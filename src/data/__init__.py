@@ -37,6 +37,8 @@ from .kitti_dataset import (
 
 from .augment_dataset import augment_dataset
 
+from .preprocess_dataset import preprocess_dataset
+
 __all__ = [
     # Augmentations
     'get_training_augmentation',
@@ -67,4 +69,7 @@ __all__ = [
     
     # Batch augmentation
     'augment_dataset',
+    
+    # Dataset preprocessing
+    'preprocess_dataset',
 ]

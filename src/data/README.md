@@ -11,10 +11,31 @@ src/data/
 ├── kitti_utils.py          # KITTI data loading utilities
 ├── kitti_dataset.py        # PyTorch Dataset classes
 ├── augment_dataset.py      # Batch augmentation script
+├── preprocess_dataset.py   # Dataset preprocessing pipeline
+├── PREPROCESSING.md        # Preprocessing documentation
 └── README.md               # This file
 ```
 
 ## Quick Start
+
+### 0. Dataset Preprocessing (First Step)
+
+**Before training, preprocess your raw KITTI data into YOLO format:**
+
+```python
+from src.data import preprocess_dataset
+
+# Preprocess KITTI data to YOLO format
+stats = preprocess_dataset()
+# Output: data/processed/ with train/val/test splits
+```
+
+Or use the convenience script:
+```bash
+python scripts/preprocess_data.py
+```
+
+See [PREPROCESSING.md](PREPROCESSING.md) for detailed documentation.
 
 ### 1. On-the-Fly Augmentation (our plan for now)
 
