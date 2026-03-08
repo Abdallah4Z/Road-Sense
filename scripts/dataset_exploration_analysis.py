@@ -12,15 +12,6 @@ from pathlib import Path
 
 
 def load_kitti_labels(train_label_path):
-    """
-    Load and parse KITTI format labels
-    
-    Args:
-        train_label_path: Path to training labels directory
-        
-    Returns:
-        DataFrame with all annotations
-    """
     all_objects = []
 
     for label_file in os.listdir(train_label_path):
@@ -132,7 +123,6 @@ def plot_bbox_width_vs_height(df_labels, output_dir=None):
 
 
 def plot_occlusion_distribution(df_labels, output_dir=None):
-    """Plot occlusion level distribution"""
     plt.figure(figsize=(8, 5))
     
     sns.countplot(data=df_labels, x="occluded", palette="viridis")
@@ -149,7 +139,6 @@ def plot_occlusion_distribution(df_labels, output_dir=None):
 
 
 def plot_truncation_distribution(df_labels, output_dir=None):
-    """Plot truncation distribution"""
     plt.figure(figsize=(8, 5))
     
     sns.histplot(df_labels["truncated"], bins=20, kde=True, color="coral")
@@ -166,7 +155,6 @@ def plot_truncation_distribution(df_labels, output_dir=None):
 
 
 def plot_bbox_area_by_class(df_labels, output_dir=None):
-    """Plot bounding box area distribution by class"""
     plt.figure(figsize=(12, 6))
     
     sns.boxplot(
@@ -189,7 +177,6 @@ def plot_bbox_area_by_class(df_labels, output_dir=None):
 
 
 def print_class_statistics(df_labels):
-    """Print detailed statistics per class"""
     print("\n" + "="*50)
     print("CLASS-WISE STATISTICS")
     print("="*50)
@@ -211,12 +198,11 @@ def print_class_statistics(df_labels):
 
 
 def main():
-    """Main execution function"""
     # Setup paths - adjust to workspace structure
     project_root = Path(__file__).parent.parent
     train_image_path = project_root / "data" / "raw" / "KITTI" / "training" / "image_2"
     train_label_path = project_root / "data" / "raw" / "KITTI" / "training" / "label_2"
-    output_dir = project_root / "experiments" / "visualization"
+    output_dir = project_root / "experiments" / "visualization" / "dataset_analysis"
     
     # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
