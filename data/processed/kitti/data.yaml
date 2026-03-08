@@ -1,0 +1,12 @@
+path: /home/abdallah/Coding/DEPI-Project/Road-Sense
+train: data/processed/kitti/images/train
+val: data/processed/kitti/images/val
+test: data/processed/kitti/images/test
+nc: 6
+names:
+- Car
+- Van
+- Truck
+- Pedestrian
+- Person_sitting
+- Cyclist
