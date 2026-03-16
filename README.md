@@ -4,35 +4,32 @@
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-red)](https://pytorch.org/)
 [![YOLO](https://img.shields.io/badge/YOLO-v8%2Fv11-green)](https://docs.ultralytics.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![KITTI](https://img.shields.io/badge/Dataset-KITTI-orange)](http://www.cvlibs.net/datasets/kitti/)
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 - [Project Overview](#-project-overview)
 - [Features](#-features)
 - [Dataset Information](#-dataset-information)
 - [Project Structure](#-project-structure)
 - [Installation](#-installation)
 - [Quick Start](#-quick-start)
-- [Milestones](#-milestones)
 - [Documentation](#-documentation)
 - [Results](#-results)
 - [Team](#-team)
-- [License](#-license)
 - [Acknowledgments](#-acknowledgments)
 
 ---
 
-## 🎯 Project Overview
+##  Project Overview
 
 **Road-Sense** is an end-to-end machine learning project focused on building a **real-time object detection system** for autonomous vehicles. The system can detect and classify:
 
-- 🚗 **Vehicles** (Cars, Vans, Trucks)
-- 🚶 **Pedestrians** (Pedestrian, Person_sitting)
-- 🚴 **Cyclists**
-- 🚸 **Traffic Signs** *(Stage 2)*
+-  **Vehicles** (Cars, Vans, Trucks)
+-  **Pedestrians** (Pedestrian, Person_sitting)
+-  **Cyclists**
+-  **Traffic Signs** *(Stage 2)*
 
 The project addresses critical challenges in autonomous driving, such as:
 - Detecting objects in various lighting conditions
@@ -44,27 +41,27 @@ This project is part of the **DEPI AI & Data Science Track - Round 2** and follo
 
 ---
 
-## ✨ Features
+##  Features
 
 ### Current Capabilities (Milestone 1 - Complete ✅)
-- ✅ **Dataset Collection & Validation**: KITTI dataset (7,481 training images, 38,186 annotations)
-- ✅ **Data Preprocessing Pipeline**: KITTI → YOLO format conversion
-- ✅ **Class Merging**: Vehicle (Car/Van/Truck), Pedestrian, Cyclist
-- ✅ **Data Quality Validation**: Zero corrupted images or invalid annotations
-- ✅ **Dataset Splitting**: 70% train, 20% val, 10% test (reproducible)
-- ✅ **Data Augmentation Strategy**: Geometric + photometric augmentations
-- ✅ **Comprehensive Documentation**: Dataset analysis, preprocessing guide, upload guidelines
+-  **Dataset Collection & Validation**: KITTI dataset (7,481 training images, 38,186 annotations)
+-  **Data Preprocessing Pipeline**: KITTI → YOLO format conversion
+-  **Class Merging**: Vehicle (Car/Van/Truck), Pedestrian, Cyclist
+-  **Data Quality Validation**: Zero corrupted images or invalid annotations
+-  **Dataset Splitting**: 70% train, 20% val, 10% test (reproducible)
+-  **Data Augmentation Strategy**: Geometric + photometric augmentations
+-  **Comprehensive Documentation**: Dataset analysis, preprocessing guide, upload guidelines
 
 ### Planned Capabilities
-- ⬜ **Model Training**: YOLOv8/v11 fine-tuning on KITTI (Milestone 2)
-- ⬜ **Real-Time Deployment**: Inference pipeline for camera input (Milestone 3)
-- ⬜ **Traffic Sign Detection**: Integration of GTSDB dataset (Stage 2)
-- ⬜ **MLOps Pipeline**: Monitoring, retraining, drift detection (Milestone 4)
-- ⬜ **Final Evaluation**: mAP, IoU, FPS benchmarking (Milestone 5)
+-  **Model Training**: YOLOv8/v11 fine-tuning on KITTI (Milestone 2)
+-  **Real-Time Deployment**: Inference pipeline for camera input (Milestone 3)
+-  **Traffic Sign Detection**: Integration of GTSDB dataset (Stage 2)
+-  **MLOps Pipeline**: Monitoring, retraining, drift detection (Milestone 4)
+-  **Final Evaluation**: mAP, IoU, FPS benchmarking (Milestone 5)
 
 ---
 
-## 📊 Dataset Information
+##  Dataset Information
 
 ### Primary Dataset: KITTI Vision Benchmark Suite
 
@@ -99,12 +96,12 @@ This project is part of the **DEPI AI & Data Science Track - Round 2** and follo
 
 **Quality Validation:**
 ```
-✅ Total PNG Images Found:     7481
-✅ Corrupted Images:           0
-✅ Missing Label Files:        0
-✅ Invalid/Out-of-bounds Bboxes: 0
-✅ Exact Duplicates Found:     0
-✅ Result: Dataset is CLEAN and ready for preprocessing!
+ Total PNG Images Found:     7481
+ Corrupted Images:           0
+ Missing Label Files:        0
+ Invalid/Out-of-bounds Bboxes: 0
+ Exact Duplicates Found:     0
+ Result: Dataset is CLEAN and ready for preprocessing!
 ```
 
 #### Supplementary Datasets
@@ -115,7 +112,7 @@ This project is part of the **DEPI AI & Data Science Track - Round 2** and follo
 
 ---
 
-## 🗂️ Project Structure
+##  Project Structure
 
 ```
 Road-Sense/
@@ -215,7 +212,7 @@ Road-Sense/
 
 ---
 
-## 🛠️ Installation
+##  Installation
 
 ### Prerequisites
 - **Python**: 3.8 or higher
@@ -297,7 +294,7 @@ python src/data/validate_kitti_quality.py
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Option 1: Preprocess Full KITTI Dataset
 
@@ -317,18 +314,18 @@ python scripts/quick_stats.py
 
 **Expected output:**
 ```
-✅ Successfully processed: 7,481 images
-✅ Total objects: 38,186
+ Successfully processed: 7,481 images
+ Total objects: 38,186
    ├─ Vehicle: 32,750 (85.73%)
    ├─ Pedestrian: 4,709 (11.06%)
    └─ Cyclist: 1,627 (4.01%)
 
-📊 Dataset split:
+ Dataset split:
    ├─ Train: 5,237 images (70.00%)
    ├─ Val: 1,496 images (20.01%)
    └─ Test: 748 images (9.99%)
 
-💾 Output saved to: data/processed/kitti/
+ Output saved to: data/processed/kitti/
 ```
 
 ### Option 2: Test with Sample Data
@@ -356,110 +353,7 @@ print(f"Vehicle count: {stats['class_counts']['Vehicle']}")
 
 ---
 
-## 🗓️ Milestones
-
-### Milestone 1: Data Collection, Exploration, and Preprocessing ✅ **COMPLETE**
-**Timeline:** Week 1  
-**Status:** ✅ Delivered
-
-**Deliverables:**
-- ✅ [Dataset Exploration Report](docs/DATASET_EXPLORATION_REPORT.md)
-- ✅ [Preprocessing & Augmentation Guide](docs/PREPROCESSING_AND_AUGMENTATION_GUIDE.md)
-- ✅ [Dataset Download Instructions](docs/DATASET_DOWNLOAD_INSTRUCTIONS.md)
-- ✅ [Dataset Upload Guidelines](docs/DATASET_UPLOAD_GUIDELINES.md)
-- ✅ Preprocessed YOLO-ready dataset (`data/processed/kitti/`)
-- ✅ Data quality validation (zero errors)
-
-**Key Results:**
-- 7,481 training images (100% clean)
-- 38,186 annotations across 3 classes
-- Train/Val/Test split: 70/20/10
-- Comprehensive augmentation strategy documented
-
----
-
-### Milestone 2: Object Detection Model Development ⏳ **IN PROGRESS**
-**Timeline:** Weeks 2-3  
-**Status:** ⏳ Not started
-
-**Tasks:**
-1. Model Selection: Choose YOLOv8/v11 variant (nano/small/medium)
-2. Transfer Learning: Fine-tune pre-trained COCO weights on KITTI
-3. Training: 100 epochs with early stopping
-4. Hyperparameter Tuning: Learning rate, batch size, augmentation
-5. Evaluation: mAP@0.5, mAP@0.5:0.95, IoU, FPS
-
-**Expected Deliverables:**
-- Trained YOLOv8/v11 model (best.pt)
-- Model Evaluation Report (mAP, IoU, FPS)
-- Training logs and metrics
-- Error analysis (failure modes)
-
-**Target Metrics:**
-- mAP@0.5: > 70%
-- mAP@0.5:0.95: > 50%
-- FPS: > 30 (real-time on GPU)
-
----
-
-### Milestone 3: Deployment and Real-Time Testing ⏳ **PLANNED**
-**Timeline:** Week 4  
-**Status:** ⏳ Not started
-
-**Tasks:**
-1. Inference Pipeline: Optimize for real-time performance
-2. Camera Integration: Connect to vehicle cameras
-3. Real-World Testing: Urban, highway, various lighting
-4. Performance Optimization: TensorRT, ONNX export
-5. Video Demo: Record detection on test videos
-
-**Expected Deliverables:**
-- Deployed inference pipeline
-- Real-time testing report
-- Video demos (urban, highway)
-- Performance benchmarks (FPS, latency)
-
----
-
-### Milestone 4: MLOps and Monitoring ⏳ **PLANNED**
-**Timeline:** Week 5  
-**Status:** ⏳ Not started
-
-**Tasks:**
-1. MLOps Setup: MLflow, Kubeflow, or DVC
-2. Model Monitoring: Drift detection, performance tracking
-3. Automated Retraining: Trigger on performance degradation
-4. Logging and Alerts: Monitor accuracy, FPS, errors
-5. CI/CD Pipeline: Automated testing and deployment
-
-**Expected Deliverables:**
-- MLOps pipeline (MLflow/Kubeflow)
-- Monitoring dashboard (Grafana/TensorBoard)
-- Retraining strategy documentation
-- Alert system for performance issues
-
----
-
-### Milestone 5: Final Documentation and Presentation ⏳ **PLANNED**
-**Timeline:** Week 6  
-**Status:** ⏳ Not started
-
-**Tasks:**
-1. Final Report: Complete project documentation
-2. Presentation: Slides and demo for stakeholders
-3. Code Cleanup: Refactor, add comments, ensure reproducibility
-4. GitHub Polish: README, documentation, examples
-5. Demo Video: End-to-end system walkthrough
-
-**Expected Deliverables:**
-- Final Project Report (PDF)
-- Presentation Slides (PowerPoint/PDF)
-- Demo Video (5-10 minutes)
-- Polished GitHub repository
-
----
-
-## 📚 Documentation
+##  Documentation
 
 ### Core Documentation
 - **[README.md](README.md)** - This file (project overview, setup, usage)
@@ -469,7 +363,6 @@ print(f"Vehicle count: {stats['class_counts']['Vehicle']}")
 - **[Dataset Upload Guidelines](docs/DATASET_UPLOAD_GUIDELINES.md)** - Git best practices for large datasets
 
 ### Additional Documentation
-- **[Multi-Dataset Training Strategy](docs/MULTI_DATASET_TRAINING_STRATEGY.md)** - Plan for Stage 2 (traffic signs)
 - **[Data Quality Report](docs/data_quality_report.md)** - Validation results
 - **[Preprocessing Module README](src/data/PREPROCESSING.md)** - Module documentation
 - **[Setup Complete Summary](reports/SETUP_COMPLETE_SUMMARY.md)** - Initial setup report
@@ -480,9 +373,9 @@ print(f"Vehicle count: {stats['class_counts']['Vehicle']}")
 
 ---
 
-## 📈 Results
+##  Results
 
-### Milestone 1 Results (Complete ✅)
+### Milestone 1 Results (Complete )
 
 #### Dataset Statistics
 | Metric | Value |
@@ -495,13 +388,13 @@ print(f"Vehicle count: {stats['class_counts']['Vehicle']}")
 | **Preprocessing Time** | ~5-8 minutes (on modern CPU) |
 
 #### Class Distribution (After Merging)
-![Class Distribution](experiments/visualization/dataset_analysis/class_distribution_plot.png)
+![Class Distribution](experiments/visualization/dataset_analysis/class_distribution_after_merge.png)
 
 | Class | Count | Percentage |
 |-------|-------|------------|
-| Vehicle | 32,750 | 85.73% |
-| Pedestrian | 4,709 | 11.06% |
-| Cyclist | 1,627 | 4.01% |
+| Vehicle | 20553 | 85.3% |
+| Pedestrian | 2714 | 11.3% |
+| Cyclist | 831 | 3.4% |
 
 #### Dataset Split
 | Split | Images | Objects | Percentage |
@@ -542,7 +435,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 ### Datasets
 - **KITTI Vision Benchmark Suite** by Geiger et al., CVPR 2012
@@ -563,11 +456,11 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 | Milestone | Status | Completion |
 |-----------|--------|------------|
-| Milestone 1: Data Collection & Preprocessing | ✅ Complete | 100% |
-| Milestone 2: Model Development | ⏳ Not Started | 0% |
-| Milestone 3: Deployment & Testing | ⏳ Planned | 0% |
-| Milestone 4: MLOps & Monitoring | ⏳ Planned | 0% |
-| Milestone 5: Documentation & Presentation | ⏳ Planned | 0% |
+| Milestone 1: Data Collection & Preprocessing |  Complete | 100% |
+| Milestone 2: Model Development |  Not Started | 0% |
+| Milestone 3: Deployment & Testing |  Planned | 0% |
+| Milestone 4: MLOps & Monitoring |  Planned | 0% |
+| Milestone 5: Documentation & Presentation |  Planned | 0% |
 
 **Overall Progress:** Milestone 1/5 Complete (20%)
 ---
