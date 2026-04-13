@@ -2,61 +2,61 @@ const docs = [
   {
     title: "Quick Setup Guide",
     description: "Install, validate, preprocess, and verify in a fast setup flow.",
-    path: "../docs/QUICK_SETUP_GUIDE.md",
+    path: "./docs/QUICK_SETUP_GUIDE.md",
     category: "getting-started"
   },
   {
     title: "Project Details",
     description: "Full dataset context, workflow design, and milestone structure.",
-    path: "../docs/PROJECT_DETAILS.md",
+    path: "./docs/PROJECT_DETAILS.md",
     category: "getting-started"
   },
   {
     title: "Preprocessing and Augmentation",
     description: "Details of the data conversion and augmentation pipeline.",
-    path: "../docs/PREPROCESSING_AND_AUGMENTATION_GUIDE.md",
+    path: "./docs/PREPROCESSING_AND_AUGMENTATION_GUIDE.md",
     category: "dataset"
   },
   {
     title: "Dataset Exploration",
     description: "Dataset profile and supporting statistical analysis.",
-    path: "../docs/DATASET_EXPLORATION_REPORT.md",
+    path: "./docs/DATASET_EXPLORATION_REPORT.md",
     category: "dataset"
   },
   {
     title: "Data Quality Report",
     description: "Validation checks for corruption, labels, and box constraints.",
-    path: "../docs/data_quality_report.md",
+    path: "./docs/data_quality_report.md",
     category: "dataset"
   },
   {
     title: "Dataset Download Instructions",
     description: "How to obtain and place KITTI and related datasets.",
-    path: "../docs/DATASET_DOWNLOAD_INSTRUCTIONS.md",
+    path: "./docs/DATASET_DOWNLOAD_INSTRUCTIONS.md",
     category: "dataset"
   },
   {
     title: "Dataset Upload Guidelines",
     description: "Repository data handling and large-file best practices.",
-    path: "../docs/DATASET_UPLOAD_GUIDELINES.md",
+    path: "./docs/DATASET_UPLOAD_GUIDELINES.md",
     category: "dataset"
   },
   {
     title: "Training Report",
     description: "Training configuration, curves, and run-specific observations.",
-    path: "../docs/TRAINING_REPORT_EXP34332.md",
+    path: "./docs/TRAINING_REPORT_EXP34332.md",
     category: "training"
   },
   {
     title: "Multi-Dataset Training Strategy",
     description: "Plan for integrating additional datasets and training stages.",
-    path: "../docs/MULTI_DATASET_TRAINING_STRATEGY.md",
+    path: "./docs/MULTI_DATASET_TRAINING_STRATEGY.md",
     category: "training"
   },
   {
     title: "Model Comparison Report",
     description: "Model-level comparison details and performance perspective.",
-    path: "../docs/models/MODEL_COMPARISON_REPORT.md",
+    path: "./docs/models/MODEL_COMPARISON_REPORT.md",
     category: "models"
   }
 ];
@@ -65,49 +65,49 @@ const reports = [
   {
     title: "Milestone 2 Executive Summary",
     description: "High-level training outcomes and readiness statement.",
-    path: "../reports/MILESTONE_2_EXECUTIVE_SUMMARY_EXP34332.md",
+    path: "./reports/MILESTONE_2_EXECUTIVE_SUMMARY_EXP34332.md",
     category: "milestones"
   },
   {
     title: "Milestone 2 Technical Report",
     description: "Technical details, metrics, and artifact inventory.",
-    path: "../reports/MILESTONE_2_TECHNICAL_REPORT_EXP34332.md",
+    path: "./reports/MILESTONE_2_TECHNICAL_REPORT_EXP34332.md",
     category: "milestones"
   },
   {
     title: "Reports Index",
     description: "One-stop map for all major reporting documents.",
-    path: "../reports/REPORTS_INDEX.md",
+    path: "./reports/REPORTS_INDEX.md",
     category: "status"
   },
   {
     title: "Project Status Report",
     description: "Progress across milestones and current priorities.",
-    path: "../reports/PROJECT_STATUS_REPORT.md",
+    path: "./reports/PROJECT_STATUS_REPORT.md",
     category: "status"
   },
   {
     title: "Week 1 Deliverables",
     description: "Early milestone summary and key outputs.",
-    path: "../reports/WEEK_1_DELIVERABLES_SUMMARY.md",
+    path: "./reports/WEEK_1_DELIVERABLES_SUMMARY.md",
     category: "status"
   },
   {
     title: "Abdallah Dataset Analysis",
     description: "Research analysis for dataset options and rationale.",
-    path: "../reports/research/Abdallah_dataset_analysis.md",
+    path: "./reports/research/Abdallah_dataset_analysis.md",
     category: "research"
   },
   {
     title: "Aya Dataset Analysis",
     description: "Research notes and comparative insights by Aya Ahmed.",
-    path: "../reports/research/AyaAhmed_dataset_analysis.md",
+    path: "./reports/research/AyaAhmed_dataset_analysis.md",
     category: "research"
   },
   {
     title: "Dataset Analysis Template",
     description: "Template used for standardized analysis documentation.",
-    path: "../reports/templates/dataset_analysis_template.md",
+    path: "./reports/templates/dataset_analysis_template.md",
     category: "research"
   }
 ];
@@ -115,82 +115,82 @@ const reports = [
 const visuals = [
   {
     title: "Class Distribution",
-    src: "../experiments/visualization/dataset_analysis/class_distribution.png",
+    src: "./experiments/visualization/dataset_analysis/class_distribution.png",
     category: "dataset"
   },
   {
     title: "Merged Class Distribution",
-    src: "../experiments/visualization/dataset_analysis/class_distribution_after_merge.png",
+    src: "./experiments/visualization/dataset_analysis/class_distribution_after_merge.png",
     category: "dataset"
   },
   {
     title: "Bounding Box Area by Class",
-    src: "../experiments/visualization/dataset_analysis/bbox_area_by_class.png",
+    src: "./experiments/visualization/dataset_analysis/bbox_area_by_class.png",
     category: "dataset"
   },
   {
     title: "Bounding Box Width vs Height",
-    src: "../experiments/visualization/dataset_analysis/bbox_width_vs_height.png",
+    src: "./experiments/visualization/dataset_analysis/bbox_width_vs_height.png",
     category: "dataset"
   },
   {
     title: "Occlusion Distribution",
-    src: "../experiments/visualization/dataset_analysis/occlusion_distribution.png",
+    src: "./experiments/visualization/dataset_analysis/occlusion_distribution.png",
     category: "dataset"
   },
   {
     title: "Truncation Distribution",
-    src: "../experiments/visualization/dataset_analysis/truncation_distribution.png",
+    src: "./experiments/visualization/dataset_analysis/truncation_distribution.png",
     category: "dataset"
   },
   {
     title: "Results Curve",
-    src: "../experiments/visualization/runsV/exp34332/results.png",
+    src: "./experiments/visualization/runsV/exp34332/results.png",
     category: "runs"
   },
   {
     title: "Confusion Matrix",
-    src: "../experiments/visualization/runsV/exp34332/confusion_matrix.png",
+    src: "./experiments/visualization/runsV/exp34332/confusion_matrix.png",
     category: "runs"
   },
   {
     title: "Normalized Confusion Matrix",
-    src: "../experiments/visualization/runsV/exp34332/confusion_matrix_normalized.png",
+    src: "./experiments/visualization/runsV/exp34332/confusion_matrix_normalized.png",
     category: "runs"
   },
   {
     title: "PR Curve",
-    src: "../experiments/visualization/runsV/exp34332/BoxPR_curve.png",
+    src: "./experiments/visualization/runsV/exp34332/BoxPR_curve.png",
     category: "runs"
   },
   {
     title: "F1 Curve",
-    src: "../experiments/visualization/runsV/exp34332/BoxF1_curve.png",
+    src: "./experiments/visualization/runsV/exp34332/BoxF1_curve.png",
     category: "runs"
   },
   {
     title: "Precision Curve",
-    src: "../experiments/visualization/runsV/exp34332/BoxP_curve.png",
+    src: "./experiments/visualization/runsV/exp34332/BoxP_curve.png",
     category: "runs"
   },
   {
     title: "Recall Curve",
-    src: "../experiments/visualization/runsV/exp34332/BoxR_curve.png",
+    src: "./experiments/visualization/runsV/exp34332/BoxR_curve.png",
     category: "runs"
   },
   {
     title: "Validation Prediction Sample",
-    src: "../experiments/visualization/runsV/exp34332/val_batch0_pred.jpg",
+    src: "./experiments/visualization/runsV/exp34332/val_batch0_pred.jpg",
     category: "runs"
   },
   {
     title: "Validation Prediction Sample 2",
-    src: "../experiments/visualization/runsV/exp34332/val_batch1_pred.jpg",
+    src: "./experiments/visualization/runsV/exp34332/val_batch1_pred.jpg",
     category: "runs"
   },
   {
     title: "Validation Prediction Sample 3",
-    src: "../experiments/visualization/runsV/exp34332/val_batch2_pred.jpg",
+    src: "./experiments/visualization/runsV/exp34332/val_batch2_pred.jpg",
     category: "runs"
   }
 ];
