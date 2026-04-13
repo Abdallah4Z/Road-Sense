@@ -1,12 +1,9 @@
-path: /home/abdallah/Coding/DEPI-Project/Road-Sense
+path: /home/skyvision/Sorry/Road-Sense
 train: data/processed/kitti/images/train
 val: data/processed/kitti/images/val
 test: data/processed/kitti/images/test
-nc: 6
+nc: 3
 names:
-- Car
-- Van
-- Truck
+- Vehicle
 - Pedestrian
-- Person_sitting
 - Cyclist
