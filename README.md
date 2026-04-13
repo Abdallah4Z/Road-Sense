@@ -43,17 +43,17 @@ This project is part of the **DEPI AI & Data Science Track - Round 2** and follo
 
 ##  Features
 
-### Current Capabilities (Milestone 1 - Complete ✅)
+### Current Capabilities (Milestone 1-2)
 -  **Dataset Collection & Validation**: KITTI dataset (7,481 training images, 38,186 annotations)
 -  **Data Preprocessing Pipeline**: KITTI → YOLO format conversion
 -  **Class Merging**: Vehicle (Car/Van/Truck), Pedestrian, Cyclist
 -  **Data Quality Validation**: Zero corrupted images or invalid annotations
 -  **Dataset Splitting**: 70% train, 20% val, 10% test (reproducible)
 -  **Data Augmentation Strategy**: Geometric + photometric augmentations
--  **Comprehensive Documentation**: Dataset analysis, preprocessing guide, upload guidelines
+-  **YOLO11m Training Complete**: 100-epoch run finished with strong detection metrics
+-  **Comprehensive Documentation**: Dataset analysis, preprocessing guide, training report, push checklist
 
 ### Planned Capabilities
--  **Model Training**: YOLOv8/v11 fine-tuning on KITTI (Milestone 2)
 -  **Real-Time Deployment**: Inference pipeline for camera input (Milestone 3)
 -  **Traffic Sign Detection**: Integration of GTSDB dataset (Stage 2)
 -  **MLOps Pipeline**: Monitoring, retraining, drift detection (Milestone 4)
@@ -366,6 +366,11 @@ print(f"Vehicle count: {stats['class_counts']['Vehicle']}")
 - **[Data Quality Report](docs/data_quality_report.md)** - Validation results
 - **[Preprocessing Module README](src/data/PREPROCESSING.md)** - Module documentation
 - **[Setup Complete Summary](reports/SETUP_COMPLETE_SUMMARY.md)** - Initial setup report
+- **[Training Report (exp34332)](docs/TRAINING_REPORT_EXP34332.md)** - Final training metrics and reproducibility details
+- **[Push Ready Checklist](docs/PUSH_READY_CHECKLIST.md)** - Pre-push verification for docs, artifacts, and hygiene
+- **[Milestone 2 Executive Summary (exp34332)](reports/MILESTONE_2_EXECUTIVE_SUMMARY_EXP34332.md)** - High-level outcome report for submission and review
+- **[Milestone 2 Technical Report (exp34332)](reports/MILESTONE_2_TECHNICAL_REPORT_EXP34332.md)** - Technical run details, metrics, and artifact inventory
+- **[Reports Index](reports/REPORTS_INDEX.md)** - Quick navigation across available reports
 
 ### Research and Analysis
 - **[Dataset Analysis (Abdallah)](reports/research/Abdallah_dataset_analysis.md)** - KITTI, COCO, Open Images comparison
@@ -375,9 +380,8 @@ print(f"Vehicle count: {stats['class_counts']['Vehicle']}")
 
 ##  Results
 
-### Milestone 1 Results (Complete )
+### Milestone 1 - Dataset Preparation (Complete)
 
-#### Dataset Statistics
 | Metric | Value |
 |--------|-------|
 | **Total Clean Images** | 7,481 |
@@ -385,23 +389,43 @@ print(f"Vehicle count: {stats['class_counts']['Vehicle']}")
 | **Corrupted Images** | 0 |
 | **Missing Labels** | 0 |
 | **Invalid Bounding Boxes** | 0 |
-| **Preprocessing Time** | ~5-8 minutes (on modern CPU) |
 
-#### Class Distribution (After Merging)
-![Class Distribution](experiments/visualization/dataset_analysis/class_distribution_after_merge.png)
+### Milestone 2 - YOLO11m Training (Complete)
 
-| Class | Count | Percentage |
-|-------|-------|------------|
-| Vehicle | 20553 | 85.3% |
-| Pedestrian | 2714 | 11.3% |
-| Cyclist | 831 | 3.4% |
+Final training run: `runs/train/exp34332` (100 epochs)
 
-#### Dataset Split
-| Split | Images | Objects | Percentage |
-|-------|--------|---------|------------|
-| Train | 5,237 | ~26,730 | 70% |
-| Validation | 1,496 | ~7,637 | 20% |
-| Test | 748 | ~3,819 | 10% |
+| Metric | Best Value | Epoch |
+|--------|------------|-------|
+| **mAP50-95 (B)** | **0.76786** | 95 |
+| **mAP50 (B)** | **0.94159** | 87 |
+| **Precision (B)** | **0.92421** | 40 |
+| **Recall (B)** | **0.91550** | 71 |
+
+| Final Epoch (100) | Value |
+|-------------------|-------|
+| **mAP50-95 (B)** | 0.76517 |
+| **mAP50 (B)** | 0.93534 |
+| **Precision (B)** | 0.90017 |
+| **Recall (B)** | 0.90167 |
+
+#### Key Artifacts (local run directory)
+- `runs/train/exp34332/results.csv`
+- `runs/train/exp34332/results.png`
+- `runs/train/exp34332/confusion_matrix.png`
+- `runs/train/exp34332/weights/best.pt`
+- `runs/train/exp34332/weights/last.pt`
+
+#### Archived Artifacts (organized for this run)
+- `experiments/visualization/runs/exp34332/results.png`
+- `experiments/visualization/runs/exp34332/confusion_matrix.png`
+- `experiments/visualization/runs/exp34332/confusion_matrix_normalized.png`
+- `experiments/visualization/runs/exp34332/BoxPR_curve.png`
+- `experiments/visualization/runs/exp34332/BoxF1_curve.png`
+- `experiments/visualization/runs/exp34332/BoxP_curve.png`
+- `experiments/visualization/runs/exp34332/BoxR_curve.png`
+- `models/checkpoints/best-3classes-exp34332.pt`
+
+See **[Training Report (exp34332)](docs/TRAINING_REPORT_EXP34332.md)** for full details.
 
 ---
 
@@ -457,10 +481,10 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 | Milestone | Status | Completion |
 |-----------|--------|------------|
 | Milestone 1: Data Collection & Preprocessing |  Complete | 100% |
-| Milestone 2: Model Development |  Not Started | 0% |
+| Milestone 2: Model Development |  Complete (baseline training) | 100% |
 | Milestone 3: Deployment & Testing |  Planned | 0% |
 | Milestone 4: MLOps & Monitoring |  Planned | 0% |
 | Milestone 5: Documentation & Presentation |  Planned | 0% |
 
-**Overall Progress:** Milestone 1/5 Complete (20%)
+**Overall Progress:** Milestones 1-2/5 Complete (40%)
 ---
