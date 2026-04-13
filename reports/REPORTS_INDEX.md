@@ -7,6 +7,10 @@ This index helps locate key Road-Sense reporting documents.
 - `reports/MILESTONE_2_EXECUTIVE_SUMMARY_EXP34332.md`
 - `reports/MILESTONE_2_TECHNICAL_REPORT_EXP34332.md`
 
+## Project Status
+
+- `reports/PROJECT_STATUS_REPORT.md`
+
 ## Existing Reports
 
 - `reports/WEEK_1_DELIVERABLES_SUMMARY.md`
@@ -18,3 +22,4 @@ This index helps locate key Road-Sense reporting documents.
 - `docs/TRAINING_REPORT_EXP34332.md`
 - `docs/DATASET_EXPLORATION_REPORT.md`
 - `docs/PREPROCESSING_AND_AUGMENTATION_GUIDE.md`
+- `docs/PROJECT_DETAILS.md`
