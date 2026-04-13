@@ -45,8 +45,8 @@ ENV/
 *.pth
 *.onnx
 *.ckpt
-!models/checkpoints/best.pt
-!models/checkpoints/final.pt
+!models/checkpoints/*.pt
+!models/checkpoints/**/*.pt
 
 # =====================================
 # IDE and Editor Files
