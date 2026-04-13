@@ -1,0 +1,55 @@
+name: Deploy Presentation Website
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'presentation/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Prepare build output
+        run: |
+          mkdir -p _site
+          # Copy presentation files
+          cp -r presentation/* _site/
+          # Copy docs, reports, and experiments for relative path access
+          cp -r docs _site/docs 2>/dev/null || true
+          cp -r reports _site/reports 2>/dev/null || true
+          cp -r experiments _site/experiments 2>/dev/null || true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
