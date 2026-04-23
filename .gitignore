@@ -45,6 +45,7 @@ ENV/
 *.pth
 *.onnx
 *.ckpt
+*.torchscript
 !models/checkpoints/*.pt
 !models/checkpoints/**/*.pt
 

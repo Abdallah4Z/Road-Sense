@@ -8,6 +8,36 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="reader.css" />
+  <style>
+    .demo-link {
+      margin-left: auto;
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: white !important;
+      border-radius: 6px;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: transform 0.2s;
+    }
+    .demo-link:hover {
+      transform: translateY(-1px);
+    }
+    .reader-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem 0;
+    }
+    .back {
+      font-size: 0.95rem;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .back:hover { color: var(--accent); }
+  </style>
 </head>
 <body>
   <div class="bg-orb bg-orb-a" aria-hidden="true"></div>
@@ -15,6 +45,7 @@
 
   <header class="reader-header">
     <a class="back" href="index.html">Back to Showcase</a>
+    <a class="demo-link" href="detect.html">Try Live Demo →</a>
     <div class="header-meta">
       <h1 id="docTitle">Loading...</h1>
     </div>

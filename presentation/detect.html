@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Road-Sense Live Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <base href="/Road-Sense/" />
+  <style>
+    .detect-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    @media (max-width: 900px) {
+      .detect-layout { grid-template-columns: 1fr; }
+    }
+    .upload-zone {
+      border: 2px dashed var(--accent);
+      border-radius: 12px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--card-bg);
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent-light);
+      background: rgba(255,255,255,0.05);
+    }
+    .upload-zone input {
+      display: none;
+    }
+    .upload-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.7;
+    }
+    .detect-preview {
+      position: relative;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .detect-preview img {
+      max-width: 100%;
+      max-height: 600px;
+      object-fit: contain;
+    }
+    .detect-preview placeholder {
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
+    .detect-results {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 1rem;
+    }
+    .detect-results h3 {
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+    .detection-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .detection-item:last-child {
+      border-bottom: none;
+    }
+    .detection-class {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .detection-class.Vehicle { color: #22c55e; }
+    .detection-class.Pedestrian { color: #3b82f6; }
+    .detection-class.Cyclist { color: #ef4444; }
+    .detection-conf {
+      color: var(--muted);
+    }
+    .detect-stats {
+      display: flex;
+      gap: 2rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .detect-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+      color: #fca5a5;
+    }
+    .detect-info {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      color: #93c5fd;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      font-size: 1rem;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--accent-light);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.15);
+    }
+    .api-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+    .api-status.connected {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+    }
+    .api-status.disconnected {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+  </style>
+</head>
+<body>
+  <nav class="page-nav reveal">
+    <div class="page-nav-inner">
+      <div class="brand">ROAD-SENSE</div>
+      <button id="menuToggle" class="menu-toggle" aria-label="Toggle menu">Menu</button>
+      <ul id="menu" class="menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="docs.html">Docs</a></li>
+        <li><a href="reports.html">Reports</a></li>
+        <li><a href="visuals.html">Visuals</a></li>
+        <li><a href="detect.html" class="active">Detect</a></li>
+        <li><a href="index.html#results">Results</a></li>
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">☀️</button>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="page-content reveal">
+    <div class="panel">
+      <div class="panel-head">
+        <p class="eyebrow">Interactive Demo</p>
+        <h2>Live Object Detection</h2>
+      </div>
+
+      <div class="detect-info">
+        <strong>How to use:</strong> Upload an image to run Road-Sense object detection. The model detects <em>Vehicle</em>, <em>Pedestrian</em>, and <em>Cyclist</em> classes. For the demo to work, the inference API server must be running locally on port 8000. <a href="docs.html" target="_blank">See docs</a> for setup.
+      </div>
+
+      <div id="apiStatus" class="api-status disconnected">
+        <span class="status-dot"></span>
+        <span class="status-text">Checking API connection...</span>
+      </div>
+
+      <div class="detect-layout">
+        <!-- Left: Upload -->
+        <div class="detect-upload">
+          <label class="upload-zone" id="uploadZone">
+            <input type="file" id="imageInput" accept="image/*" />
+            <div class="upload-icon">📸</div>
+            <h3>Drop an image here</h3>
+            <p style="color: var(--muted); margin-top: 0.5rem;">
+              or click to browse<br />
+              Supports JPG, PNG, BMP
+            </p>
+          </label>
+          <div style="margin-top: 1rem; text-align: center;">
+            <button id="sampleBtn" class="btn btn-secondary" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
+              Load Sample Image
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Results -->
+        <div class="detect-result">
+          <div class="detect-preview" id="previewContainer">
+            <p class="placeholder">Upload an image to see detections</p>
+            <img id="previewImage" style="display: none;" alt="Preview" />
+          </div>
+
+          <div class="detect-results" id="resultsPanel" style="display: none;">
+            <h3>Detections</h3>
+            <div id="detectionsList"></div>
+            <div class="detect-stats">
+              <span id="totalDetections">0 objects</span>
+              <span id="inferenceTime">– ms</span>
+            </div>
+          </div>
+
+          <div class="detect-error" id="errorBox" style="display: none;"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer reveal">
+    <p>Road-Sense Presentation Site</p>
+    <p>Interactive demo powered by FastAPI & YOLO inference.</p>
+  </footer>
+
+  <script>
+    // Configuration
+    const API_BASE = window.location.protocol === 'https:' ? 'https://' : 'http://';
+    const API_HOST = 'localhost:8000';
+    const API_URL = `${API_BASE}${API_HOST}`;
+
+    // DOM Elements
+    const uploadZone = document.getElementById('uploadZone');
+    const imageInput = document.getElementById('imageInput');
+    const previewImage = document.getElementById('previewImage');
+    const previewContainer = document.getElementById('previewContainer');
+    const resultsPanel = document.getElementById('resultsPanel');
+    const detectionsList = document.getElementById('detectionsList');
+    const totalDetections = document.getElementById('totalDetections');
+    const inferenceTime = document.getElementById('inferenceTime');
+    const errorBox = document.getElementById('errorBox');
+    const apiStatus = document.getElementById('apiStatus');
+    const statusText = apiStatus.querySelector('.status-text');
+    const sampleBtn = document.getElementById('sampleBtn');
+
+    let apiConnected = false;
+
+    // Check API health
+    async function checkAPI() {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch(`${API_URL}/health`, { signal: controller.signal });
+        clearTimeout(timeout);
+        apiConnected = res.ok;
+      } catch (e) {
+        apiConnected = false;
+      }
+      updateAPIStatus();
+    }
+
+    function updateAPIStatus() {
+      if (apiConnected) {
+        apiStatus.className = 'api-status connected';
+        statusText.textContent = 'API connected (localhost:8000)';
+      } else {
+        apiStatus.className = 'api-status disconnected';
+        statusText.textContent = 'API offline – run: python src/models/api_server.py --weights models/checkpoints/best-3classes-exp34332.pt';
+      }
+    }
+
+    // Drag & drop handlers
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        handleImageUpload(file);
+      } else {
+        showError('Please drop an image file');
+      }
+    });
+
+    uploadZone.addEventListener('click', () => {
+      imageInput.click();
+    });
+
+    imageInput.addEventListener('change', () => {
+      const file = imageInput.files[0];
+      if (file) handleImageUpload(file);
+    });
+
+    // Sample image
+    sampleBtn.addEventListener('click', () => {
+      // Use a sample image from visuals if available, otherwise placeholder
+      const samplePath = './experiments/visualization/runsV/exp34332/val_batch0_pred.jpg';
+      fetch(samplePath)
+        .then(r => {
+          if (!r.ok) throw new Error('Sample not found');
+          return r.blob();
+        })
+        .then(blob => {
+          const file = new File([blob], 'sample.jpg', { type: 'image/jpeg' });
+          handleImageUpload(file);
+        })
+        .catch(() => {
+          showError('Sample image not available. Upload your own image.');
+        });
+    });
+
+    async function handleImageUpload(file) {
+      // Show preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImage.src = e.target.result;
+        previewImage.style.display = 'block';
+        uploadZone.style.display = 'none';
+        resultsPanel.style.display = 'none';
+        errorBox.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+
+      // Run detection
+      if (!apiConnected) {
+        showError('Cannot connect to inference API at ' + API_URL + '. Start the server to enable detections.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const res = await fetch(`${API_URL}/detect`, {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.detail || 'Detection failed');
+        }
+
+        displayResults(data, previewImage.src);
+
+      } catch (err) {
+        showError('Detection error: ' + err.message);
+      }
+    }
+
+    function displayResults(data, originalImageSrc) {
+      // Replace image with annotated version
+      if (data.annotated_image) {
+        previewImage.src = data.annotated_image;
+      }
+
+      // Build detections list
+      detectionsList.innerHTML = '';
+      data.detections.forEach(det => {
+        const item = document.createElement('div');
+        item.className = 'detection-item';
+        item.innerHTML = `
+          <span class="detection-class ${det.class_name}">${det.class_name}</span>
+          <span class="detection-conf">${(det.confidence * 100).toFixed(1)}%</span>
+        `;
+        detectionsList.appendChild(item);
+      });
+
+      // Update stats
+      totalDetections.textContent = `${data.detections.length} object${data.detections.length !== 1 ? 's' : ''}`;
+      inferenceTime.textContent = `${data.inference_time_ms.toFixed(1)} ms`;
+
+      resultsPanel.style.display = 'block';
+    }
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.style.display = 'block';
+      resultsPanel.style.display = 'none';
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAPI();
+      // Periodic check
+      setInterval(checkAPI, 5000);
+    });
+  </script>
+</body>
+</html>
