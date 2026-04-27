@@ -1,66 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <base href="/Road-Sense/" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Road-Sense Showcase</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="hero reveal">
-    <nav class="top-nav">
+  <nav class="top-nav reveal">
+    <div class="nav-container">
       <div class="brand">ROAD-SENSE</div>
       <button id="menuToggle" class="menu-toggle" aria-label="Toggle menu">Menu</button>
       <ul id="menu" class="menu">
-        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html" class="active">Home</a></li>
         <li><a href="docs.html">Docs</a></li>
         <li><a href="reports.html">Reports</a></li>
         <li><a href="visuals.html">Visuals</a></li>
         <li><a href="detect.html">Detect</a></li>
         <li><a href="#results">Results</a></li>
-      <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">☀️</button>
-
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">☀️</button>
       </ul>
-    </nav>
-
-    <div class="hero-content">
-      <p class="eyebrow">Autonomous Vision Project Showcase</p>
-      <h1>From Raw KITTI Data to Production-Ready Detection Insights</h1>
-      <p class="hero-copy">
-        A presentation-ready portal for Road-Sense documentation, milestone reports,
-        training visualizations, and benchmark results.
-      </p>
-      <div class="hero-actions">
-        <a href="#results" class="btn btn-primary">View Metrics</a>
-        <a href="docs.html" class="btn btn-ghost">Open Documentation</a>
-      </div>
     </div>
-
-    <section class="stat-ribbon" aria-label="Key model metrics">
-      <article>
-        <span class="label">Best mAP50-95</span>
-        <span class="value">0.76786</span>
-      </article>
-      <article>
-        <span class="label">Best mAP50</span>
-        <span class="value">0.94159</span>
-      </article>
-      <article>
-        <span class="label">Best Precision</span>
-        <span class="value">0.92421</span>
-      </article>
-      <article>
-        <span class="label">Best Recall</span>
-        <span class="value">0.91550</span>
-      </article>
-    </section>
-  </header>
+  </nav>
 
   <main>
+    <header class="hero reveal">
+      <div class="hero-content">
+        <p class="eyebrow">Autonomous Vision Project Showcase</p>
+        <h1>From Raw KITTI Data to Production-Ready Detection Insights</h1>
+        <p class="hero-copy">
+          A presentation-ready portal for Road-Sense documentation, milestone reports,
+          training visualizations, and benchmark results.
+        </p>
+        <div class="hero-actions">
+          <a href="#results" class="btn btn-primary">View Metrics</a>
+          <a href="docs.html" class="btn btn-ghost">Open Documentation</a>
+        </div>
+      </div>
+
+      <section class="stat-ribbon reveal" aria-label="Key model metrics">
+        <article>
+          <span class="label">Best mAP50-95</span>
+          <span class="value">0.76786</span>
+        </article>
+        <article>
+          <span class="label">Best mAP50</span>
+          <span class="value">0.94159</span>
+        </article>
+        <article>
+          <span class="label">Best Precision</span>
+          <span class="value">0.92421</span>
+        </article>
+        <article>
+          <span class="label">Best Recall</span>
+          <span class="value">0.91550</span>
+        </article>
+      </section>
+    </header>
+
     <section id="results" class="panel reveal">
       <div class="panel-head">
         <p class="eyebrow">Run exp34332</p>

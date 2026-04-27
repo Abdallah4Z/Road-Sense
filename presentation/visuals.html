@@ -6,30 +6,28 @@
   <title>Road-Sense Visualizations</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <base href="/Road-Sense/" />
 </head>
 <body>
-  <nav class="page-nav reveal">
-    <div class="page-nav-inner">
+  <nav class="top-nav reveal">
+    <div class="nav-container">
       <div class="brand">ROAD-SENSE</div>
       <button id="menuToggle" class="menu-toggle" aria-label="Toggle menu">Menu</button>
-        <ul id="menu" class="menu">
-          <li><a href="index.html">Home</a></li>
-          <li><a href="docs.html">Docs</a></li>
-          <li><a href="reports.html">Reports</a></li>
-          <li><a href="visuals.html" class="active">Visuals</a></li>
-          <li><a href="detect.html">Detect</a></li>
-          <li><a href="index.html#results">Results</a></li>
-          <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">☀️</button>
-
+      <ul id="menu" class="menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="docs.html">Docs</a></li>
+        <li><a href="reports.html">Reports</a></li>
+        <li><a href="visuals.html" class="active">Visuals</a></li>
+        <li><a href="detect.html">Detect</a></li>
+        <li><a href="index.html#results">Results</a></li>
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">☀️</button>
       </ul>
     </div>
   </nav>
 
-  <main class="page-content reveal">
-    <div class="panel">
+  <main class="reveal">
+    <div class="panel" style="margin-top: 3rem;">
       <div class="panel-head">
         <p class="eyebrow">Model Artifacts</p>
         <h2>Visualizations Gallery</h2>
@@ -39,6 +37,7 @@
           <button class="filter-btn active" data-filter="all">All</button>
           <button class="filter-btn" data-filter="dataset">Dataset Analysis</button>
           <button class="filter-btn" data-filter="runs">Training Runs</button>
+          <button class="filter-btn" data-filter="planning">Project Planning</button>
         </div>
         <div id="visualGrid" class="visual-grid"></div>
       </div>
