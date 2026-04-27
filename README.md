@@ -7,6 +7,7 @@ Real-time object detection for autonomous driving scenes using the YOLO pipeline
 - Visualization website: included under `presentation/`
 - Live deployed website (GitHub Pages): https://abdallah4z.github.io/Road-Sense/index.html
 
+
 ## What This Project Does
 Road-Sense focuses on 3-class road-object detection:
 - Vehicle (Car, Van, Truck)
