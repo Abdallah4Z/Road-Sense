@@ -134,3 +134,6 @@ logs/
 !data/samples/**/*.txt
 !data/samples/**/*.jpg
 
+.coverage
+
+
