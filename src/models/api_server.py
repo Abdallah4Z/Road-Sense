@@ -32,6 +32,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from ultralytics import YOLO
 
+from src.mlops.performance_monitor import PerformanceMonitor
 from src.utils import (
     CLASS_COLORS,
     CLASS_COLORS_LIST,
@@ -474,6 +475,7 @@ class_names: dict[int, str] = {}
 loaded_model_path: str | None = None
 trackers: dict[str, SessionTracker] = {}
 trackers_lock = threading.Lock()
+perf_monitor = PerformanceMonitor()
 
 
 # FastAPI app
@@ -503,6 +505,12 @@ async def startup_event():
     model = load_model(str(resolved_weights), device=args.device)
     class_names = getattr(model, "names", {0: "Vehicle", 1: "Pedestrian", 2: "Cyclist"})
     logger.info(f"Model loaded with classes: {class_names}")
+    try:
+        from prometheus_fastapi_instrumentator import Instrumentator
+        Instrumentator().instrument(app).expose(app)
+        logger.info("Prometheus metrics endpoint enabled at /metrics")
+    except ImportError:
+        logger.warning("prometheus-fastapi-instrumentator not installed; metrics disabled")
 
 
 @app.get("/health")
@@ -513,6 +521,7 @@ async def health_check():
         "model_loaded": model is not None,
         "model_path": loaded_model_path,
         "tracking_enabled": not args.disable_tracking,
+        "stats": perf_monitor.get_stats(),
     }
 
 
@@ -539,8 +548,9 @@ async def detect_objects(
     if not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
+    perf_monitor.record_request()
+
     try:
-        # Read image
         contents = await image.read()
         nparr = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -548,10 +558,10 @@ async def detect_objects(
         if img is None:
             raise HTTPException(status_code=400, detail="Could not decode image")
 
-        # Run inference
         start_time = time.time()
         results = model.predict(img, conf=conf, verbose=False)
         inference_time = (time.time() - start_time) * 1000
+        perf_monitor.record_latency(inference_time)
 
         raw_detections = extract_raw_detections(results[0], class_names)
 
@@ -571,23 +581,18 @@ async def detect_objects(
                     trackers[session_id] = tracker
                 output_detections = tracker.update(raw_detections)
 
-        # Draw boxes
         annotated_img = draw_boxes_from_detections(img, output_detections)
-
-        # Encode annotated image
         annotated_b64 = encode_image_to_base64(annotated_img)
 
-        # Build detections list
-        detections = []
-        for det in output_detections:
-            detections.append(
-                Detection(
-                    class_name=str(det["class_name"]),
-                    confidence=float(det["confidence"]),
-                    bbox=[float(v) for v in det["bbox"]],
-                    track_id=det.get("track_id"),
-                )
+        detections = [
+            Detection(
+                class_name=str(d["class_name"]),
+                confidence=float(d["confidence"]),
+                bbox=[float(v) for v in d["bbox"]],
+                track_id=d.get("track_id"),
             )
+            for d in output_detections
+        ]
 
         return DetectionResponse(
             success=True,
@@ -597,7 +602,10 @@ async def detect_objects(
             message=f"Detected {len(detections)} tracked objects",
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
+        perf_monitor.record_error()
         logger.error(f"Inference error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
