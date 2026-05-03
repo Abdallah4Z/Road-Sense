@@ -8,6 +8,7 @@ from src.utils.constants import (
     CUSTOM_CLASSES,
     DEFAULT_CONFIDENCE,
     DEFAULT_IOU,
+    env_or_default,
     TRACKING_BBOX_ALPHA,
     TRACKING_CONF_ALPHA,
     TRACKING_IOU,
@@ -34,5 +35,6 @@ __all__ = [
     "DEFAULT_CONFIDENCE", "DEFAULT_IOU",
     "TRACKING_IOU", "TRACKING_MAX_MISSED", "TRACKING_BBOX_ALPHA", "TRACKING_CONF_ALPHA",
     "BENCHMARK_IMAGE_SIZE", "BENCHMARK_NUM_IMAGES", "BENCHMARK_WARMUP", "BENCHMARK_REPEATS",
+    "env_or_default",
     "RoadSenseError", "ConfigError", "ModelLoadError", "InferenceError", "DataError", "APIError", "retry",
 ]

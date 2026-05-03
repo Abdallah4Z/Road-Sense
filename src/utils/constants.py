@@ -1,3 +1,15 @@
+import os
+from pathlib import Path
+
+
+def env_or_default(key: str, default: str) -> str:
+    return os.environ.get(key, default)
+
+
+def env_path(key: str, default: str) -> Path:
+    return Path(env_or_default(key, default))
+
+
 DEFAULT_CONFIDENCE = 0.25
 DEFAULT_IOU = 0.45
 TRACKING_IOU = 0.35
