@@ -15,14 +15,12 @@ Outputs:
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import tempfile
 import time
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -40,6 +38,7 @@ from torchvision.models.detection import (
 from torchvision.transforms.functional import pil_to_tensor
 from ultralytics import YOLO
 
+from src.utils import ensure_dir, yolo_txt_to_boxes_labels
 
 COCO128_ZIP_URL = "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip"
 
@@ -75,11 +74,6 @@ class BenchResult:
     gpu_mem_peak_mb: float
 
 
-def ensure_dir(path: Path) -> None:
-    """Create directory if it doesn't exist."""
-    path.mkdir(parents=True, exist_ok=True)
-
-
 def download_file(url: str, dest: Path) -> None:
     """Download file from URL to destination path."""
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -98,7 +92,7 @@ def image_to_label_path(rel_image: str) -> str:
     return rel_image.replace("images/", "labels/").replace(".jpg", ".txt")
 
 
-def prepare_sample_dataset(root: Path) -> List[Path]:
+def prepare_sample_dataset(root: Path) -> list[Path]:
     """Prepare COCO128 sample dataset for benchmarking."""
     coco_root = root / "coco128"
     images_root = coco_root / "images" / "train2017"
@@ -112,7 +106,7 @@ def prepare_sample_dataset(root: Path) -> List[Path]:
             zf.extractall(root)
 
     image_paths_all = sorted(images_root.glob("*.jpg"))
-    image_paths: List[Path] = []
+    image_paths: list[Path] = []
     for img_path in image_paths_all:
         lbl_path = labels_root / f"{img_path.stem}.txt"
         if lbl_path.exists():
@@ -127,47 +121,18 @@ def prepare_sample_dataset(root: Path) -> List[Path]:
     return image_paths
 
 
-def yolo_txt_to_boxes_labels(label_path: Path, width: int, height: int) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Parse YOLO format label file to boxes and labels tensors."""
-    if not label_path.exists():
-        return torch.empty((0, 4), dtype=torch.float32), torch.empty((0,), dtype=torch.int64)
-    
-    content = label_path.read_text(encoding="utf-8").strip()
-    if not content:
-        return torch.empty((0, 4), dtype=torch.float32), torch.empty((0,), dtype=torch.int64)
-
-    boxes = []
-    labels = []
-    for line in content.splitlines():
-        parts = line.split()
-        if len(parts) != 5:
-            continue
-        cls, xc, yc, w, h = map(float, parts)
-        x1 = (xc - w / 2.0) * width
-        y1 = (yc - h / 2.0) * height
-        x2 = (xc + w / 2.0) * width
-        y2 = (yc + h / 2.0) * height
-        boxes.append([x1, y1, x2, y2])
-        labels.append(int(cls))
-
-    if not boxes:
-        return torch.empty((0, 4), dtype=torch.float32), torch.empty((0,), dtype=torch.int64)
-    
-    return torch.tensor(boxes, dtype=torch.float32), torch.tensor(labels, dtype=torch.int64)
-
-
-def load_ground_truths(image_paths: List[Path], dataset_root: Path) -> Dict[str, Dict[str, torch.Tensor]]:
+def load_ground_truths(image_paths: list[Path], dataset_root: Path) -> dict[str, dict[str, torch.Tensor]]:
     """Load ground truth annotations for all images."""
-    gts: Dict[str, Dict[str, torch.Tensor]] = {}
+    gts: dict[str, dict[str, torch.Tensor]] = {}
     labels_root = dataset_root / "coco128" / "labels" / "train2017"
-    
+
     for img_path in image_paths:
         with Image.open(img_path) as img:
             w, h = img.size
         lbl_path = labels_root / f"{img_path.stem}.txt"
         boxes, labels = yolo_txt_to_boxes_labels(lbl_path, w, h)
         gts[str(img_path)] = {"boxes": boxes, "labels": labels}
-    
+
     return gts
 
 
@@ -200,7 +165,7 @@ def yolo_weight_size_mb(model: YOLO) -> float:
                     path = Path(path)
                     if path.exists():
                         return path.stat().st_size / (1024 * 1024)
-    except Exception:
+    except Exception:  # noqa: S110
         pass
     # Fallback: estimate from model state
     try:
@@ -220,7 +185,7 @@ def yolo_predict(
     device: str,
     imgsz: int,
     conf: float,
-) -> Dict[str, torch.Tensor]:
+) -> dict[str, torch.Tensor]:
     """Run YOLO inference and return predictions."""
     out = model.predict(
         source=str(image_path),
@@ -230,14 +195,14 @@ def yolo_predict(
         verbose=False,
         augment=False,
     )[0]
-    
+
     if out.boxes is None or len(out.boxes) == 0:
         return {
             "boxes": torch.empty((0, 4), dtype=torch.float32),
             "scores": torch.empty((0,), dtype=torch.float32),
             "labels": torch.empty((0,), dtype=torch.int64),
         }
-    
+
     boxes = out.boxes.xyxy.detach().cpu().to(torch.float32)
     scores = out.boxes.conf.detach().cpu().to(torch.float32)
     labels = out.boxes.cls.detach().cpu().to(torch.int64)
@@ -249,11 +214,11 @@ def torchvision_predict(
     image_path: Path,
     device: torch.device,
     score_thresh: float,
-) -> Dict[str, torch.Tensor]:
+) -> dict[str, torch.Tensor]:
     """Run torchvision model inference and return predictions."""
     with Image.open(image_path).convert("RGB") as img:
         t = pil_to_tensor(img).float() / 255.0
-    
+
     with torch.no_grad():
         out = model([t.to(device)])[0]
 
@@ -298,8 +263,8 @@ def torchvision_predict(
 def benchmark_model(
     name: str,
     family: str,
-    image_paths: List[Path],
-    gt_map: Dict[str, Dict[str, torch.Tensor]],
+    image_paths: list[Path],
+    gt_map: dict[str, dict[str, torch.Tensor]],
     imgsz: int,
     conf: float,
     warmup: int,
@@ -360,7 +325,7 @@ def benchmark_model(
 
     # Benchmark iterations
     print(f"  Running {repeats} benchmark iterations...")
-    latencies: List[float] = []
+    latencies: list[float] = []
     for rep in range(repeats):
         for idx, image_path in enumerate(image_paths):
             start = time.perf_counter()
@@ -445,7 +410,7 @@ def run(args: argparse.Namespace) -> None:
         ("fasterrcnn_resnet50_fpn_v2", "fasterrcnn"),
     ]
 
-    results: List[BenchResult] = []
+    results: list[BenchResult] = []
     for model_name, family in models:
         print(f"\nBenchmarking {model_name} ({family})...")
         try:

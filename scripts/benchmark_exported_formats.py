@@ -12,12 +12,12 @@ Outputs:
 
 from __future__ import annotations
 
-import os
 import json
+import os
+import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 # Disable ultralytics auto-install of dependencies
 os.environ["ULTRALYTICS_AUTOINSTALL"] = "0"
@@ -33,6 +33,7 @@ from torchmetrics.detection import MeanAveragePrecision
 from tqdm import tqdm
 from ultralytics import YOLO
 
+from src.utils import BENCHMARK_NUM_IMAGES, compute_precision_recall, ensure_dir, yolo_txt_to_boxes_labels
 
 # Configuration
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -43,7 +44,7 @@ BENCHMARK_DIR = PROJECT_ROOT / "experiments/format_comparison"
 
 IMAGE_SIZE = 640
 CONF_THRESHOLD = 0.25
-NUM_IMAGES = 50
+NUM_IMAGES = BENCHMARK_NUM_IMAGES
 WARMUP = 1  # Reduced for speed
 REPEATS = 3  # Reduced for speed
 
@@ -61,58 +62,13 @@ class BenchmarkResult:
     recall: float
     latency_ms: float
     fps: float
-    per_class: Dict[str, float]
+    per_class: dict[str, float]
     error: str = ""
-
-
-def ensure_dir(path: Path) -> None:
-    path.mkdir(parents=True, exist_ok=True)
-
-
-def yolo_txt_to_boxes_labels(
-    label_path: Path, width: int, height: int
-) -> Tuple[torch.Tensor, torch.Tensor]:
-    if not label_path.exists():
-        return torch.empty((0, 4), dtype=torch.float32), torch.empty(
-            (0,), dtype=torch.int64
-        )
-
-    content = label_path.read_text(encoding="utf-8").strip()
-    if not content:
-        return torch.empty((0, 4), dtype=torch.float32), torch.empty(
-            (0,), dtype=torch.int64
-        )
-
-    boxes = []
-    labels = []
-    for line in content.splitlines():
-        parts = line.split()
-        if len(parts) != 5:
-            continue
-        cls, xc, yc, w, h = map(float, parts)
-        boxes.append(
-            [
-                (xc - w / 2) * width,
-                (yc - h / 2) * height,
-                (xc + w / 2) * width,
-                (yc + h / 2) * height,
-            ]
-        )
-        labels.append(int(cls))
-
-    if not boxes:
-        return torch.empty((0, 4), dtype=torch.float32), torch.empty(
-            (0,), dtype=torch.int64
-        )
-
-    return torch.tensor(boxes, dtype=torch.float32), torch.tensor(
-        labels, dtype=torch.int64
-    )
 
 
 def load_validation_set(
     images_dir: Path, labels_dir: Path, num_images: int = 50
-) -> Tuple[List[Path], Dict[str, Dict[str, torch.Tensor]]]:
+) -> tuple[list[Path], dict[str, dict[str, torch.Tensor]]]:
     """Load validation images and ground truths."""
     print(f"Loading validation images from: {images_dir}")
     image_paths = []
@@ -137,56 +93,7 @@ def load_validation_set(
     return list(gts.keys()), gts
 
 
-def compute_precision_recall(preds: List[Dict], gts: List[Dict]) -> Tuple[float, float]:
-    """Compute precision and recall at IoU=0.5."""
-    tp = fp = fn = 0
-
-    for pred, gt in zip(preds, gts):
-        p_boxes = pred["boxes"]
-        p_labels = pred["labels"]
-        p_scores = pred["scores"]
-
-        g_boxes = gt["boxes"]
-        g_labels = gt["labels"]
-
-        g_matched = set()
-        p_matched = set()
-
-        for i, (pb, pl, ps) in enumerate(zip(p_boxes, p_labels, p_scores)):
-            best_iou = 0
-            best_j = -1
-            for j, (gb, gl) in enumerate(zip(g_boxes, g_labels)):
-                if j in g_matched or pl != gl:
-                    continue
-                iou = box_iou(pb.unsqueeze(0), gb.unsqueeze(0)).item()
-                if iou > best_iou:
-                    best_iou = iou
-                    best_j = j
-            if best_iou >= 0.5 and best_j >= 0:
-                tp += 1
-                g_matched.add(best_j)
-                p_matched.add(i)
-            else:
-                fp += 1
-        fn += len(g_boxes) - len(g_matched)
-
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    return precision, recall
-
-
-def box_iou(boxes1: torch.Tensor, boxes2: torch.Tensor) -> torch.Tensor:
-    area1 = (boxes1[:, 2] - boxes1[:, 0]) * (boxes1[:, 3] - boxes1[:, 1])
-    area2 = (boxes2[:, 2] - boxes2[:, 0]) * (boxes2[:, 3] - boxes2[:, 1])
-    lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])
-    rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])
-    wh = (rb - lt).clamp(min=0)
-    inter = wh[:, :, 0] * wh[:, :, 1]
-    union = area1[:, None] + area2 - inter
-    return inter / union
-
-
-def run_predict(model: YOLO, image_path: Path, device: str) -> Dict[str, torch.Tensor]:
+def run_predict(model: YOLO, image_path: Path, device: str) -> dict[str, torch.Tensor]:
     """Run inference and return predictions."""
     results = model.predict(
         source=str(image_path),
@@ -232,8 +139,8 @@ def benchmark_format(
     model: YOLO,
     format_name: str,
     model_file: Path,
-    image_paths: List[Path],
-    gts: Dict[str, Dict[str, torch.Tensor]],
+    image_paths: list[Path],
+    gts: dict[str, dict[str, torch.Tensor]],
     device: str,
     size_mb: float,
 ) -> BenchmarkResult:
@@ -302,7 +209,7 @@ def benchmark_format(
         fps=round(fps, 2),
         per_class=per_class_map,
     )
-    return result
+    return result  # noqa: RET504
 
 
 def get_model_size_mb(model: YOLO) -> float:
@@ -311,7 +218,7 @@ def get_model_size_mb(model: YOLO) -> float:
         path = Path(model.ckpt_path)
         if path.exists():
             return path.stat().st_size / (1024 * 1024)
-    except:
+    except Exception:  # noqa: S110
         pass
     try:
         with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as tmp:
@@ -319,12 +226,12 @@ def get_model_size_mb(model: YOLO) -> float:
             size = Path(tmp.name).stat().st_size / (1024 * 1024)
             os.remove(tmp.name)
             return size
-    except:
+    except Exception:
         return 0.0
 
 
 def create_visualizations(
-    results: List[BenchmarkResult], output_dir: Path, device: str
+    results: list[BenchmarkResult], output_dir: Path, device: str
 ) -> None:
     """Create comparison plots."""
     print("\nCreating visualizations...")
@@ -423,7 +330,7 @@ def create_visualizations(
 
 
 def create_sample_predictions(
-    results: List[BenchmarkResult], output_dir: Path, device: str
+    results: list[BenchmarkResult], output_dir: Path, device: str
 ) -> None:
     """Show predictions from each format on sample images."""
     print("\nCreating sample predictions...")
@@ -476,7 +383,7 @@ def create_sample_predictions(
     print("  ✓ sample_predictions.png")
 
 
-def save_results(results: List[BenchmarkResult], output_dir: Path) -> None:
+def save_results(results: list[BenchmarkResult], output_dir: Path) -> None:
     """Save results to CSV and JSON."""
     ensure_dir(output_dir)
 
@@ -564,7 +471,7 @@ def main():
                 continue
         elif fmt == "tensorrt":
             try:
-                import tensorrt as trt
+                import tensorrt as trt  # noqa: F401
 
                 model_files.append(mf)
             except ImportError:
@@ -604,7 +511,7 @@ def main():
                     )
                     continue
             except ImportError:
-                print(f"  Skipping ONNX - onnxruntime not properly installed")
+                print("  Skipping ONNX - onnxruntime not properly installed")
                 continue
 
         try:

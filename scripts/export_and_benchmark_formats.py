@@ -19,25 +19,22 @@ Outputs:
 
 from __future__ import annotations
 
-import argparse
 import json
-import os
 import shutil
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import psutil
 import torch
 from PIL import Image
 from torchmetrics.detection import MeanAveragePrecision
 from tqdm import tqdm
 from ultralytics import YOLO
 
+from src.utils import ensure_dir
 
 # Paths
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -78,14 +75,9 @@ class FormatResult:
     error_msg: str = ""
 
 
-def ensure_dir(path: Path) -> None:
-    """Create directory if it doesn't exist."""
-    path.mkdir(parents=True, exist_ok=True)
-
-
 def yolo_txt_to_boxes_labels(
     label_path: Path, width: int, height: int
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Parse YOLO format label file to boxes and labels tensors."""
     if not label_path.exists():
         return torch.empty((0, 4), dtype=torch.float32), torch.empty(
@@ -124,7 +116,7 @@ def yolo_txt_to_boxes_labels(
 
 def load_validation_set(
     images_dir: Path, labels_dir: Path, num_images: int = 50
-) -> Tuple[List[Path], Dict[str, Dict[str, torch.Tensor]]]:
+) -> tuple[list[Path], dict[str, dict[str, torch.Tensor]]]:
     """Load validation images and ground truth annotations."""
     print(f"Loading validation images from: {images_dir}")
     image_extensions = {".jpg", ".jpeg", ".png"}
@@ -153,7 +145,7 @@ def load_validation_set(
     return image_paths, gts
 
 
-def check_dependencies() -> Dict[str, bool]:
+def check_dependencies() -> dict[str, bool]:
     """Check which export formats are available."""
     deps = {
         "onnx": False,
@@ -163,21 +155,21 @@ def check_dependencies() -> Dict[str, bool]:
     }
 
     try:
-        import onnx
+        import onnx  # noqa: F401
 
         deps["onnx"] = True
     except ImportError:
         pass
 
     try:
-        import tensorrt
+        import tensorrt  # noqa: F401
 
         deps["tensorrt"] = True
     except ImportError:
         pass
 
     try:
-        import onnxsim
+        import onnxsim  # noqa: F401
 
         deps["onnxsim"] = True
     except ImportError:
@@ -186,243 +178,128 @@ def check_dependencies() -> Dict[str, bool]:
     return deps
 
 
-def export_models(model: YOLO, device: str) -> List[FormatResult]:
-    """Export model to all available formats."""
+def _format_result(
+    format_name: str,
+    path: Path,
+    size_mb: float = 0.0,
+    success: bool = False,
+    error: str = "",
+) -> FormatResult:
+    return FormatResult(
+        format_name=format_name,
+        model_path=path,
+        model_size_mb=size_mb,
+        map50=0.0,
+        map5095=0.0,
+        latency_ms=0.0,
+        fps=0.0,
+        export_success=success,
+        benchmark_success=False,
+        error_msg=error,
+    )
+
+
+def _copy_pytorch_model() -> FormatResult:
+    original_path = EXPORT_DIR / "best-3classes-exp34332-original.pt"
+    shutil.copy2(MODEL_PATH, original_path)
+    size_mb = original_path.stat().st_size / (1024 * 1024)
+    print(f"  ✓ Saved to {original_path} ({size_mb:.2f} MB)")
+    return _format_result("pytorch", original_path, size_mb, success=True)
+
+
+def _export_onnx(model: YOLO, device: str, deps: dict) -> FormatResult:
+    onnx_path = model.export(
+        format="onnx", dynamic=True, half=True, simplify=deps["onnxsim"],
+        imgsz=IMAGE_SIZE, device=device,
+    )
+    onnx_path = Path(onnx_path)
+    if onnx_path.parent != EXPORT_DIR:
+        dest = EXPORT_DIR / onnx_path.name
+        shutil.move(str(onnx_path), dest)
+        onnx_path = dest
+    size_mb = onnx_path.stat().st_size / (1024 * 1024)
+    print(f"  ✓ Saved to {onnx_path} ({size_mb:.2f} MB)")
+    return _format_result("onnx", onnx_path, size_mb, success=True)
+
+
+def _export_tensorrt(model: YOLO, device: str) -> FormatResult:
+    engine_path = model.export(
+        format="engine", half=True, imgsz=IMAGE_SIZE, device=device, workspace=4,
+    )
+    engine_path = Path(engine_path)
+    if engine_path.parent != EXPORT_DIR:
+        dest = EXPORT_DIR / engine_path.name
+        shutil.move(str(engine_path), dest)
+        engine_path = dest
+    size_mb = engine_path.stat().st_size / (1024 * 1024)
+    print(f"  ✓ Saved to {engine_path} ({size_mb:.2f} MB)")
+    return _format_result("tensorrt", engine_path, size_mb, success=True)
+
+
+def _export_torchscript(model: YOLO, device: str) -> FormatResult:
+    torchscript_path = model.export(
+        format="torchscript", imgsz=IMAGE_SIZE, device=device,
+    )
+    torchscript_path = Path(torchscript_path)
+    if torchscript_path.parent != EXPORT_DIR:
+        dest = EXPORT_DIR / torchscript_path.name
+        shutil.move(str(torchscript_path), dest)
+        torchscript_path = dest
+    size_mb = torchscript_path.stat().st_size / (1024 * 1024)
+    print(f"  ✓ Saved to {torchscript_path} ({size_mb:.2f} MB)")
+    return _format_result("torchscript", torchscript_path, size_mb, success=True)
+
+
+_FORMAT_EXPORTERS = [
+    ("pytorch", _copy_pytorch_model, None),
+    ("onnx", _export_onnx, "onnx"),
+    ("tensorrt", _export_tensorrt, "tensorrt"),
+    ("torchscript", _export_torchscript, None),
+]
+
+
+def export_models(model: YOLO, device: str) -> list[FormatResult]:
     ensure_dir(EXPORT_DIR)
-    results = []
+    results: list[FormatResult] = []
 
     print("\n" + "=" * 60)
     print("EXPORTING MODELS")
     print("=" * 60)
 
-    # 1. Original PyTorch (just copy)
-    print("\n[1/4] Original PyTorch (.pt)")
-    try:
-        original_path = EXPORT_DIR / "best-3classes-exp34332-original.pt"
-        shutil.copy2(MODEL_PATH, original_path)
-        size_mb = original_path.stat().st_size / (1024 * 1024)
-        results.append(
-            FormatResult(
-                format_name="pytorch",
-                model_path=original_path,
-                model_size_mb=size_mb,
-                map50=0.0,
-                map5095=0.0,
-                latency_ms=0.0,
-                fps=0.0,
-                export_success=True,
-                benchmark_success=False,
-            )
-        )
-        print(f"  ✓ Saved to {original_path} ({size_mb:.2f} MB)")
-    except Exception as e:
-        results.append(
-            FormatResult(
-                format_name="pytorch",
-                model_path=Path(""),
-                model_size_mb=0.0,
-                map50=0.0,
-                map5095=0.0,
-                latency_ms=0.0,
-                fps=0.0,
-                export_success=False,
-                benchmark_success=False,
-                error_msg=str(e),
-            )
-        )
-        print(f"  ✗ Failed: {e}")
-
-    # 2. ONNX
-    print("\n[2/4] ONNX (.onnx)")
     deps = check_dependencies()
-    if deps["onnx"]:
+
+    for idx, (fmt_name, export_fn, dep_key) in enumerate(_FORMAT_EXPORTERS, 1):
+        print(f"\n[{idx}/{len(_FORMAT_EXPORTERS)}] {fmt_name.title()}")
+
+        if dep_key is not None and not deps.get(dep_key):
+            print(f"  ⚠ Skipped - {fmt_name} dependencies not installed")
+            results.append(_format_result(fmt_name, Path(""), error=f"{fmt_name} dependencies not installed"))
+            continue
+
         try:
-            onnx_path = model.export(
-                format="onnx",
-                dynamic=True,
-                half=True,
-                simplify=deps["onnxsim"],
-                imgsz=IMAGE_SIZE,
-                device=device,
-            )
-            onnx_path = Path(onnx_path)
-            # Move to export dir if needed
-            if onnx_path.parent != EXPORT_DIR:
-                dest = EXPORT_DIR / onnx_path.name
-                shutil.move(str(onnx_path), dest)
-                onnx_path = dest
-            size_mb = onnx_path.stat().st_size / (1024 * 1024)
-            results.append(
-                FormatResult(
-                    format_name="onnx",
-                    model_path=onnx_path,
-                    model_size_mb=size_mb,
-                    map50=0.0,
-                    map5095=0.0,
-                    latency_ms=0.0,
-                    fps=0.0,
-                    export_success=True,
-                    benchmark_success=False,
-                )
-            )
-            print(f"  ✓ Saved to {onnx_path} ({size_mb:.2f} MB)")
+            if fmt_name == "pytorch":
+                results.append(export_fn())
+            else:
+                results.append(export_fn(model, device, deps) if dep_key == "onnx" else export_fn(model, device))
         except Exception as e:
             print(f"  ✗ Failed: {e}")
-            results.append(
-                FormatResult(
-                    format_name="onnx",
-                    model_path=Path(""),
-                    model_size_mb=0.0,
-                    map50=0.0,
-                    map5095=0.0,
-                    latency_ms=0.0,
-                    fps=0.0,
-                    export_success=False,
-                    benchmark_success=False,
-                    error_msg=str(e),
-                )
-            )
-    else:
-        print("  ⚠ Skipped - ONNX not available (install: pip install onnx onnxsim)")
-        results.append(
-            FormatResult(
-                format_name="onnx",
-                model_path=Path(""),
-                model_size_mb=0.0,
-                map50=0.0,
-                map5095=0.0,
-                latency_ms=0.0,
-                fps=0.0,
-                export_success=False,
-                benchmark_success=False,
-                error_msg="ONNX dependencies not installed",
-            )
-        )
-
-    # 3. TensorRT
-    print("\n[3/4] TensorRT (.engine)")
-    if deps["tensorrt"]:
-        try:
-            engine_path = model.export(
-                format="engine",
-                half=True,
-                imgsz=IMAGE_SIZE,
-                device=device,
-                workspace=4,  # 4 GB workspace
-            )
-            engine_path = Path(engine_path)
-            if engine_path.parent != EXPORT_DIR:
-                dest = EXPORT_DIR / engine_path.name
-                shutil.move(str(engine_path), dest)
-                engine_path = dest
-            size_mb = engine_path.stat().st_size / (1024 * 1024)
-            results.append(
-                FormatResult(
-                    format_name="tensorrt",
-                    model_path=engine_path,
-                    model_size_mb=size_mb,
-                    map50=0.0,
-                    map5095=0.0,
-                    latency_ms=0.0,
-                    fps=0.0,
-                    export_success=True,
-                    benchmark_success=False,
-                )
-            )
-            print(f"  ✓ Saved to {engine_path} ({size_mb:.2f} MB)")
-        except Exception as e:
-            print(f"  ✗ Failed: {e}")
-            results.append(
-                FormatResult(
-                    format_name="tensorrt",
-                    model_path=Path(""),
-                    model_size_mb=0.0,
-                    map50=0.0,
-                    map5095=0.0,
-                    latency_ms=0.0,
-                    fps=0.0,
-                    export_success=False,
-                    benchmark_success=False,
-                    error_msg=str(e),
-                )
-            )
-    else:
-        print("  ⚠ Skipped - TensorRT not available (install: pip install tensorrt)")
-        results.append(
-            FormatResult(
-                format_name="tensorrt",
-                model_path=Path(""),
-                model_size_mb=0.0,
-                map50=0.0,
-                map5095=0.0,
-                latency_ms=0.0,
-                fps=0.0,
-                export_success=False,
-                benchmark_success=False,
-                error_msg="TensorRT not installed",
-            )
-        )
-
-    # 4. TorchScript
-    print("\n[4/4] TorchScript (.torchscript)")
-    try:
-        torchscript_path = model.export(
-            format="torchscript",
-            imgsz=IMAGE_SIZE,
-            device=device,
-        )
-        torchscript_path = Path(torchscript_path)
-        if torchscript_path.parent != EXPORT_DIR:
-            dest = EXPORT_DIR / torchscript_path.name
-            shutil.move(str(torchscript_path), dest)
-            torchscript_path = dest
-        size_mb = torchscript_path.stat().st_size / (1024 * 1024)
-        results.append(
-            FormatResult(
-                format_name="torchscript",
-                model_path=torchscript_path,
-                model_size_mb=size_mb,
-                map50=0.0,
-                map5095=0.0,
-                latency_ms=0.0,
-                fps=0.0,
-                export_success=True,
-                benchmark_success=False,
-            )
-        )
-        print(f"  ✓ Saved to {torchscript_path} ({size_mb:.2f} MB)")
-    except Exception as e:
-        print(f"  ✗ Failed: {e}")
-        results.append(
-            FormatResult(
-                format_name="torchscript",
-                model_path=Path(""),
-                model_size_mb=0.0,
-                map50=0.0,
-                map5095=0.0,
-                latency_ms=0.0,
-                fps=0.0,
-                export_success=False,
-                benchmark_success=False,
-                error_msg=str(e),
-            )
-        )
+            results.append(_format_result(fmt_name, Path(""), error=str(e)))
 
     return results
 
 
 def load_model_for_format(
     format_name: str, model_path: Path, device: str
-) -> Optional[YOLO]:
+) -> YOLO | None:
     """Load model in specified format for inference."""
     if format_name == "pytorch":
         return YOLO(str(model_path))
-    elif format_name in ["onnx", "torchscript"]:
+    if format_name in ["onnx", "torchscript"]:
         # For exported formats, we use ONNX Runtime or back to PyTorch via YOLO
         # ONNX Runtime is used automatically by YOLO when loading .onnx
         # For TorchScript, YOLO wraps it
         return YOLO(str(model_path))
-    elif format_name == "tensorrt":
+    if format_name == "tensorrt":
         # TensorRT engines are loaded via YOLO as well
         return YOLO(str(model_path))
     return None
@@ -431,10 +308,10 @@ def load_model_for_format(
 def benchmark_format(
     format_name: str,
     model_path: Path,
-    image_paths: List[Path],
-    gts: Dict[str, Dict[str, torch.Tensor]],
+    image_paths: list[Path],
+    gts: dict[str, dict[str, torch.Tensor]],
     device: str,
-) -> Tuple[float, float, float, float]:
+) -> tuple[float, float, float, float]:
     """Benchmark a single model format."""
     print(f"\nBenchmarking {format_name}...")
 
@@ -518,11 +395,11 @@ def benchmark_format(
 
 
 def benchmark_all_formats(
-    results: List[FormatResult],
-    image_paths: List[Path],
-    gts: Dict[str, Dict[str, torch.Tensor]],
+    results: list[FormatResult],
+    image_paths: list[Path],
+    gts: dict[str, dict[str, torch.Tensor]],
     device: str,
-) -> List[FormatResult]:
+) -> list[FormatResult]:
     """Benchmark all successfully exported formats."""
     updated_results = []
 
@@ -557,7 +434,7 @@ def benchmark_all_formats(
     return updated_results
 
 
-def create_visualizations(results: List[FormatResult], output_dir: Path) -> None:
+def create_visualizations(results: list[FormatResult], output_dir: Path, device: str = "cpu") -> None:
     """Create comparison visualizations."""
     print("\n" + "=" * 60)
     print("CREATING VISUALIZATIONS")
@@ -573,8 +450,8 @@ def create_visualizations(results: List[FormatResult], output_dir: Path) -> None
 
     formats = [r.format_name for r in valid_results]
     map50s = [r.map50 for r in valid_results]
-    map5095s = [r.map5095 for r in valid_results]
     latencies = [r.latency_ms for r in valid_results]
+    fps_list = [r.fps for r in valid_results]
     fps_list = [r.fps for r in valid_results]
     sizes = [r.model_size_mb for r in valid_results]
 
@@ -596,7 +473,7 @@ def create_visualizations(results: List[FormatResult], output_dir: Path) -> None
     plt.tight_layout()
     plt.savefig(output_dir / "accuracy_comparison.png", dpi=150)
     plt.close()
-    print(f"  ✓ Saved: accuracy_comparison.png")
+    print("  ✓ Saved: accuracy_comparison.png")
 
     # 2. Speed comparison (FPS)
     plt.figure(figsize=(10, 6))
@@ -618,7 +495,7 @@ def create_visualizations(results: List[FormatResult], output_dir: Path) -> None
     plt.tight_layout()
     plt.savefig(output_dir / "speed_comparison.png", dpi=150)
     plt.close()
-    print(f"  ✓ Saved: speed_comparison.png")
+    print("  ✓ Saved: speed_comparison.png")
 
     # 3. Model size comparison
     plt.figure(figsize=(10, 6))
@@ -638,7 +515,7 @@ def create_visualizations(results: List[FormatResult], output_dir: Path) -> None
     plt.tight_layout()
     plt.savefig(output_dir / "size_comparison.png", dpi=150)
     plt.close()
-    print(f"  ✓ Saved: size_comparison.png")
+    print("  ✓ Saved: size_comparison.png")
 
     # 4. Speed vs Accuracy tradeoff
     plt.figure(figsize=(10, 6))
@@ -658,7 +535,7 @@ def create_visualizations(results: List[FormatResult], output_dir: Path) -> None
     plt.tight_layout()
     plt.savefig(output_dir / "speed_vs_accuracy.png", dpi=150)
     plt.close()
-    print(f"  ✓ Saved: speed_vs_accuracy.png")
+    print("  ✓ Saved: speed_vs_accuracy.png")
 
     # 5. Latency comparison
     plt.figure(figsize=(10, 6))
@@ -680,7 +557,7 @@ def create_visualizations(results: List[FormatResult], output_dir: Path) -> None
     plt.tight_layout()
     plt.savefig(output_dir / "latency_comparison.png", dpi=150)
     plt.close()
-    print(f"  ✓ Saved: latency_comparison.png")
+    print("  ✓ Saved: latency_comparison.png")
 
     # 6. Sample predictions from each format (if all formats work)
     if len(valid_results) >= 2:
@@ -688,7 +565,7 @@ def create_visualizations(results: List[FormatResult], output_dir: Path) -> None
 
 
 def create_sample_predictions(
-    results: List[FormatResult],
+    results: list[FormatResult],
     output_dir: Path,
     device: str,
 ) -> None:
@@ -752,11 +629,11 @@ def create_sample_predictions(
         output_dir / "sample_predictions_all_formats.png", dpi=150, bbox_inches="tight"
     )
     plt.close()
-    print(f"  ✓ Saved: sample_predictions_all_formats.png")
+    print("  ✓ Saved: sample_predictions_all_formats.png")
 
 
 def save_results(
-    results: List[FormatResult],
+    results: list[FormatResult],
     output_dir: Path,
 ) -> None:
     """Save benchmark results to CSV and JSON."""
@@ -783,12 +660,12 @@ def save_results(
     df = pd.DataFrame(data)
 
     # Sort by mAP50 (desc) then latency (asc)
-    df_valid = df[df["Benchmark Success"] == True].copy()
+    df_valid = df[df["Benchmark Success"]].copy()
     if not df_valid.empty:
         df_valid = df_valid.sort_values(
             ["mAP@50", "Latency (ms)"], ascending=[False, True]
         )
-        df = pd.concat([df_valid, df[df["Benchmark Success"] == False]])
+        df = pd.concat([df_valid, df[~df["Benchmark Success"]]])  # noqa: E712
 
     # Save CSV
     csv_path = output_dir / "format_comparison_results.csv"
@@ -869,7 +746,7 @@ def main():
     benchmark_results = benchmark_all_formats(export_results, image_paths, gts, device)
 
     # Step 4: Create visualizations
-    create_visualizations(benchmark_results, BENCHMARK_DIR)
+    create_visualizations(benchmark_results, BENCHMARK_DIR, device)
 
     # Step 5: Save results
     save_results(benchmark_results, BENCHMARK_DIR)
