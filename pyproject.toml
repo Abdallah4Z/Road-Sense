@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends_legacy"
+
+[project]
+name = "road-sense"
+version = "1.0.0"
+description = "Road-Sense: Object Detection for Autonomous Vision"
+authors = [
+    {name = "Road-Sense Team"},
+]
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = [
+    "ultralytics>=8.0.0",
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "numpy>=1.24.0",
+    "opencv-python>=4.8.0",
+    "pillow>=10.0.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.65.0",
+    "matplotlib>=3.7.0",
+    "pandas>=2.0.0",
+    "torchmetrics>=1.0.0",
+    "python-multipart>=0.0.6",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "S", "BLE", "RET"]
+ignore = ["S101", "S311", "S104"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "BLE001", "E402"]
+"scripts/*" = ["S101", "BLE001", "E402"]
+"src/data/validate_kitti_quality.py" = ["S324", "BLE001"]
+"src/data/verify_dataset.py" = ["BLE001"]
+"src/data/augment_dataset.py" = ["BLE001"]
+"src/data/augmentations.py" = ["N812"]
+"src/data/preprocess_dataset.py" = ["BLE001"]
+"src/models/trainer.py" = ["BLE001"]
+"src/models/export.py" = ["E501"]
+"src/models/inference.py" = ["E501"]
+"src/models/realtime.py" = ["E501"]
+"train.py" = ["E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
