@@ -13,7 +13,6 @@ import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import cv2
 import matplotlib.pyplot as plt
@@ -25,13 +24,12 @@ from torchmetrics.detection import MeanAveragePrecision
 from tqdm import tqdm
 from ultralytics import YOLO
 
+from src.utils import CUSTOM_CLASSES, compute_precision_recall, ensure_dir, yolo_txt_to_boxes_labels
 
-PROJECT_ROOT = Path("/home/abdallah/Coding/DEPI-Project/Road-Sense")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CUSTOM_MODEL_PATH = PROJECT_ROOT / "models/checkpoints/best-3classes-exp34332.pt"
 DATA_YAML = PROJECT_ROOT / "data/processed/kitti/data.yaml"
 OUTPUT_DIR = PROJECT_ROOT / "experiments/model_comparison"
-
-CUSTOM_CLASSES = ["Vehicle", "Pedestrian", "Cyclist"]
 
 NATIVE_CLASS_MAP = {
     0: "Vehicle",
@@ -54,7 +52,7 @@ class MetricsResult:
     recall: float
     latency_ms: float
     fps: float
-    per_class: Dict[str, Dict[str, float]] = field(default_factory=dict)
+    per_class: dict[str, dict[str, float]] = field(default_factory=dict)
 
 
 @dataclass
@@ -64,11 +62,7 @@ class ConfusionEntry:
     count: int
 
 
-def ensure_dir(path: Path) -> None:
-    path.mkdir(parents=True, exist_ok=True)
-
-
-def load_validation_images(val_dir: Path) -> List[Path]:
+def load_validation_images(val_dir: Path) -> list[Path]:
     image_extensions = {".jpg", ".jpeg", ".png"}
     images = []
     if val_dir.exists():
@@ -77,47 +71,9 @@ def load_validation_images(val_dir: Path) -> List[Path]:
     return images
 
 
-def yolo_txt_to_boxes_labels(
-    label_path: Path, width: int, height: int
-) -> Tuple[torch.Tensor, torch.Tensor]:
-    if not label_path.exists():
-        return torch.empty((0, 4), dtype=torch.float32), torch.empty(
-            (0,), dtype=torch.int64
-        )
-
-    content = label_path.read_text(encoding="utf-8").strip()
-    if not content:
-        return torch.empty((0, 4), dtype=torch.float32), torch.empty(
-            (0,), dtype=torch.int64
-        )
-
-    boxes = []
-    labels = []
-    for line in content.splitlines():
-        parts = line.split()
-        if len(parts) != 5:
-            continue
-        cls, xc, yc, w, h = map(float, parts)
-        x1 = (xc - w / 2.0) * width
-        y1 = (yc - h / 2.0) * height
-        x2 = (xc + w / 2.0) * width
-        y2 = (yc + h / 2.0) * height
-        boxes.append([x1, y1, x2, y2])
-        labels.append(int(cls))
-
-    if not boxes:
-        return torch.empty((0, 4), dtype=torch.float32), torch.empty(
-            (0,), dtype=torch.int64
-        )
-
-    return torch.tensor(boxes, dtype=torch.float32), torch.tensor(
-        labels, dtype=torch.int64
-    )
-
-
 def load_ground_truths(
-    image_paths: List[Path], labels_root: Path
-) -> Dict[str, Dict[str, torch.Tensor]]:
+    image_paths: list[Path], labels_root: Path
+) -> dict[str, dict[str, torch.Tensor]]:
     gts = {}
     for img_path in image_paths:
         with Image.open(img_path) as img:
@@ -133,7 +89,7 @@ def map_native_predictions(
     labels: torch.Tensor,
     scores: torch.Tensor,
     conf_threshold: float = 0.25,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     if len(labels) == 0:
         return boxes, labels, scores
 
@@ -172,78 +128,15 @@ def map_native_predictions(
     )
 
 
-def compute_precision_recall(
-    predictions: List[Dict],
-    ground_truths: List[Dict],
-    iou_threshold: float = 0.5,
-) -> Tuple[float, float]:
-    total_tp = 0
-    total_fp = 0
-    total_fn = 0
-
-    for pred, gt in zip(predictions, ground_truths):
-        pred_boxes = pred["boxes"]
-        pred_labels = pred["labels"]
-        pred_scores = pred["scores"]
-
-        gt_boxes = gt["boxes"]
-        gt_labels = gt["labels"]
-
-        gt_matched = set()
-        pred_matched = set()
-
-        for i, (pb, pl, ps) in enumerate(zip(pred_boxes, pred_labels, pred_scores)):
-            best_iou = 0
-            best_gt_idx = -1
-
-            for j, (gb, gl) in enumerate(zip(gt_boxes, gt_labels)):
-                if j in gt_matched or pl != gl:
-                    continue
-
-                iou = box_iou(pb.unsqueeze(0), gb.unsqueeze(0)).item()
-                if iou > best_iou:
-                    best_iou = iou
-                    best_gt_idx = j
-
-            if best_iou >= iou_threshold and best_gt_idx >= 0:
-                total_tp += 1
-                gt_matched.add(best_gt_idx)
-                pred_matched.add(i)
-            else:
-                total_fp += 1
-
-        total_fn += len(gt_boxes) - len(gt_matched)
-
-    precision = total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else 0.0
-    recall = total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else 0.0
-
-    return precision, recall
-
-
-def box_iou(boxes1: torch.Tensor, boxes2: torch.Tensor) -> torch.Tensor:
-    area1 = (boxes1[:, 2] - boxes1[:, 0]) * (boxes1[:, 3] - boxes1[:, 1])
-    area2 = (boxes2[:, 2] - boxes2[:, 0]) * (boxes2[:, 3] - boxes2[:, 1])
-
-    lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])
-    rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])
-
-    wh = (rb - lt).clamp(min=0)
-    inter = wh[:, :, 0] * wh[:, :, 1]
-
-    union = area1[:, None] + area2 - inter
-
-    return inter / union
-
-
 def evaluate_model(
     model: YOLO,
-    image_paths: List[Path],
-    gts: Dict[str, Dict[str, torch.Tensor]],
+    image_paths: list[Path],
+    gts: dict[str, dict[str, torch.Tensor]],
     is_native: bool,
     device: str,
     imgsz: int = 640,
     conf: float = 0.25,
-) -> Tuple[MetricsResult, List[ConfusionEntry]]:
+) -> tuple[MetricsResult, list[ConfusionEntry]]:
     metric = MeanAveragePrecision(box_format="xyxy", iou_type="bbox")
 
     latencies = []
@@ -351,7 +244,7 @@ def evaluate_model(
 
 
 def build_confusion_matrix(
-    confusion_entries: List[ConfusionEntry],
+    confusion_entries: list[ConfusionEntry],
     num_classes: int,
 ) -> np.ndarray:
     cm = np.zeros((num_classes, num_classes), dtype=np.int32)
@@ -364,9 +257,9 @@ def build_confusion_matrix(
 def create_visualizations(
     custom_result: MetricsResult,
     native_result: MetricsResult,
-    custom_confusion: List[ConfusionEntry],
-    native_confusion: List[ConfusionEntry],
-    image_paths: List[Path],
+    custom_confusion: list[ConfusionEntry],
+    native_confusion: list[ConfusionEntry],
+    image_paths: list[Path],
     custom_model: YOLO,
     native_model: YOLO,
     device: str,
@@ -421,7 +314,7 @@ def create_visualizations(
     plt.tight_layout()
     plt.savefig(output_dir / "map50_comparison.png", dpi=150)
     plt.close()
-    print(f"  Saved: map50_comparison.png")
+    print("  Saved: map50_comparison.png")
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
@@ -463,7 +356,7 @@ def create_visualizations(
     plt.tight_layout()
     plt.savefig(output_dir / "metrics_comparison.png", dpi=150)
     plt.close()
-    print(f"  Saved: metrics_comparison.png")
+    print("  Saved: metrics_comparison.png")
 
     fig, ax = plt.subplots(figsize=(8, 6))
     scatter_data = [
@@ -494,7 +387,7 @@ def create_visualizations(
     plt.tight_layout()
     plt.savefig(output_dir / "speed_vs_accuracy.png", dpi=150)
     plt.close()
-    print(f"  Saved: speed_vs_accuracy.png")
+    print("  Saved: speed_vs_accuracy.png")
 
     print("  Creating sample predictions...")
     sample_images = image_paths[:6]
@@ -504,7 +397,6 @@ def create_visualizations(
 
     for idx, img_path in enumerate(sample_images):
         img = cv2.imread(str(img_path))
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         custom_result_img = custom_model.predict(
             source=str(img_path), imgsz=imgsz, device=device, conf=0.25, verbose=False
@@ -518,12 +410,6 @@ def create_visualizations(
             for box in custom_result_img.boxes:
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 cls_id = int(box.cls[0].item())
-                conf = box.conf[0].item()
-                cls_name = (
-                    CUSTOM_CLASSES[cls_id]
-                    if cls_id < len(CUSTOM_CLASSES)
-                    else "Unknown"
-                )
                 cv2.rectangle(
                     img_custom, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2
                 )
@@ -538,11 +424,11 @@ def create_visualizations(
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 cls_id = int(box.cls[0].item())
                 if cls_id in [2, 7, 5, 3]:
-                    cls_name = "Vehicle"
+                    pass
                 elif cls_id == 0:
-                    cls_name = "Pedestrian"
+                    pass
                 elif cls_id == 1:
-                    cls_name = "Cyclist"
+                    pass
                 else:
                     continue
                 cv2.rectangle(
@@ -556,7 +442,7 @@ def create_visualizations(
     plt.tight_layout()
     plt.savefig(output_dir / "sample_predictions.png", dpi=150, bbox_inches="tight")
     plt.close()
-    print(f"  Saved: sample_predictions.png")
+    print("  Saved: sample_predictions.png")
 
     cm_custom = build_confusion_matrix(custom_confusion, len(CUSTOM_CLASSES))
     cm_native = build_confusion_matrix(native_confusion, len(CUSTOM_CLASSES))
@@ -606,7 +492,7 @@ def create_visualizations(
     plt.tight_layout()
     plt.savefig(output_dir / "confusion_matrix.png", dpi=150)
     plt.close()
-    print(f"  Saved: confusion_matrix.png")
+    print("  Saved: confusion_matrix.png")
 
 
 def main():
@@ -618,7 +504,7 @@ def main():
     print("\nLoading models...")
     print(f"  Custom model: {CUSTOM_MODEL_PATH}")
     custom_model = YOLO(str(CUSTOM_MODEL_PATH))
-    print(f"  Native YOLOv11m: yolo11m.pt")
+    print("  Native YOLOv11m: yolo11m.pt")
     native_model = YOLO("yolo11m.pt")
 
     val_images_dir = PROJECT_ROOT / "data/processed/kitti/images/val"
