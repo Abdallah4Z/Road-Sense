@@ -485,7 +485,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Allow browser clients (local or deployed presentation) to call this API directly.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -493,6 +492,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+try:
+    from prometheus_fastapi_instrumentator import Instrumentator
+    Instrumentator().instrument(app).expose(app, endpoint="/metrics", should_close=False)
+    logger.info("Prometheus metrics endpoint enabled at /metrics")
+except Exception as e:
+    logger.warning("Prometheus metrics disabled: %s", e)
 
 
 @app.on_event("startup")
@@ -505,12 +511,6 @@ async def startup_event():
     model = load_model(str(resolved_weights), device=args.device)
     class_names = getattr(model, "names", {0: "Vehicle", 1: "Pedestrian", 2: "Cyclist"})
     logger.info(f"Model loaded with classes: {class_names}")
-    try:
-        from prometheus_fastapi_instrumentator import Instrumentator
-        Instrumentator().instrument(app).expose(app)
-        logger.info("Prometheus metrics endpoint enabled at /metrics")
-    except ImportError:
-        logger.warning("prometheus-fastapi-instrumentator not installed; metrics disabled")
 
 
 @app.get("/health")
