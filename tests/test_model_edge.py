@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 from src.models.model_factory import AVAILABLE_MODELS, get_model_info, list_available_models
@@ -81,6 +82,7 @@ def test_trainer_init(sample_trainer):
 
 def test_trainer_section_builders():
     from src.models.trainer import YOLOTrainer
+
     args = YOLOTrainer._build_data_args({"imgsz": 640, "batch_size": 4}, "/tmp/data.yaml")
     assert args["imgsz"] == 640
     assert args["batch"] == 4
@@ -90,9 +92,68 @@ def test_trainer_section_builders():
 
     args = YOLOTrainer._build_validation_args({"val_interval": 2})
     assert args["val"] is True
+    args = YOLOTrainer._build_validation_args({"val_interval": 0})
+    assert args["val"] is False
 
     args = YOLOTrainer._build_device_args({"device": "cpu"})
     assert args["device"] == "cpu"
+
+    args = YOLOTrainer._build_regularization_args({"dropout": 0.2, "box": 5.0})
+    assert args["dropout"] == 0.2
+    assert args["box"] == 5.0
+
+    args = YOLOTrainer._build_advanced_args({"seed": 99, "cache": True})
+    assert args["seed"] == 99
+    assert args["cache"] is True
+
+    args = YOLOTrainer._build_logging_args({"verbose": False, "exist_ok": True})
+    assert args["verbose"] is False
+    assert args["exist_ok"] is True
+
+
+def test_trainer_section_builders_empty_configs():
+    from src.models.trainer import YOLOTrainer
+
+    args = YOLOTrainer._build_data_args({}, "/tmp/data.yaml")
+    assert args["imgsz"] == 640
+
+    args = YOLOTrainer._build_train_hyperparams({})
+    assert args["epochs"] == 100
+
+    args = YOLOTrainer._build_device_args({})
+    assert args["device"] == "0"
+
+    args = YOLOTrainer._build_augmentation_args({})
+    assert args["hsv_h"] == 0.015
+
+
+def test_trainer_build_checkpoint_args():
+    from pathlib import Path
+    from src.models.trainer import YOLOTrainer
+    trainer = MagicMock()
+    trainer.save_dir = Path("/tmp")
+    args = YOLOTrainer._build_checkpoint_args(trainer, {"save_period": 5})
+    assert args["save_period"] == 5
+    assert args["save"] is True
+
+
+class TestPredictSource:
+    def test_video_file_path(self):
+        from src.models.realtime import parse_source
+        result = parse_source("video.mp4")
+        assert result == ("video.mp4", -1)
+
+    def test_camera_index(self):
+        from src.models.realtime import parse_source
+        result = parse_source("0")
+        assert result[0] is None
+        assert result[1] == 0
+
+    def test_camera_index_str(self):
+        from src.models.realtime import parse_source
+        result = parse_source("2")
+        assert result[0] is None
+        assert result[1] == 2
 
 
 def test_trainer_build_data_args():
