@@ -6,17 +6,16 @@ for training and validation phases. Includes support for bounding boxes.
 """
 
 import albumentations as A
-from albumentations.pytorch import ToTensorV2
 import cv2
 
 
 def get_training_augmentation(image_size=None):
     transforms = []
-    
+
     # Resize if specified
     if image_size:
         transforms.append(A.Resize(height=image_size[0], width=image_size[1]))
-    
+
     # Geometric transformations
     transforms.extend([
         A.HorizontalFlip(p=0.5),
@@ -28,7 +27,7 @@ def get_training_augmentation(image_size=None):
             p=0.5
         ),
     ])
-    
+
     # Color augmentations
     transforms.extend([
         A.RandomBrightnessContrast(
@@ -44,7 +43,7 @@ def get_training_augmentation(image_size=None):
             p=0.3
         ),
     ])
-    
+
     # Weather and lighting effects
     transforms.extend([
         A.OneOf([
@@ -52,7 +51,7 @@ def get_training_augmentation(image_size=None):
             A.GaussNoise(var_limit=(10.0, 30.0), p=1.0),
             A.GaussianBlur(blur_limit=3, p=1.0),
         ], p=0.3),
-        
+
         A.OneOf([
             A.RandomRain(
                 slant_lower=-10,
@@ -75,17 +74,17 @@ def get_training_augmentation(image_size=None):
             ),
         ], p=0.2),
     ])
-    
+
     return A.Compose(transforms)
 
 
 def get_training_augmentation_with_bbox(image_size=None, min_visibility=0.3):
     transforms = []
-    
+
     # Resize if specified
     if image_size:
         transforms.append(A.Resize(height=image_size[0], width=image_size[1]))
-    
+
     # Geometric transformations (safe for bounding boxes)
     transforms.extend([
         A.HorizontalFlip(p=0.5),
@@ -97,7 +96,7 @@ def get_training_augmentation_with_bbox(image_size=None, min_visibility=0.3):
             p=0.4
         ),
     ])
-    
+
     # Color augmentations (don't affect bounding boxes)
     transforms.extend([
         A.RandomBrightnessContrast(
@@ -113,14 +112,14 @@ def get_training_augmentation_with_bbox(image_size=None, min_visibility=0.3):
             p=0.3
         ),
     ])
-    
+
     # Weather and lighting effects
     transforms.extend([
         A.OneOf([
             A.MotionBlur(blur_limit=5, p=1.0),
             A.GaussNoise(var_limit=(10.0, 30.0), p=1.0),
         ], p=0.3),
-        
+
         A.RandomSunFlare(
             flare_roi=(0, 0, 1, 0.5),
             angle_lower=0.5,
@@ -128,7 +127,7 @@ def get_training_augmentation_with_bbox(image_size=None, min_visibility=0.3):
             p=0.2
         ),
     ])
-    
+
     return A.Compose(
         transforms,
         bbox_params=A.BboxParams(
@@ -141,21 +140,21 @@ def get_training_augmentation_with_bbox(image_size=None, min_visibility=0.3):
 
 def get_validation_augmentation(image_size=None):
     transforms = []
-    
+
     # Only resize for validation, no other augmentations
     if image_size:
         transforms.append(A.Resize(height=image_size[0], width=image_size[1]))
-    
+
     return A.Compose(transforms)
 
 
 def get_validation_augmentation_with_bbox(image_size=None):
     transforms = []
-    
+
     # Only resize for validation
     if image_size:
         transforms.append(A.Resize(height=image_size[0], width=image_size[1]))
-    
+
     return A.Compose(
         transforms,
         bbox_params=A.BboxParams(
@@ -167,10 +166,10 @@ def get_validation_augmentation_with_bbox(image_size=None):
 
 def get_inference_augmentation(image_size=None):
     transforms = []
-    
+
     if image_size:
         transforms.append(A.Resize(height=image_size[0], width=image_size[1]))
-    
+
     return A.Compose(transforms)
 
 
@@ -200,13 +199,13 @@ AUGMENTATION_PRESETS = {
 def get_custom_augmentation(preset='medium', image_size=None, with_bbox=False, min_visibility=0.3):
     if preset not in AUGMENTATION_PRESETS:
         raise ValueError(f"Unknown preset: {preset}. Choose from {list(AUGMENTATION_PRESETS.keys())}")
-    
+
     params = AUGMENTATION_PRESETS[preset]
     transforms = []
-    
+
     if image_size:
         transforms.append(A.Resize(height=image_size[0], width=image_size[1]))
-    
+
     transforms.extend([
         A.HorizontalFlip(p=params['horizontal_flip_p']),
         A.ShiftScaleRotate(
@@ -222,7 +221,7 @@ def get_custom_augmentation(preset='medium', image_size=None, with_bbox=False, m
         ], p=0.3),
         A.RandomSunFlare(p=params['weather_p']),
     ])
-    
+
     if with_bbox:
         return A.Compose(
             transforms,
@@ -232,5 +231,4 @@ def get_custom_augmentation(preset='medium', image_size=None, with_bbox=False, m
                 min_visibility=min_visibility
             )
         )
-    else:
-        return A.Compose(transforms)
+    return A.Compose(transforms)
