@@ -19,15 +19,16 @@ Usage:
     python src/models/realtime.py --weights models/checkpoints/best-3classes-exp34332.pt --conf 0.3
 """
 
-import sys
 import argparse
 import logging
+import sys
 import time
 from pathlib import Path
-from typing import Optional, Tuple
 
 import cv2
 from ultralytics import YOLO
+
+from src.utils import CLASS_COLORS_LIST, DEFAULT_CONFIDENCE
 
 logger = logging.getLogger(__name__)
 
@@ -83,8 +84,8 @@ Examples:
     parser.add_argument(
         "--conf",
         type=float,
-        default=0.25,
-        help="Confidence threshold for detections (default: 0.25)",
+        default=DEFAULT_CONFIDENCE,
+        help=f"Confidence threshold for detections (default: {DEFAULT_CONFIDENCE})",
     )
 
     parser.add_argument(
@@ -134,19 +135,10 @@ Examples:
 
 def setup_logging(verbose: bool = False, quiet: bool = False) -> None:
     """Configure logging."""
+    from src.utils import setup_logging as _setup_logging
+    _setup_logging(verbose=verbose)
     if quiet:
-        level = logging.WARNING
-    elif verbose:
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
-
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        force=True,
-    )
+        logging.getLogger().setLevel(logging.WARNING)
 
 
 def load_model(weights_path: str, device: str = "") -> YOLO:
@@ -165,7 +157,7 @@ def load_model(weights_path: str, device: str = "") -> YOLO:
     return model
 
 
-def parse_source(source: str) -> Tuple[Optional[str], int]:
+def parse_source(source: str) -> tuple[str | None, int]:
     """
     Parse source argument to determine video capture source.
 
@@ -182,8 +174,8 @@ def parse_source(source: str) -> Tuple[Optional[str], int]:
 
 
 def init_video_writer(
-    frame_shape: Tuple[int, int], fps: float, output_path: str, codec: str = "XVID"
-) -> Optional[cv2.VideoWriter]:
+    frame_shape: tuple[int, int], fps: float, output_path: str, codec: str = "XVID"
+) -> cv2.VideoWriter | None:
     """Initialize video writer for saving output."""
     fourcc = cv2.VideoWriter_fourcc(*codec)
     out = cv2.VideoWriter(output_path, fourcc, fps, frame_shape[::-1])
@@ -221,11 +213,7 @@ def draw_detections(
     cls_ids = results.boxes.cls.cpu().numpy().astype(int)
 
     # Color palette for classes (BGR format)
-    colors = [
-        (0, 255, 0),  # Green - Vehicle
-        (255, 0, 0),  # Blue - Pedestrian
-        (0, 0, 255),  # Red - Cyclist
-    ]
+    colors = CLASS_COLORS_LIST
 
     for box, conf, cls_id in zip(boxes, confs, cls_ids):
         x1, y1, x2, y2 = map(int, box)

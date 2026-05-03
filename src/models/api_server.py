@@ -14,28 +14,33 @@ Endpoints:
     GET  /health  - Health check
 """
 
-import sys
 import argparse
-import logging
 import base64
-import io
+import logging
+import sys
 import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Any
 
 import cv2
 import numpy as np
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+import uvicorn
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from starlette.requests import Request
 from pydantic import BaseModel
 from ultralytics import YOLO
-import uvicorn
+
+from src.utils import (
+    CLASS_COLORS,
+    CLASS_COLORS_LIST,
+    DEFAULT_CONFIDENCE,
+    TRACKING_BBOX_ALPHA,
+    TRACKING_CONF_ALPHA,
+    TRACKING_IOU,
+    setup_logging,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +49,14 @@ logger = logging.getLogger(__name__)
 class Detection(BaseModel):
     class_name: str
     confidence: float
-    bbox: List[float]  # [x1, y1, x2, y2]
-    track_id: Optional[int] = None
+    bbox: list[float]  # [x1, y1, x2, y2]
+    track_id: int | None = None
 
 
 class DetectionResponse(BaseModel):
     success: bool
-    detections: List[Detection]
-    annotated_image: Optional[str] = None  # Base64 encoded image
+    detections: list[Detection]
+    annotated_image: str | None = None  # Base64 encoded image
     inference_time_ms: float
     message: str
 
@@ -88,8 +93,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--conf",
         type=float,
-        default=0.25,
-        help="Confidence threshold (default: 0.25)",
+        default=DEFAULT_CONFIDENCE,
+        help=f"Confidence threshold (default: {DEFAULT_CONFIDENCE})",
     )
     parser.add_argument(
         "--device",
@@ -112,8 +117,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--tracking-iou",
         type=float,
-        default=0.35,
-        help="IoU threshold used to match detections to tracks (default: 0.35)",
+        default=TRACKING_IOU,
+        help=f"IoU threshold used to match detections to tracks (default: {TRACKING_IOU})",
     )
     parser.add_argument(
         "--tracking-max-missed",
@@ -124,26 +129,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--tracking-bbox-alpha",
         type=float,
-        default=0.7,
-        help="EMA factor for bbox smoothing (default: 0.7)",
+        default=TRACKING_BBOX_ALPHA,
+        help=f"EMA factor for bbox smoothing (default: {TRACKING_BBOX_ALPHA})",
     )
     parser.add_argument(
         "--tracking-conf-alpha",
         type=float,
-        default=0.6,
-        help="EMA factor for confidence smoothing (default: 0.6)",
+        default=TRACKING_CONF_ALPHA,
+        help=f"EMA factor for confidence smoothing (default: {TRACKING_CONF_ALPHA})",
     )
     return parser.parse_args()
-
-
-def setup_logging(verbose: bool = False) -> None:
-    level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        force=True,
-    )
 
 
 def load_model(weights_path: str, device: str = "") -> YOLO:
@@ -157,7 +152,7 @@ def load_model(weights_path: str, device: str = "") -> YOLO:
     return model
 
 
-def resolve_weights_path(weights: Optional[str], weights_dir: str) -> Path:
+def resolve_weights_path(weights: str | None, weights_dir: str) -> Path:
     """Resolve model path from explicit --weights or auto-discover in exports directory."""
     project_root = Path(__file__).resolve().parents[2]
 
@@ -236,7 +231,7 @@ class SessionTracker:
         self.bbox_alpha = bbox_alpha
         self.conf_alpha = conf_alpha
         self.next_track_id = 1
-        self.tracks: List[TrackState] = []
+        self.tracks: list[TrackState] = []
         self.last_update = time.monotonic()
 
     @staticmethod
@@ -261,7 +256,7 @@ class SessionTracker:
             return 0.0
         return inter_area / union
 
-    def update(self, detections: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def update(self, detections: list[dict[str, Any]]) -> list[dict[str, Any]]:
         self.last_update = time.monotonic()
         unmatched_track_indices = set(range(len(self.tracks)))
 
@@ -311,7 +306,7 @@ class SessionTracker:
 
         self.tracks = [track for track in self.tracks if track.missed <= self.max_missed]
 
-        output: List[Dict[str, Any]] = []
+        output: list[dict[str, Any]] = []
         for track in self.tracks:
             decayed_conf = max(0.05, track.confidence * (0.92 ** track.missed))
             output.append(
@@ -326,9 +321,9 @@ class SessionTracker:
         return output
 
 
-def extract_raw_detections(result, class_name_map: Dict[int, str]) -> List[Dict[str, Any]]:
+def extract_raw_detections(result, class_name_map: dict[int, str]) -> list[dict[str, Any]]:
     """Convert YOLO result object into a serializable detections list."""
-    detections: List[Dict[str, Any]] = []
+    detections: list[dict[str, Any]] = []
     if not hasattr(result, "boxes") or len(result.boxes) == 0:
         return detections
 
@@ -351,7 +346,7 @@ def extract_raw_detections(result, class_name_map: Dict[int, str]) -> List[Dict[
 
 def draw_boxes_from_detections(
     image: np.ndarray,
-    detections: List[Dict[str, Any]],
+    detections: list[dict[str, Any]],
     line_thickness: int = 2,
     font_scale: float = 0.5,
 ) -> np.ndarray:
@@ -360,11 +355,7 @@ def draw_boxes_from_detections(
     if not detections:
         return img
 
-    color_by_class = {
-        "Vehicle": (0, 255, 0),
-        "Pedestrian": (255, 0, 0),
-        "Cyclist": (0, 0, 255),
-    }
+    color_by_class = CLASS_COLORS
 
     for det in detections:
         x1, y1, x2, y2 = map(int, det["bbox"])
@@ -402,7 +393,7 @@ def draw_boxes_from_detections(
     return img
 
 
-def cleanup_trackers(trackers: Dict[str, "SessionTracker"], max_idle_seconds: float = 120.0) -> None:
+def cleanup_trackers(trackers: dict[str, "SessionTracker"], max_idle_seconds: float = 120.0) -> None:
     """Drop stale tracking sessions to keep memory bounded."""
     now = time.monotonic()
     stale_keys = [
@@ -417,7 +408,7 @@ def cleanup_trackers(trackers: Dict[str, "SessionTracker"], max_idle_seconds: fl
 def draw_boxes(
     image: np.ndarray,
     results,
-    class_names: Dict[int, str],
+    class_names: dict[int, str],
     line_thickness: int = 2,
     font_scale: float = 0.5,
 ) -> np.ndarray:
@@ -431,11 +422,7 @@ def draw_boxes(
     confs = results.boxes.conf.cpu().numpy()
     cls_ids = results.boxes.cls.cpu().numpy().astype(int)
 
-    colors = [
-        (0, 255, 0),  # Green - Vehicle
-        (255, 0, 0),  # Blue - Pedestrian
-        (0, 0, 255),  # Red - Cyclist
-    ]
+    colors = CLASS_COLORS_LIST
 
     for box, conf, cls_id in zip(boxes, confs, cls_ids):
         x1, y1, x2, y2 = map(int, box)
@@ -482,10 +469,10 @@ def encode_image_to_base64(image: np.ndarray) -> str:
 
 
 # Global model instance
-model: Optional[YOLO] = None
-class_names: Dict[int, str] = {}
-loaded_model_path: Optional[str] = None
-trackers: Dict[str, SessionTracker] = {}
+model: YOLO | None = None
+class_names: dict[int, str] = {}
+loaded_model_path: str | None = None
+trackers: dict[str, SessionTracker] = {}
 trackers_lock = threading.Lock()
 
 
@@ -533,7 +520,7 @@ async def health_check():
 async def detect_objects(
     image: UploadFile = File(..., description="Image file to run inference on"),
     conf: float = Form(
-        default=0.25, ge=0.0, le=1.0, description="Confidence threshold"
+        default=DEFAULT_CONFIDENCE, ge=0.0, le=1.0, description="Confidence threshold"
     ),
     session_id: str = Form(
         default="default",

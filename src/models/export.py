@@ -21,11 +21,10 @@ Usage:
     python src/models/export.py --weights models/checkpoints/best-3classes-exp34332.pt --format onnx --output models/exports/
 """
 
-import sys
 import argparse
 import logging
+import sys
 from pathlib import Path
-from typing import List, Optional, Dict
 
 from ultralytics import YOLO
 
@@ -119,19 +118,10 @@ Examples:
 
 
 def setup_logging(verbose: bool = False, quiet: bool = False) -> None:
+    from src.utils import setup_logging as _setup_logging
+    _setup_logging(verbose=verbose)
     if quiet:
-        level = logging.WARNING
-    elif verbose:
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
-
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        force=True,
-    )
+        logging.getLogger().setLevel(logging.WARNING)
 
 
 def load_model(weights_path: str, device: str = "") -> YOLO:
@@ -151,11 +141,11 @@ def load_model(weights_path: str, device: str = "") -> YOLO:
 
 def export_model(
     model: YOLO,
-    formats: List[str],
+    formats: list[str],
     output_dir: Path,
     imgsz: int = 640,
     half: bool = False,
-) -> Dict[str, Path]:
+) -> dict[str, Path]:
     """
     Export model to specified formats.
 
@@ -222,9 +212,8 @@ def main() -> int:
                 print(f"  {fmt.upper():12s}  {path}  ({size_mb:.1f} MB)")
             print("=" * 60)
             return 0
-        else:
-            logger.error("No models were exported successfully")
-            return 1
+        logger.error("No models were exported successfully")
+        return 1
 
     except FileNotFoundError as e:
         logger.error(f"File error: {e}")

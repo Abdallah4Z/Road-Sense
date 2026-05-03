@@ -9,27 +9,24 @@ Tests cover:
 - CLI argument parsing
 """
 
-import pytest
-import json
-import yaml
+import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
-import sys
+import pytest
+import yaml
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+from src.models.callbacks import ModelCheckpoint, TrainingLogger
 from src.models.model_factory import (
-    load_model,
+    AVAILABLE_MODELS,
     get_model_info,
     list_available_models,
-    AVAILABLE_MODELS,
+    load_model,
 )
 from src.models.trainer import YOLOTrainer, load_config
-from src.models.callbacks import TrainingLogger, ModelCheckpoint
-
 
 # ==============================================================================
 # Fixtures
@@ -378,17 +375,17 @@ class TestCLI:
 
     def test_train_module_import(self):
         """Test that train module can be imported."""
-        from train import parse_args, setup_logging, apply_overrides
+        from train import apply_overrides, parse_args, setup_logging
         assert parse_args is not None
         assert setup_logging is not None
         assert apply_overrides is not None
 
     def test_parse_args_defaults(self):
         """Test CLI argument defaults."""
-        from train import parse_args
-
         # Simulate default args by passing minimal args
         import sys
+
+        from train import parse_args
         original_argv = sys.argv
         sys.argv = ["train.py"]
 
@@ -404,8 +401,9 @@ class TestCLI:
 
     def test_parse_args_overrides(self):
         """Test CLI argument overrides."""
-        from train import parse_args
         import sys
+
+        from train import parse_args
 
         original_argv = sys.argv
         sys.argv = [
@@ -427,8 +425,9 @@ class TestCLI:
 
     def test_apply_overrides(self):
         """Test that CLI overrides are applied to config."""
-        from train import apply_overrides
         import argparse
+
+        from train import apply_overrides
 
         config = {
             "model": {"name": "yolo11m", "pretrained_weights": None, "pretrained": True},

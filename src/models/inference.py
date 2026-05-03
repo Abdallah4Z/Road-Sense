@@ -19,13 +19,14 @@ Usage:
     python src/models/inference.py --weights models/checkpoints/best-3classes-exp34332.pt --source image.jpg --conf 0.5
 """
 
-import sys
 import argparse
 import logging
+import sys
 from pathlib import Path
-from typing import Optional, Union
 
 from ultralytics import YOLO
+
+from src.utils import DEFAULT_CONFIDENCE
 
 logger = logging.getLogger(__name__)
 
@@ -85,8 +86,8 @@ Examples:
     parser.add_argument(
         "--conf",
         type=float,
-        default=0.25,
-        help="Confidence threshold for detections (default: 0.25)",
+        default=DEFAULT_CONFIDENCE,
+        help=f"Confidence threshold for detections (default: {DEFAULT_CONFIDENCE})",
     )
 
     parser.add_argument(
@@ -157,22 +158,13 @@ Examples:
 
 def setup_logging(verbose: bool = False, quiet: bool = False) -> None:
     """Configure logging."""
+    from src.utils import setup_logging as _setup_logging
+    _setup_logging(verbose=verbose)
     if quiet:
-        level = logging.WARNING
-    elif verbose:
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
-
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        force=True,
-    )
+        logging.getLogger().setLevel(logging.WARNING)
 
 
-def load_model(weights_path: Union[str, Path], device: str = "") -> YOLO:
+def load_model(weights_path: str | Path, device: str = "") -> YOLO:
     """
     Load YOLO model from checkpoint.
 
@@ -198,15 +190,15 @@ def load_model(weights_path: Union[str, Path], device: str = "") -> YOLO:
     # Log model info
     if hasattr(model, "names"):
         logger.info(f"Model classes: {model.names}")
-    logger.info(f"Model loaded successfully")
+    logger.info("Model loaded successfully")
 
     return model
 
 
 def predict(
     model: YOLO,
-    source: Union[str, Path],
-    output_dir: Optional[Union[str, Path]] = None,
+    source: str | Path,
+    output_dir: str | Path | None = None,
     conf: float = 0.25,
     iou: float = 0.45,
     imgsz: int = 640,
