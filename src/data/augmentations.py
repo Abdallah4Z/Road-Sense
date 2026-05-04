@@ -9,7 +9,7 @@ import albumentations as A
 import cv2
 
 
-def get_training_augmentation(image_size=None):
+def get_training_augmentation(image_size: tuple[int, int] | None = None) -> A.Compose:
     transforms = []
 
     # Resize if specified
@@ -78,7 +78,10 @@ def get_training_augmentation(image_size=None):
     return A.Compose(transforms)
 
 
-def get_training_augmentation_with_bbox(image_size=None, min_visibility=0.3):
+def get_training_augmentation_with_bbox(
+    image_size: tuple[int, int] | None = None,
+    min_visibility: float = 0.3,
+) -> A.Compose:
     transforms = []
 
     # Resize if specified
@@ -138,7 +141,7 @@ def get_training_augmentation_with_bbox(image_size=None, min_visibility=0.3):
     )
 
 
-def get_validation_augmentation(image_size=None):
+def get_validation_augmentation(image_size: tuple[int, int] | None = None) -> A.Compose:
     transforms = []
 
     # Only resize for validation, no other augmentations
@@ -148,7 +151,7 @@ def get_validation_augmentation(image_size=None):
     return A.Compose(transforms)
 
 
-def get_validation_augmentation_with_bbox(image_size=None):
+def get_validation_augmentation_with_bbox(image_size: tuple[int, int] | None = None) -> A.Compose:
     transforms = []
 
     # Only resize for validation
@@ -164,7 +167,7 @@ def get_validation_augmentation_with_bbox(image_size=None):
     )
 
 
-def get_inference_augmentation(image_size=None):
+def get_inference_augmentation(image_size: tuple[int, int] | None = None) -> A.Compose:
     transforms = []
 
     if image_size:
@@ -196,7 +199,12 @@ AUGMENTATION_PRESETS = {
 }
 
 
-def get_custom_augmentation(preset='medium', image_size=None, with_bbox=False, min_visibility=0.3):
+def get_custom_augmentation(
+    preset: str = 'medium',
+    image_size: tuple[int, int] | None = None,
+    with_bbox: bool = False,
+    min_visibility: float = 0.3,
+) -> A.Compose:
     if preset not in AUGMENTATION_PRESETS:
         raise ValueError(f"Unknown preset: {preset}. Choose from {list(AUGMENTATION_PRESETS.keys())}")
 

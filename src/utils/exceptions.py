@@ -2,6 +2,7 @@ import logging
 import time
 from collections.abc import Callable
 from functools import wraps
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ class DataError(RoadSenseError):
 
 
 class APIError(RoadSenseError):
-    def __init__(self, message: str, status_code: int = 500, detail: str = ""):
+    def __init__(self, message: str, status_code: int = 500, detail: str = "") -> None:
         super().__init__(message)
         self.status_code = status_code
         self.detail = detail
@@ -41,7 +42,7 @@ def retry(
 ) -> Callable:
     def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
             current_delay = delay
             for attempt in range(1, max_attempts + 1):
                 try:

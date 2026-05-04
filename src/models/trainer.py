@@ -57,12 +57,12 @@ class YOLOTrainer:
     - Results tracking
     """
 
-    def __init__(
+    def __init__(  # type: ignore[valid-type]
         self,
         config: dict[str, Any],
         config_path: str | None = None,
         project_root: str | None = None,
-    ):
+    ) -> None:
         """
         Initialize the trainer.
 
@@ -96,7 +96,7 @@ class YOLOTrainer:
         self._init_callbacks()
         self._save_config_snapshot()
 
-    def train(self, **override_kwargs) -> dict[str, Any]:
+    def train(self, **override_kwargs: Any) -> dict[str, Any]:  # noqa: ANN401
         """
         Run the training loop.
 
@@ -168,7 +168,7 @@ class YOLOTrainer:
 
         return metrics
 
-    def export(self, format: str = "onnx", output_dir: str | None = None, **export_kwargs) -> str:
+    def export(self, format: str = "onnx", output_dir: str | None = None, **export_kwargs: Any) -> str:  # noqa: ANN401
         """
         Export the trained model to a deployment format.
 
@@ -292,7 +292,7 @@ class YOLOTrainer:
 
         logger.info(f"Config snapshot saved to: {config_snapshot_path}")
 
-    def _build_train_args(self, **override_kwargs) -> dict[str, Any]:
+    def _build_train_args(self, **override_kwargs: Any) -> dict[str, Any]:  # noqa: ANN401
         data_cfg = self.config.get("data", {})
         train_cfg = self.config.get("training", {})
         aug_cfg = self.config.get("augmentation", {})
@@ -411,7 +411,7 @@ class YOLOTrainer:
             "save_period": cfg.get("save_period", -1),
         }
 
-    def _extract_metrics(self, results) -> dict[str, float]:
+    def _extract_metrics(self, results: Any) -> dict[str, float]:  # noqa: ANN401
         """Extract metrics from Ultralytics training/validation results."""
         metrics = {}
 
@@ -585,7 +585,7 @@ class YOLOTrainer:
 def train(
     config_path: str | Path = "configs/training.yaml",
     project_root: str | Path | None = None,
-    **override_kwargs,
+    **override_kwargs: Any,  # noqa: ANN401
 ) -> dict[str, Any]:
     """
     Convenience function to run training from a config file.

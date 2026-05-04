@@ -24,8 +24,10 @@ import logging
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 import cv2
+import numpy as np
 from ultralytics import YOLO
 
 from src.utils import CLASS_COLORS_LIST, DEFAULT_CONFIDENCE
@@ -187,8 +189,8 @@ def init_video_writer(
 
 
 def draw_detections(
-    frame,
-    results,
+    frame: np.ndarray,
+    results: Any,  # noqa: ANN401
     class_names: dict,
     line_thickness: int = 2,
     font_scale: float = 0.5,
@@ -256,7 +258,7 @@ def draw_detections(
         )
 
 
-def draw_fps(frame, fps: float) -> None:
+def draw_fps(frame: np.ndarray, fps: float) -> None:
     """Draw FPS counter on frame."""
     fps_text = f"FPS: {fps:.1f}"
     cv2.putText(

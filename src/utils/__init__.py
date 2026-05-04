@@ -8,11 +8,11 @@ from src.utils.constants import (
     CUSTOM_CLASSES,
     DEFAULT_CONFIDENCE,
     DEFAULT_IOU,
-    env_or_default,
     TRACKING_BBOX_ALPHA,
     TRACKING_CONF_ALPHA,
     TRACKING_IOU,
     TRACKING_MAX_MISSED,
+    env_or_default,
 )
 from src.utils.exceptions import APIError, ConfigError, DataError, InferenceError, ModelLoadError, RoadSenseError, retry
 from src.utils.io_utils import ensure_dir

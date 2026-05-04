@@ -132,7 +132,7 @@ def augment_dataset(
     return stats
 
 
-def main():
+def main() -> None:
     """Main function for command-line usage."""
     parser = argparse.ArgumentParser(
         description='Augment KITTI dataset images with bounding boxes'

@@ -410,7 +410,7 @@ def create_yolo_config(
     print(f"✓ Created YOLO config: {data_yaml_path}")
 
 
-def main():
+def main() -> None:
     """Command-line interface for dataset preprocessing."""
     parser = argparse.ArgumentParser(
         description="Preprocess KITTI dataset for YOLO training",

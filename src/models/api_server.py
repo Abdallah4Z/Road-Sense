@@ -322,7 +322,7 @@ class SessionTracker:
         return output
 
 
-def extract_raw_detections(result, class_name_map: dict[int, str]) -> list[dict[str, Any]]:
+def extract_raw_detections(result: Any, class_name_map: dict[int, str]) -> list[dict[str, Any]]:  # noqa: ANN401
     """Convert YOLO result object into a serializable detections list."""
     detections: list[dict[str, Any]] = []
     if not hasattr(result, "boxes") or len(result.boxes) == 0:
@@ -408,7 +408,7 @@ def cleanup_trackers(trackers: dict[str, "SessionTracker"], max_idle_seconds: fl
 
 def draw_boxes(
     image: np.ndarray,
-    results,
+    results: Any,  # noqa: ANN401
     class_names: dict[int, str],
     line_thickness: int = 2,
     font_scale: float = 0.5,
@@ -502,7 +502,7 @@ except Exception as e:
 
 
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     """Load model on startup."""
     global model, class_names, loaded_model_path
     resolved_weights = resolve_weights_path(args.weights, args.weights_dir)
@@ -514,7 +514,7 @@ async def startup_event():
 
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> dict:
     """Health check endpoint."""
     return {
         "status": "healthy",
@@ -526,7 +526,7 @@ async def health_check():
 
 
 @app.post("/detect", response_model=DetectionResponse)
-async def detect_objects(
+async def detect_objects(  # type: ignore[misc]
     image: UploadFile = File(..., description="Image file to run inference on"),
     conf: float = Form(
         default=DEFAULT_CONFIDENCE, ge=0.0, le=1.0, description="Confidence threshold"
@@ -535,7 +535,7 @@ async def detect_objects(
         default="default",
         description="Client session ID used for temporal tracking",
     ),
-):
+) -> DetectionResponse:
     """
     Run object detection on uploaded image.
 

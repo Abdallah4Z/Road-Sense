@@ -21,7 +21,7 @@ from .kitti_utils import CLASS_ID_TO_NAME, load_kitti_image, load_kitti_labels
 
 
 class KITTIDataset(Dataset):
-    def __init__(
+    def __init__(  # type: ignore[valid-type]
         self,
         img_dir: str,
         label_dir: str,
@@ -30,7 +30,7 @@ class KITTIDataset(Dataset):
         image_size: tuple[int, int] | None = None,
         augmentation_preset: str = 'medium',
         return_image_path: bool = False
-    ):
+    ) -> None:
         self.img_dir = Path(img_dir)
         self.label_dir = Path(label_dir)
         self.mode = mode
@@ -140,7 +140,7 @@ class KITTIDataset(Dataset):
 
 class KITTIDatasetTorch(KITTIDataset):
 
-    def __init__(
+    def __init__(  # type: ignore[valid-type]
         self,
         img_dir: str,
         label_dir: str,
@@ -148,9 +148,9 @@ class KITTIDatasetTorch(KITTIDataset):
         mode: str = 'train',
         image_size: tuple[int, int] | None = None,
         augmentation_preset: str = 'medium',
+        return_image_path: bool = False,
         normalize: bool = True,
-        return_image_path: bool = False
-    ):
+    ) -> None:
         super().__init__(
             img_dir=img_dir,
             label_dir=label_dir,

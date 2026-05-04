@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class PerformanceMonitor:
-    def __init__(self, window_size: int = 100):
+    def __init__(self, window_size: int = 100) -> None:
         self.window_size = window_size
         self.latencies: deque = deque(maxlen=window_size)
         self.request_count = 0

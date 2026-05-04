@@ -20,7 +20,7 @@ class TrainingLogger:
     Callback for logging training progress and events.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.train_start_time: datetime | None = None
 
     def on_train_start(self, config: dict[str, Any]) -> None:
@@ -94,7 +94,7 @@ class ModelCheckpoint:
         save_last: bool = True,
         save_period: int = -1,
         metric: str = "mAP50-95",
-    ):
+    ) -> None:
         """
         Initialize the checkpoint callback.
 
