@@ -1,7 +1,7 @@
+
 import cv2
 import numpy as np
 import pytest
-from pathlib import Path
 
 
 def _make_test_image(path, w=100, h=100):
@@ -71,6 +71,7 @@ class TestKITTIDataset:
 
     def test_torch_dataset(self, kitti_data):
         import torch
+
         from src.data.kitti_dataset import KITTIDatasetTorch
         img_dir, lbl_dir = kitti_data
         ds = KITTIDatasetTorch(str(img_dir), str(lbl_dir), normalize=False)
@@ -81,6 +82,7 @@ class TestKITTIDataset:
 
     def test_torch_dataset_normalize(self, kitti_data):
         import torch
+
         from src.data.kitti_dataset import KITTIDatasetTorch
         img_dir, lbl_dir = kitti_data
         ds = KITTIDatasetTorch(str(img_dir), str(lbl_dir), normalize=True)
@@ -90,10 +92,13 @@ class TestKITTIDataset:
 
     def test_collate_fn(self):
         import torch
+
         from src.data.kitti_dataset import collate_fn
         batch = [
-            {"image": torch.zeros(3, 100, 100), "bboxes": torch.tensor([[0.5, 0.5, 0.4, 0.4]]), "labels": torch.tensor([0])},
-            {"image": torch.zeros(3, 100, 100), "bboxes": torch.zeros((0, 4)), "labels": torch.zeros((0,), dtype=torch.long)},
+            {"image": torch.zeros(3, 100, 100), "bboxes": torch.tensor([[0.5, 0.5, 0.4, 0.4]]),
+             "labels": torch.tensor([0])},
+            {"image": torch.zeros(3, 100, 100), "bboxes": torch.zeros((0, 4)),
+             "labels": torch.zeros((0,), dtype=torch.long)},
         ]
         result = collate_fn(batch)
         assert "images" in result

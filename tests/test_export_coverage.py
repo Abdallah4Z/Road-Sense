@@ -35,7 +35,6 @@ class TestExportMain:
 
 class TestExportModel:
     def test_export_onnx(self, mock_yolo, tmp_path):
-        from pathlib import Path
         from src.models.export import export_model
         mock_yolo.export.return_value = "/tmp/model.onnx"
         result = export_model(mock_yolo, formats=["onnx"], output_dir=tmp_path)
