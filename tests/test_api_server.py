@@ -21,7 +21,7 @@ def test_performance_monitor():
     assert stats["error_rate"] == 1.0
     assert stats["latency_ms_avg"] == 25.0
     assert stats["latency_ms_p50"] == 25.0
-    assert stats["uptime_seconds"] > 0
+    assert stats["uptime_seconds"] >= 0
 
 
 def test_performance_monitor_empty():

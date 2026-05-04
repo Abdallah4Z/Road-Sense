@@ -229,9 +229,15 @@ class TestYOLOTrainer:
         assert trainer.save_dir is not None
         assert trainer.save_dir.exists()
 
-    def test_trainer_build_args(self, sample_config):
+    def test_trainer_build_args(self, sample_config, tmp_path):
         """Test training arguments are built correctly."""
-        trainer = YOLOTrainer(config=sample_config)
+        data_yaml = tmp_path / "data.yaml"
+        data_yaml.write_text("train: train\nval: val\nnc: 3\nnames: [a, b, c]\n")
+        (tmp_path / "train").mkdir(exist_ok=True)
+        (tmp_path / "val").mkdir(exist_ok=True)
+        sample_config["data"]["yaml_path"] = str(data_yaml)
+
+        trainer = YOLOTrainer(config=sample_config, project_root=tmp_path)
         trainer.setup()
 
         args = trainer._build_train_args()
@@ -244,9 +250,15 @@ class TestYOLOTrainer:
         assert args["batch"] == sample_config["data"]["batch_size"]
         assert args["imgsz"] == sample_config["data"]["imgsz"]
 
-    def test_trainer_build_args_with_overrides(self, sample_config):
+    def test_trainer_build_args_with_overrides(self, sample_config, tmp_path):
         """Test that overrides are applied."""
-        trainer = YOLOTrainer(config=sample_config)
+        data_yaml = tmp_path / "data.yaml"
+        data_yaml.write_text("train: train\nval: val\nnc: 3\nnames: [a, b, c]\n")
+        (tmp_path / "train").mkdir(exist_ok=True)
+        (tmp_path / "val").mkdir(exist_ok=True)
+        sample_config["data"]["yaml_path"] = str(data_yaml)
+
+        trainer = YOLOTrainer(config=sample_config, project_root=tmp_path)
         trainer.setup()
 
         args = trainer._build_train_args(epochs=50, batch=32)
