@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from src.mlops.performance_monitor import PerformanceMonitor
 
@@ -42,8 +42,10 @@ def test_performance_monitor_log(caplog):
 
 def test_parse_args():
     import sys
+
     from src.models.api_server import parse_args
-    test_args = ["prog", "--port", "9000", "--host", "127.0.0.1", "--weights", "/fake.pt", "--device", "cpu", "--verbose"]
+    test_args = ["prog", "--port", "9000", "--host", "127.0.0.1",
+                 "--weights", "/fake.pt", "--device", "cpu", "--verbose"]
     with patch.object(sys, "argv", test_args):
         args = parse_args()
     assert args.port == 9000
@@ -55,6 +57,7 @@ def test_parse_args():
 
 def test_parse_args_defaults():
     import sys
+
     from src.models.api_server import parse_args
     with patch.object(sys, "argv", ["prog"]):
         args = parse_args()
@@ -65,8 +68,8 @@ def test_parse_args_defaults():
 
 
 def test_encode_image_to_base64():
-    import cv2
     import numpy as np
+
     from src.models.api_server import encode_image_to_base64
     img = np.zeros((10, 10, 3), dtype=np.uint8)
     b64 = encode_image_to_base64(img)

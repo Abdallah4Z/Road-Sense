@@ -1,7 +1,7 @@
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+
 from src.models.model_factory import AVAILABLE_MODELS, get_model_info, list_available_models
 
 
@@ -37,20 +37,21 @@ def test_load_config_not_found(tmp_path):
         load_config(tmp_path / "nonexistent.yaml")
 
 
-def test_callbacks():
-    from src.models.callbacks import TrainingLogger, ModelCheckpoint
+def test_callbacks(tmp_path):
+    from src.models.callbacks import ModelCheckpoint, TrainingLogger
     logger = TrainingLogger()
     assert logger.train_start_time is None
 
-    config = {"model": {"name": "yolo11m"}, "training": {"epochs": 10}, "data": {"yaml_path": "data.yaml", "batch_size": 16, "imgsz": 640}, "device": {"device": "0"}}
+    config = {"model": {"name": "yolo11m"}, "training": {"epochs": 10},
+              "data": {"yaml_path": "data.yaml", "batch_size": 16, "imgsz": 640},
+              "device": {"device": "0"}}
     logger.on_train_start(config)
     assert logger.train_start_time is not None
 
     logger.on_epoch_end(1, {"loss": 0.5})
     logger.on_train_end({"metrics": {"mAP50": 0.9}})
 
-    from pathlib import Path
-    ckpt = ModelCheckpoint(Path("/tmp"), save_best=True, save_last=True)
+    ckpt = ModelCheckpoint(tmp_path, save_best=True, save_last=True)
     assert ckpt.get_best_model_path() is None
     ckpt.on_epoch_end(1, {"mAP50-95": 0.5})
     summary = ckpt.get_checkpoint_summary()
@@ -58,7 +59,7 @@ def test_callbacks():
 
 
 @pytest.fixture
-def sample_trainer():
+def sample_trainer(tmp_path):
     from src.models.trainer import YOLOTrainer
     config = {
         "model": {"name": "yolo11n", "pretrained": True},
@@ -72,7 +73,7 @@ def sample_trainer():
         "logging": {"verbose": True},
         "checkpoint": {"save_period": -1},
     }
-    return YOLOTrainer(config=config, project_root=Path("/tmp"))
+    return YOLOTrainer(config=config, project_root=tmp_path)
 
 
 def test_trainer_init(sample_trainer):
@@ -80,10 +81,10 @@ def test_trainer_init(sample_trainer):
     assert sample_trainer.project_root is not None
 
 
-def test_trainer_section_builders():
+def test_trainer_section_builders(tmp_path):
     from src.models.trainer import YOLOTrainer
 
-    args = YOLOTrainer._build_data_args({"imgsz": 640, "batch_size": 4}, "/tmp/data.yaml")
+    args = YOLOTrainer._build_data_args({"imgsz": 640, "batch_size": 4}, str(tmp_path / "data.yaml"))
     assert args["imgsz"] == 640
     assert args["batch"] == 4
 
@@ -111,10 +112,10 @@ def test_trainer_section_builders():
     assert args["exist_ok"] is True
 
 
-def test_trainer_section_builders_empty_configs():
+def test_trainer_section_builders_empty_configs(tmp_path):
     from src.models.trainer import YOLOTrainer
 
-    args = YOLOTrainer._build_data_args({}, "/tmp/data.yaml")
+    args = YOLOTrainer._build_data_args({}, str(tmp_path / "data.yaml"))
     assert args["imgsz"] == 640
 
     args = YOLOTrainer._build_train_hyperparams({})
@@ -127,11 +128,10 @@ def test_trainer_section_builders_empty_configs():
     assert args["hsv_h"] == 0.015
 
 
-def test_trainer_build_checkpoint_args():
-    from pathlib import Path
+def test_trainer_build_checkpoint_args(tmp_path):
     from src.models.trainer import YOLOTrainer
     trainer = MagicMock()
-    trainer.save_dir = Path("/tmp")
+    trainer.save_dir = tmp_path
     args = YOLOTrainer._build_checkpoint_args(trainer, {"save_period": 5})
     assert args["save_period"] == 5
     assert args["save"] is True
@@ -156,8 +156,8 @@ class TestPredictSource:
         assert result[1] == 2
 
 
-def test_trainer_build_data_args():
+def test_trainer_build_data_args(tmp_path):
     from src.models.trainer import YOLOTrainer
-    args = YOLOTrainer._build_data_args({"imgsz": 640, "batch_size": 4}, "/tmp/data.yaml")
+    args = YOLOTrainer._build_data_args({"imgsz": 640, "batch_size": 4}, str(tmp_path / "data.yaml"))
     assert args["imgsz"] == 640
     assert args["batch"] == 4

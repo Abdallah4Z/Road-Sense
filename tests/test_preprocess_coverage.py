@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
-from pathlib import Path
 
 from src.data.preprocess_dataset import (
     filter_classes,
@@ -174,7 +175,6 @@ class TestSplitDataset:
         assert s1 == s2
 
     def test_empty_list(self):
-        from pathlib import Path
         splits = split_dataset([], 0.7, 0.15, 0.15, shuffle=False)
         assert len(splits["train"]) == 0
         assert len(splits["val"]) == 0

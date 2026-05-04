@@ -50,9 +50,9 @@ class TestConstants:
         assert env_or_default("PATH", "fallback") != "fallback"
 
     def test_env_path(self):
-        result = env_path("NONEXISTENT_VAR_12345", "/tmp/test")
+        result = env_path("NONEXISTENT_VAR_12345", "/nonexistent/test")
         assert isinstance(result, Path)
-        assert str(result) == "/tmp/test"
+        assert str(result) == "/nonexistent/test"
 
 
 class TestExceptions:
@@ -89,7 +89,7 @@ class TestExceptions:
             nonlocal call_count
             call_count += 1
             if call_count < 3:
-                raise IOError("transient")
+                raise OSError("transient")
             return "ok"
 
         assert flaky() == "ok"
@@ -102,7 +102,7 @@ class TestExceptions:
         def always_fails():
             nonlocal call_count
             call_count += 1
-            raise IOError("always fails")
+            raise OSError("always fails")
 
         with pytest.raises(IOError):
             always_fails()

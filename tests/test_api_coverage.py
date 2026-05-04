@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-import cv2
 import numpy as np
 import pytest
 
@@ -26,6 +25,7 @@ class TestLoadModel:
     @patch("src.models.api_server.YOLO")
     def test_load_model_success(self, mock_yolo):
         import tempfile
+
         from src.models.api_server import load_model
 
         with tempfile.NamedTemporaryFile(suffix=".pt") as f:
@@ -171,6 +171,7 @@ class TestEncodeImage:
 class TestCleanupTrackers:
     def test_cleanup_stale(self):
         import time
+
         from src.models.api_server import cleanup_trackers
 
         stale = MagicMock()
@@ -186,6 +187,7 @@ class TestCleanupTrackers:
 
     def test_no_stale(self):
         import time
+
         from src.models.api_server import cleanup_trackers
 
         fresh = MagicMock()

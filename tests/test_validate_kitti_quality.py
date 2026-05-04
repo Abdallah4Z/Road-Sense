@@ -1,9 +1,7 @@
-import hashlib
 from pathlib import Path
 
 import cv2
 import numpy as np
-import pytest
 
 
 def _make_label_file(path: Path, lines: list[str]):

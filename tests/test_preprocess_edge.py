@@ -1,4 +1,3 @@
-import pytest
 
 
 def test_filter_classes():
@@ -22,6 +21,7 @@ def test_filter_small_boxes():
 
 def test_normalize_image():
     import numpy as np
+
     from src.data.preprocess_dataset import normalize_image
     img = np.random.randint(0, 256, (10, 10, 3), dtype=np.uint8)
     normalized = normalize_image(img)

@@ -1,9 +1,7 @@
-import numpy as np
-import pytest
 
 
 def test_kitti_classes():
-    from src.data.kitti_utils import KITTI_CLASSES, CLASS_ID_TO_NAME
+    from src.data.kitti_utils import CLASS_ID_TO_NAME, KITTI_CLASSES
     assert len(KITTI_CLASSES) > 0
     assert "Car" in KITTI_CLASSES
     assert "Pedestrian" in KITTI_CLASSES
@@ -62,7 +60,7 @@ def test_load_yolo_labels_missing():
 
 
 def test_save_empty_labels(tmp_path):
-    from src.data.kitti_utils import save_yolo_labels, load_yolo_labels
+    from src.data.kitti_utils import load_yolo_labels, save_yolo_labels
     lbl_file = tmp_path / "empty.txt"
     save_yolo_labels(str(lbl_file), [], [])
     boxes, labels = load_yolo_labels(str(lbl_file))
