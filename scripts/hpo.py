@@ -26,6 +26,7 @@ import time
 from pathlib import Path
 
 import optuna
+import torch
 import yaml
 from optuna.pruners import MedianPruner
 from ultralytics import YOLO
@@ -55,7 +56,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--stage", type=int, choices=[1, 2], default=1, help="Search stage")
     parser.add_argument("--base-config", type=str, default="configs/training.yaml", help="Base training config")
     parser.add_argument("--output", type=str, default="experiments/hpo", help="Output directory")
-    parser.add_argument("--device", type=str, default="0", help="CUDA device")
+    parser.add_argument("--device", type=str, default="", help="CUDA device (auto-detected if empty)")
     return parser.parse_args()
 
 
@@ -149,8 +150,19 @@ def create_best_config(base_config: dict, best_params: dict, output_path: Path) 
     logger.info("Best config saved to %s", output_path)
 
 
+def resolve_device(args_device: str) -> str:
+    if args_device and torch.cuda.is_available():
+        return args_device
+    if torch.cuda.is_available():
+        return "0"
+    return "cpu"
+
+
 def main() -> int:
     args = parse_args()
+    device = resolve_device(args.device)
+    logger.info("Using device: %s", device)
+
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -170,7 +182,7 @@ def main() -> int:
         config = apply_params(base_config, params)
 
         try:
-            map50_95 = run_trial(config, args.epochs, args.device)
+            map50_95 = run_trial(config, args.epochs, device)
             study.tell(trial, map50_95)
             logger.info("Trial %d/%d — mAP@50:95=%.4f — params=%s", trial_idx + 1, args.trials, map50_95, params)
         except Exception as e:
