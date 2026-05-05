@@ -17,11 +17,15 @@ Usage:
 
 from __future__ import annotations
 
+import os
+
+# Fix Lambda Labs NVML issue: pop CUDA_VISIBLE_DEVICES before torch import
+os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+
 import argparse
 import copy
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -152,7 +156,6 @@ def create_best_config(base_config: dict, best_params: dict, output_path: Path) 
 
 
 def resolve_device(args_device: str) -> str:
-    os.environ.pop("CUDA_VISIBLE_DEVICES", None)
     if args_device and torch.cuda.is_available():
         return args_device
     if torch.cuda.is_available():
