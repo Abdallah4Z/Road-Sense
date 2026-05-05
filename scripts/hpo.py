@@ -21,6 +21,7 @@ import argparse
 import copy
 import json
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -151,6 +152,7 @@ def create_best_config(base_config: dict, best_params: dict, output_path: Path) 
 
 
 def resolve_device(args_device: str) -> str:
+    os.environ.pop("CUDA_VISIBLE_DEVICES", None)
     if args_device and torch.cuda.is_available():
         return args_device
     if torch.cuda.is_available():
