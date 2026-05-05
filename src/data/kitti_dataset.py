@@ -11,7 +11,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, WeightedRandomSampler
 
 from .augmentations import (
     get_inference_augmentation,
@@ -137,6 +137,30 @@ class KITTIDataset(Dataset):
 
         return class_counts
 
+    def get_sample_weights(self) -> list[float]:
+        class_counts = self.get_class_distribution()
+        total = sum(class_counts.values())
+        num_classes = len(class_counts)
+        class_weights = {
+            cls: total / (num_classes * count) if count > 0 else 1.0
+            for cls, count in class_counts.items()
+        }
+        sample_weights = []
+        for img_path in self.image_files:
+            label_path = self.label_dir / f"{img_path.stem}.txt"
+            if not hasattr(self, "_img_width"):
+                img = cv2.imread(str(img_path))
+                self._img_height, self._img_width = img.shape[:2]
+            _, _, class_names = load_kitti_labels(
+                str(label_path), self._img_width, self._img_height
+            )
+            if not class_names:
+                sample_weights.append(1.0)
+            else:
+                weight = sum(class_weights.get(n, 1.0) for n in class_names) / len(class_names)
+                sample_weights.append(weight)
+        return sample_weights
+
 
 class KITTIDatasetTorch(KITTIDataset):
 
@@ -208,9 +232,9 @@ def create_data_loaders(
     batch_size: int = 8,
     num_workers: int = 4,
     image_size: tuple[int, int] | None = None,
-    augmentation_preset: str = 'medium'
+    augmentation_preset: str = 'medium',
+    balanced_sampling: bool = False,
 ) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader | None]:
-    # Create training dataset
     train_dataset = KITTIDatasetTorch(
         img_dir=train_img_dir,
         label_dir=train_label_dir,
@@ -219,10 +243,16 @@ def create_data_loaders(
         augmentation_preset=augmentation_preset
     )
 
+    sampler = None
+    if balanced_sampling:
+        weights = train_dataset.get_sample_weights()
+        sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
+
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=sampler is None,
+        sampler=sampler,
         num_workers=num_workers,
         collate_fn=collate_fn,
         pin_memory=True
