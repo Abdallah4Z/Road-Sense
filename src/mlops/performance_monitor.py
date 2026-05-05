@@ -5,6 +5,7 @@ from collections import deque
 import torch
 
 logger = logging.getLogger(__name__)
+logger.propagate = True
 
 
 class PerformanceMonitor:

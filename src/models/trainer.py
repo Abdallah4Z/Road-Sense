@@ -371,7 +371,7 @@ class YOLOTrainer:
             "dropout": cfg.get("dropout", 0.0),
             "box": cfg.get("box", 7.5),
             "cls": cfg.get("cls", 1.0),
-            "cls_pw": cfg.get("cls_pw", [1.0, 5.0, 8.0]),
+            "cls_pw": cfg.get("cls_pw", 1.0),
             "dfl": cfg.get("dfl", 1.5),
         }
 

@@ -120,7 +120,7 @@ def build_train_args(config: dict, epochs: int, device: str) -> dict:
         "flipud": a.get("flipud", 0.0), "fliplr": a.get("fliplr", 0.5),
         "mosaic": a["mosaic"], "mixup": a["mixup"], "copy_paste": a["copy_paste"],
         "box": r.get("box", 7.5), "cls": r.get("cls", 1.0),
-        "cls_pw": r.get("cls_pw", [1.0, 5.0, 8.0]), "dfl": r.get("dfl", 1.5),
+        "cls_pw": r.get("cls_pw", 1.0), "dfl": r.get("dfl", 1.5),
         "val": v.get("val_interval", 1) > 0,
         "device": dev.get("device", device),
         "workers": d.get("workers", 4),
@@ -182,7 +182,7 @@ def main() -> int:
             "trial": trial.number,
             "params": params,
             "value": map50_95,
-            "state": str(trial.state),
+            "state": "COMPLETE" if map50_95 is not None else "FAIL",
         }
         results.append(trial_result)
 
