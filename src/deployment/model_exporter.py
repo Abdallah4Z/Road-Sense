@@ -19,18 +19,12 @@ Fully compliant with deployment requirements:
 
 
 import argparse
-
 import logging
-
+import shutil
 from pathlib import Path
 
-import shutil
-
 import torch
-
 from ultralytics import YOLO
-
-
 
 logger = logging.getLogger(__name__)
 
