@@ -95,7 +95,7 @@ def build_train_args(cfg: dict, epochs: int) -> dict:
     a = cfg["augmentation"]
     r = cfg.get("regularization", {})
     return {
-        "data": d.get("yaml_path", "/data/data/processed/kitti/data.yaml"),
+        "data": d.get("yaml_path", "/data/data/data/processed/kitti/data.yaml"),
         "imgsz": d.get("imgsz", 640),
         "batch": d.get("batch_size", 16),
         "epochs": epochs,
@@ -111,7 +111,7 @@ def build_train_args(cfg: dict, epochs: int) -> dict:
         "box": r.get("box", 7.5), "cls": r.get("cls", 1.0), "dfl": r.get("dfl", 1.5),
         "device": "0", "workers": 4,
         "exist_ok": True, "verbose": False,
-        "project": "/data/runs/hpo",
+        "project": "/data/data/runs/hpo",
         "name": f"trial_{int(time.time())}",
     }
 
@@ -208,14 +208,14 @@ def save_best_config(best_params: dict, output_dir: Path, epochs: int = 100):
     volumes={"/data": data_volume},
 )
 def run_hpo(trials: int = 20, epochs: int = 10, stage: int = 1,
-            base_config: str = "/data/configs/training.yaml"):
+            base_config: str = "/data/data/configs/training.yaml"):
     import optuna
     from optuna.pruners import MedianPruner
 
     output_dir = Path("/data/experiments/hpo")
     output_dir.mkdir(parents=True, exist_ok=True)
     base_cfg = load_config(base_config)
-    base_cfg["data"]["yaml_path"] = "/data/data/processed/kitti/data.yaml"
+    base_cfg["data"]["yaml_path"] = "/data/data/data/processed/kitti/data.yaml"
 
     if stage == 1:
         pruner = MedianPruner(n_startup_trials=3, n_warmup_steps=2)
