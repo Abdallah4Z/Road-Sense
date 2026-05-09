@@ -30,11 +30,9 @@ import modal
 app = modal.App("road-sense-hpo")
 
 hpo_image = (
-    modal.Image.from_registry("nvidia/cuda:12.4.0-cudnn-devel-ubuntu22.04", add_python="3.11")
+    modal.Image.from_registry("pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel", add_python="3.11")
     .apt_install("libgl1", "libglib2.0-0")
     .pip_install(
-        "torch>=2.5.0",
-        "torchvision>=0.20.0",
         "ultralytics>=8.3.0",
         "optuna>=4.0.0",
         "pyyaml>=6.0",
@@ -44,7 +42,6 @@ hpo_image = (
         "tqdm>=4.65.0",
         "matplotlib>=3.7.0",
         "pandas>=2.0.0",
-        extra_index_url="https://download.pytorch.org/whl/cu124",
     )
 )
 
