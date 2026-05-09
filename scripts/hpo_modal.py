@@ -125,12 +125,6 @@ def run_trial(cfg: dict, epochs: int) -> float:
     return float(metrics.box.map)
 
 
-@app.function(
-    image=hpo_image,
-    gpu="A100-80GB:1",
-    timeout=3600 * 4,
-    volumes={"/data": data_volume},
-)
 def run_stage(study, base_cfg: dict, space: dict, trials: int, epochs: int, output_dir: Path):
     results = load_results(output_dir)
     start = len(results)
@@ -207,6 +201,12 @@ def save_best_config(best_params: dict, output_dir: Path, epochs: int = 100):
     print(f"Best config saved to {path}")
 
 
+@app.function(
+    image=hpo_image,
+    gpu="A100-80GB:1",
+    timeout=3600 * 4,
+    volumes={"/data": data_volume},
+)
 def run_hpo(trials: int = 20, epochs: int = 10, stage: int = 1,
             base_config: str = "/data/configs/training.yaml"):
     import optuna
