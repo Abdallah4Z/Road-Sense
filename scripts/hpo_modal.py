@@ -95,7 +95,7 @@ def build_train_args(cfg: dict, epochs: int) -> dict:
     a = cfg["augmentation"]
     r = cfg.get("regularization", {})
     return {
-        "data": d.get("yaml_path", "/data/processed/kitti/data.yaml"),
+        "data": d.get("yaml_path", "/data/data/processed/kitti/data.yaml"),
         "imgsz": d.get("imgsz", 640),
         "batch": d.get("batch_size", 16),
         "epochs": epochs,
@@ -215,6 +215,7 @@ def run_hpo(trials: int = 20, epochs: int = 10, stage: int = 1,
     output_dir = Path("/data/experiments/hpo")
     output_dir.mkdir(parents=True, exist_ok=True)
     base_cfg = load_config(base_config)
+    base_cfg["data"]["yaml_path"] = "/data/data/processed/kitti/data.yaml"
 
     if stage == 1:
         pruner = MedianPruner(n_startup_trials=3, n_warmup_steps=2)
