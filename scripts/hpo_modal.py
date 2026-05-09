@@ -130,7 +130,7 @@ def run_trial(cfg: dict, epochs: int) -> float:
 
 @app.function(
     image=hpo_image,
-    gpu="A10G",
+    gpu="A100-80GB:1",
     timeout=3600 * 4,
     volumes={"/data": data_volume},
 )
