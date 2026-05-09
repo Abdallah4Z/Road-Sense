@@ -134,23 +134,15 @@ def run_trial(cfg: dict, epochs: int) -> float:
     timeout=3600 * 4,
     volumes={"/data": data_volume},
 )
-def run_hpo(trials: int = 20, epochs: int = 10, base_config: str = "/data/configs/training.yaml"):
-    import optuna
-    from optuna.pruners import MedianPruner
-
-    output_dir = Path("/data/experiments/hpo")
-    output_dir.mkdir(parents=True, exist_ok=True)
-    base_cfg = load_config(base_config)
-    space = HPO_SEARCH_SPACE
-    results = []
-
-    pruner = MedianPruner(n_startup_trials=3, n_warmup_steps=2)
-    study = optuna.create_study(direction="maximize", pruner=pruner, study_name="road_sense_hpo")
-
-    print(f"Starting HPO — {trials} trials, {epochs} epochs each")
+def run_stage(study, base_cfg: dict, space: dict, trials: int, epochs: int, output_dir: Path):
+    results = load_results(output_dir)
+    start = len(results)
+    print(f"\n{'='*60}")
+    print(f"Stage: {trials} trials × {epochs} epochs")
     print(f"Search space: {list(space.keys())}")
+    print(f"{'='*60}")
 
-    for trial_idx in range(trials):
+    for trial_idx in range(start, trials):
         trial = study.ask()
         cfg = suggest_and_apply(trial, base_cfg, space)
 
@@ -170,8 +162,86 @@ def run_hpo(trials: int = 20, epochs: int = 10, base_config: str = "/data/config
         results.append(trial_result)
         with open(output_dir / "results.json", "w") as f:
             json.dump(results, f, indent=2)
+        data_volume.commit()
+    return results
 
-    best = study.best_trial
+
+def build_narrow_space(best_params: dict) -> dict:
+    narrow = {}
+    for k, spec in HPO_SEARCH_SPACE.items():
+        if spec["type"] != "float":
+            narrow[k] = spec
+            continue
+        best_val = best_params.get(k, spec.get("low", 0))
+        span = (spec["high"] - spec["low"]) * 0.2
+        low = max(spec["low"], best_val - span)
+        high = min(spec["high"], best_val + span)
+        narrow[k] = {**spec, "low": low, "high": high}
+    return narrow
+
+
+def load_results(output_dir: Path) -> list:
+    results_file = output_dir / "results.json"
+    if results_file.exists():
+        with open(results_file) as f:
+            return json.load(f)
+    return []
+
+
+def save_best_config(best_params: dict, output_dir: Path, epochs: int = 100):
+    import yaml
+    cfg = {}
+    section_map = {
+        "lr0": "training", "lrf": "training", "optimizer": "training",
+        "momentum": "training", "weight_decay": "training",
+        "mosaic": "augmentation", "mixup": "augmentation",
+        "copy_paste": "augmentation", "degrees": "augmentation",
+        "hsv_h": "augmentation",
+    }
+    for k, v in best_params.items():
+        section = section_map[k]
+        if section not in cfg:
+            cfg[section] = {}
+        cfg[section][k] = v
+    cfg["training"]["epochs"] = epochs
+    path = output_dir / "best_config.yaml"
+    with open(path, "w") as f:
+        yaml.dump(cfg, f, default_flow_style=False, sort_keys=False)
+    print(f"Best config saved to {path}")
+
+
+def run_hpo(trials: int = 20, epochs: int = 10, stage: int = 1,
+            base_config: str = "/data/configs/training.yaml"):
+    import optuna
+    from optuna.pruners import MedianPruner
+
+    output_dir = Path("/data/experiments/hpo")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    base_cfg = load_config(base_config)
+
+    if stage == 1:
+        pruner = MedianPruner(n_startup_trials=3, n_warmup_steps=2)
+        study = optuna.create_study(direction="maximize", pruner=pruner, study_name="road_sense_hpo")
+        _ = run_stage(study, base_cfg, HPO_SEARCH_SPACE, trials, epochs, output_dir)
+        best = study.best_trial
+    elif stage == 2:
+        results = load_results(output_dir)
+        if not results:
+            print("No Stage 1 results found. Run Stage 1 first.")
+            return
+        best_params = max((r for r in results if r["value"] is not None),
+                          key=lambda r: r["value"], default=None)
+        if not best_params:
+            print("No successful trials from Stage 1.")
+            return
+        best_params = best_params["params"]
+        print(f"Narrowing space around best Stage 1 params: {best_params}")
+        narrow_space = build_narrow_space(best_params)
+        pruner = MedianPruner(n_startup_trials=2, n_warmup_steps=2)
+        study = optuna.create_study(direction="maximize", pruner=pruner, study_name="road_sense_hpo")
+        _ = run_stage(study, base_cfg, narrow_space, trials, epochs, output_dir)
+        best = study.best_trial
+
     print("\n" + "=" * 60)
     print("HPO COMPLETE")
     print("=" * 60)
@@ -181,34 +251,16 @@ def run_hpo(trials: int = 20, epochs: int = 10, base_config: str = "/data/config
     for k, v in best.params.items():
         print(f"  {k}: {v}")
 
-    import yaml
-    best_cfg = {}
-    section_map = {
-        "lr0": "training", "lrf": "training", "optimizer": "training",
-        "momentum": "training", "weight_decay": "training",
-        "mosaic": "augmentation", "mixup": "augmentation",
-        "copy_paste": "augmentation", "degrees": "augmentation",
-        "hsv_h": "augmentation",
-    }
-    for k, v in best.params.items():
-        section = section_map[k]
-        if section not in best_cfg:
-            best_cfg[section] = {}
-        best_cfg[section][k] = v
-    best_cfg["training"]["epochs"] = 100
-    with open(output_dir / "best_config.yaml", "w") as f:
-        yaml.dump(best_cfg, f, default_flow_style=False, sort_keys=False)
-
+    save_best_config(best.params, output_dir)
     summary = {"best_trial": best.number, "best_value": best.value,
-               "best_params": best.params, "n_trials": trials, "n_epochs": epochs}
+               "best_params": best.params, "n_trials": trials, "n_epochs": epochs,
+               "stage": stage}
     with open(output_dir / "summary.json", "w") as f:
         json.dump(summary, f, indent=2)
-
-    print("\nResults saved to /data/experiments/hpo/")
     data_volume.commit()
 
 
 @app.local_entrypoint()
-def main(trials: int = 20, epochs: int = 10):
-    print(f"Running HPO on Modal with {trials} trials, {epochs} epochs each")
-    run_hpo.remote(trials=trials, epochs=epochs)
+def main(trials: int = 20, epochs: int = 10, stage: int = 1):
+    print(f"Running HPO Stage {stage} on Modal — {trials} trials, {epochs} epochs each")
+    run_hpo.remote(trials=trials, epochs=epochs, stage=stage)
