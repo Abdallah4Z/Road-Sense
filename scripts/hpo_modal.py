@@ -113,7 +113,7 @@ def build_train_args(cfg: dict, epochs: int) -> dict:
     a = cfg["augmentation"]
     r = cfg.get("regularization", {})
     return {
-        "data": d.get("yaml_path", "/data/data/data/processed/kitti/data.yaml"),
+        "data": d.get("yaml_path", "/data/data/processed/kitti/data.yaml"),
         "imgsz": d.get("imgsz", 640),
         "batch": d.get("batch_size", 16),
         "epochs": epochs,
@@ -129,7 +129,7 @@ def build_train_args(cfg: dict, epochs: int) -> dict:
         "box": r.get("box", 7.5), "cls": r.get("cls", 1.0), "dfl": r.get("dfl", 1.5),
         "device": "0", "workers": 4,
         "exist_ok": True, "verbose": False,
-        "project": "/data/data/runs/hpo",
+        "project": "/tmp/hpo",  # noqa: S108
         "name": f"trial_{int(time.time())}",
     }
 
@@ -139,7 +139,8 @@ def run_trial(cfg: dict, epochs: int) -> float:
     model = YOLO(cfg["model"]["name"] + ".pt")
     args = build_train_args(cfg, epochs)
     model.train(**args)
-    metrics = model.val()
+    data_yaml = args["data"]
+    metrics = model.val(data=data_yaml)
     return float(metrics.box.map)
 
 
@@ -240,15 +241,14 @@ def run_hpo(trials: int = 20, epochs: int = 10, stage: int = 1,
     output_dir = Path("/data/experiments/hpo")
     output_dir.mkdir(parents=True, exist_ok=True)
     base_cfg = load_config(base_config)
-    kitti_yaml = "/data/data/data/processed/kitti/data.yaml"
-    fixed_yaml = fix_data_yaml(kitti_yaml, "/data/data/data/processed/kitti")
+    kitti_yaml = "/data/data/processed/kitti/data.yaml"
+    fixed_yaml = fix_data_yaml(kitti_yaml, "/data/data/processed/kitti")
     base_cfg["data"]["yaml_path"] = fixed_yaml
 
     if stage == 1:
         pruner = MedianPruner(n_startup_trials=3, n_warmup_steps=2)
         study = optuna.create_study(direction="maximize", pruner=pruner, study_name="road_sense_hpo")
         _ = run_stage(study, base_cfg, HPO_SEARCH_SPACE, trials, epochs, output_dir)
-        best = study.best_trial
     elif stage == 2:
         results = load_results(output_dir)
         if not results:
@@ -265,8 +265,14 @@ def run_hpo(trials: int = 20, epochs: int = 10, stage: int = 1,
         pruner = MedianPruner(n_startup_trials=2, n_warmup_steps=2)
         study = optuna.create_study(direction="maximize", pruner=pruner, study_name="road_sense_hpo")
         _ = run_stage(study, base_cfg, narrow_space, trials, epochs, output_dir)
-        best = study.best_trial
 
+    completed = [t for t in study.trials if t.state.name == "COMPLETE"]
+    if not completed:
+        print("\nNo trials completed successfully. Check the logs above for errors.")
+        data_volume.commit()
+        return
+
+    best = study.best_trial
     print("\n" + "=" * 60)
     print("HPO COMPLETE")
     print("=" * 60)
