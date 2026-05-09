@@ -146,23 +146,30 @@ def run_trial(cfg: dict, epochs: int) -> float:
 def run_stage(study, base_cfg: dict, space: dict, trials: int, epochs: int, output_dir: Path):
     results = load_results(output_dir)
     start = len(results)
-    print(f"\n{'='*60}")
-    print(f"Stage: {trials} trials × {epochs} epochs")
-    print(f"Search space: {list(space.keys())}")
-    print(f"{'='*60}")
+    print(f"\n{'='*60}", flush=True)
+    print(f"Stage: {trials} trials × {epochs} epochs", flush=True)
+    print(f"Search space: {list(space.keys())}", flush=True)
+    print(f"{'='*60}", flush=True)
 
     for trial_idx in range(start, trials):
         trial = study.ask()
         cfg = suggest_and_apply(trial, base_cfg, space)
+        print(f"\n--- Starting trial {trial_idx + 1}/{trials} ---", flush=True)
 
+        map50_95 = None
         try:
             map50_95 = run_trial(cfg, epochs)
-            study.tell(trial, map50_95)
-            print(f"Trial {trial_idx + 1}/{trials} — mAP@50:95={map50_95:.4f}")
+            try:
+                study.tell(trial, map50_95)
+            except Exception as tell_err:
+                print(f"  study.tell failed: {tell_err}", flush=True)
+            print(f"✓ Trial {trial_idx + 1}/{trials} — mAP@50:95={map50_95:.4f}", flush=True)
         except Exception as e:
-            print(f"Trial {trial_idx + 1} failed: {e}")
-            study.tell(trial, float("-inf"))
-            map50_95 = None
+            print(f"✗ Trial {trial_idx + 1} failed: {e}", flush=True)
+            try:
+                study.tell(trial, float("-inf"))
+            except Exception:  # noqa: S110
+                pass
 
         trial_result = {
             "trial": trial.number, "params": trial.params,
