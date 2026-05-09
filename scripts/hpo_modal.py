@@ -71,18 +71,14 @@ def fix_data_yaml(original_path: str, data_root: str) -> str:
     import yaml
     with open(original_path) as f:
         cfg = yaml.safe_load(f) or {}
-    fixed = {
-        "path": data_root,
-        "train": "images/train",
-        "val": "images/val",
-        "nc": cfg.get("nc", 3),
-        "names": cfg.get("names", ["Vehicle", "Pedestrian", "Cyclist"]),
-    }
-    fixed_path = f"{original_path}.fixed"
-    with open(fixed_path, "w") as f:
-        yaml.dump(fixed, f, default_flow_style=False, sort_keys=False)
-    print(f"Fixed data.yaml: path={data_root}, train={fixed['train']}, val={fixed['val']}")
-    return fixed_path
+    cfg["path"] = data_root
+    cfg["train"] = "images/train"
+    cfg["val"] = "images/val"
+    cfg.pop("test", None)
+    with open(original_path, "w") as f:
+        yaml.dump(cfg, f, default_flow_style=False, sort_keys=False)
+    print(f"Fixed data.yaml: path={data_root}, train=images/train, val=images/val")
+    return original_path
 
 
 def suggest_and_apply(trial, base_cfg: dict, space: dict) -> dict:
