@@ -144,14 +144,15 @@ def run_stage(study, base_cfg: dict, space: dict, trials: int, epochs: int, outp
     results = load_results(output_dir)
     start = len(results)
     print(f"\n{'='*60}", flush=True)
-    print(f"Stage: {trials} trials × {epochs} epochs", flush=True)
+    total = start + trials
+    print(f"Stage: {trials} trials × {epochs} epochs (trials {start + 1}-{total})", flush=True)
     print(f"Search space: {list(space.keys())}", flush=True)
     print(f"{'='*60}", flush=True)
 
-    for trial_idx in range(start, trials):
+    for trial_idx in range(start, total):
         trial = study.ask()
         cfg = suggest_and_apply(trial, base_cfg, space)
-        print(f"\n--- Starting trial {trial_idx + 1}/{trials} ---", flush=True)
+        print(f"\n--- Starting trial {trial_idx + 1}/{total} ---", flush=True)
 
         map50_95 = None
         try:
@@ -160,9 +161,9 @@ def run_stage(study, base_cfg: dict, space: dict, trials: int, epochs: int, outp
                 study.tell(trial, map50_95)
             except Exception as tell_err:
                 print(f"  study.tell failed: {tell_err}", flush=True)
-            print(f"✓ Trial {trial_idx + 1}/{trials} — mAP@50:95={map50_95:.4f}", flush=True)
+            print(f"✓ Trial {trial_idx + 1}/{total} — mAP@50:95={map50_95:.4f}", flush=True)
         except Exception as e:
-            print(f"✗ Trial {trial_idx + 1} failed: {e}", flush=True)
+            print(f"✗ Trial {trial_idx + 1}/{total} failed: {e}", flush=True)
             try:
                 study.tell(trial, float("-inf"))
             except Exception:  # noqa: S110
