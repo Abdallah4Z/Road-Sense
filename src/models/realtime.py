@@ -138,6 +138,7 @@ Examples:
 def setup_logging(verbose: bool = False, quiet: bool = False) -> None:
     """Configure logging."""
     from src.utils import setup_logging as _setup_logging
+
     _setup_logging(verbose=verbose)
     if quiet:
         logging.getLogger().setLevel(logging.WARNING)
@@ -232,9 +233,7 @@ def draw_detections(
             label = class_name
 
         # Calculate text size
-        (label_w, label_h), baseline = cv2.getTextSize(
-            label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1
-        )
+        (label_w, label_h), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1)
 
         # Draw label background
         cv2.rectangle(
@@ -283,9 +282,7 @@ def main() -> int:
         model = load_model(args.weights, device=args.device)
 
         # Get class names
-        class_names = getattr(
-            model, "names", {0: "Vehicle", 1: "Pedestrian", 2: "Cyclist"}
-        )
+        class_names = getattr(model, "names", {0: "Vehicle", 1: "Pedestrian", 2: "Cyclist"})
         logger.info(f"Model classes: {class_names}")
 
         # Parse source

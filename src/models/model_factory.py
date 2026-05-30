@@ -50,9 +50,7 @@ def load_model(
     """
     if model_name not in AVAILABLE_MODELS:
         available = ", ".join(AVAILABLE_MODELS.keys())
-        raise ValueError(
-            f"Unknown model '{model_name}'. Available: {available}"
-        )
+        raise ValueError(f"Unknown model '{model_name}'. Available: {available}")
 
     if weights_path is not None:
         weights_path = str(Path(weights_path))

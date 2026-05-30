@@ -32,6 +32,7 @@ def test_performance_monitor_empty():
 
 def test_performance_monitor_log(caplog):
     import logging
+
     pm = PerformanceMonitor()
     pm.record_request()
     pm.record_latency(10.0)
@@ -44,8 +45,19 @@ def test_parse_args():
     import sys
 
     from src.models.api_server import parse_args
-    test_args = ["prog", "--port", "9000", "--host", "127.0.0.1",
-                 "--weights", "/fake.pt", "--device", "cpu", "--verbose"]
+
+    test_args = [
+        "prog",
+        "--port",
+        "9000",
+        "--host",
+        "127.0.0.1",
+        "--weights",
+        "/fake.pt",
+        "--device",
+        "cpu",
+        "--verbose",
+    ]
     with patch.object(sys, "argv", test_args):
         args = parse_args()
     assert args.port == 9000
@@ -59,6 +71,7 @@ def test_parse_args_defaults():
     import sys
 
     from src.models.api_server import parse_args
+
     with patch.object(sys, "argv", ["prog"]):
         args = parse_args()
     assert args.port == 8000
@@ -71,6 +84,7 @@ def test_encode_image_to_base64():
     import numpy as np
 
     from src.models.api_server import encode_image_to_base64
+
     img = np.zeros((10, 10, 3), dtype=np.uint8)
     b64 = encode_image_to_base64(img)
     assert b64.startswith("data:image/jpeg;base64,")
@@ -82,6 +96,7 @@ def test_extract_raw_detections_empty():
 
     class NoBoxes:
         pass
+
     result = NoBoxes()
     dets = extract_raw_detections(result, {0: "test"})
     assert dets == []

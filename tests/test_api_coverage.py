@@ -6,6 +6,7 @@ import pytest
 
 class _CpuTensor:
     """Mock torch tensor that wraps numpy and supports .cpu().numpy() chain."""
+
     def __init__(self, arr):
         self._arr = arr
 
@@ -19,6 +20,7 @@ class _CpuTensor:
 class TestLoadModel:
     def test_load_model_not_found(self):
         from src.models.api_server import load_model
+
         with pytest.raises(FileNotFoundError, match="not found"):
             load_model("/nonexistent/path.pt")
 
@@ -39,6 +41,7 @@ class TestLoadModel:
 class TestResolveWeightsPath:
     def test_explicit_weights_exists(self, tmp_path):
         from src.models.api_server import resolve_weights_path
+
         w = tmp_path / "model.pt"
         w.write_text("dummy")
         result = resolve_weights_path(str(w), str(tmp_path))
@@ -46,11 +49,13 @@ class TestResolveWeightsPath:
 
     def test_weights_not_found_raises(self, tmp_path):
         from src.models.api_server import resolve_weights_path
+
         with pytest.raises(FileNotFoundError):
             resolve_weights_path("nonexistent.pt", str(tmp_path))
 
     def test_weights_dir_not_found_raises(self, tmp_path):
         from src.models.api_server import resolve_weights_path
+
         missing_dir = tmp_path / "nonexistent"
         with pytest.raises(FileNotFoundError, match="not found"):
             resolve_weights_path(None, str(missing_dir))
@@ -108,12 +113,14 @@ class TestExtractRawDetections:
 class TestDrawBoxesFromDetections:
     def test_empty_detections(self):
         from src.models.api_server import draw_boxes_from_detections
+
         img = np.zeros((100, 100, 3), dtype=np.uint8)
         result = draw_boxes_from_detections(img, [])
         assert np.array_equal(img, result)
 
     def test_with_detection(self):
         from src.models.api_server import draw_boxes_from_detections
+
         img = np.zeros((200, 200, 3), dtype=np.uint8)
         detections = [{"bbox": [10, 20, 100, 120], "class_name": "Vehicle", "confidence": 0.9, "track_id": 1}]
         result = draw_boxes_from_detections(img, detections)
@@ -122,6 +129,7 @@ class TestDrawBoxesFromDetections:
 
     def test_with_track_id(self):
         from src.models.api_server import draw_boxes_from_detections
+
         img = np.ones((100, 100, 3), dtype=np.uint8) * 255
         detections = [{"bbox": [10, 10, 50, 50], "class_name": "Pedestrian", "confidence": 0.8, "track_id": 5}]
         result = draw_boxes_from_detections(img, detections)
@@ -131,6 +139,7 @@ class TestDrawBoxesFromDetections:
 class TestDrawBoxes:
     def test_empty_boxes(self):
         from src.models.api_server import draw_boxes
+
         img = np.zeros((100, 100, 3), dtype=np.uint8)
 
         class NoBoxes:
@@ -141,6 +150,7 @@ class TestDrawBoxes:
 
     def test_with_boxes(self):
         from src.models.api_server import draw_boxes
+
         img = np.zeros((200, 200, 3), dtype=np.uint8)
 
         class MockBoxes:
@@ -162,6 +172,7 @@ class TestDrawBoxes:
 class TestEncodeImage:
     def test_encode(self):
         from src.models.api_server import encode_image_to_base64
+
         img = np.zeros((10, 10, 3), dtype=np.uint8)
         encoded = encode_image_to_base64(img)
         assert encoded.startswith("data:image/jpeg;base64,")

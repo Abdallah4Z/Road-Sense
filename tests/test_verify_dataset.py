@@ -17,6 +17,7 @@ def test_verify_dataset_files_match(tmp_path, capsys):
     _touch(lbl_dir / "000001.txt")
 
     from src.data.verify_dataset import verify_dataset
+
     verify_dataset(str(tmp_path))
     captured = capsys.readouterr()
     assert "Image and label counts match" in captured.out
@@ -31,6 +32,7 @@ def test_verify_dataset_mismatch(tmp_path, capsys):
     _touch(lbl_dir / "000001.txt")
 
     from src.data.verify_dataset import verify_dataset
+
     verify_dataset(str(tmp_path))
     captured = capsys.readouterr()
     assert "do not match" in captured.out
@@ -38,5 +40,6 @@ def test_verify_dataset_mismatch(tmp_path, capsys):
 
 def test_verify_dataset_missing_folder(tmp_path):
     from src.data.verify_dataset import verify_dataset
+
     with pytest.raises(FileNotFoundError):
         verify_dataset(str(tmp_path / "nonexistent"))

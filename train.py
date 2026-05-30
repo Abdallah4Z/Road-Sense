@@ -106,10 +106,7 @@ Examples:
         "--log-file",
         type=str,
         default=None,
-        help=(
-            "Path to combined console log file. "
-            "Default: logs/train_<timestamp>.log"
-        ),
+        help=("Path to combined console log file. Default: logs/train_<timestamp>.log"),
     )
 
     # Model overrides
@@ -217,6 +214,7 @@ Examples:
 def setup_logging(verbose: bool = True, quiet: bool = False) -> None:
     """Configure logging based on CLI arguments."""
     from src.utils import setup_logging as _setup_logging
+
     _setup_logging(verbose=verbose)
     if quiet:
         logging.getLogger().setLevel(logging.WARNING)

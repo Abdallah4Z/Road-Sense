@@ -32,6 +32,7 @@ data_volume = modal.Volume.from_name("road-sense-data", create_if_missing=True)
 
 def fix_data_yaml(original_path: str, data_root: str) -> str:
     import yaml
+
     with open(original_path) as f:
         cfg = yaml.safe_load(f) or {}
     cfg["path"] = data_root

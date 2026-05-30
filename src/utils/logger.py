@@ -49,9 +49,7 @@ def setup_logger(
         global _LOG_FILE
         _LOG_FILE = Path(log_file)
         _LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        file_handler = RotatingFileHandler(
-            str(_LOG_FILE), maxBytes=max_bytes, backupCount=backup_count
-        )
+        file_handler = RotatingFileHandler(str(_LOG_FILE), maxBytes=max_bytes, backupCount=backup_count)
         file_handler.setFormatter(JSONFormatter(datefmt="%Y-%m-%dT%H:%M:%S"))
         logger.addHandler(file_handler)
 

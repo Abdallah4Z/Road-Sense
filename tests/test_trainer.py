@@ -121,9 +121,7 @@ def sample_config():
 @pytest.fixture
 def temp_config_file(sample_config):
     """Create a temporary YAML config file."""
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(sample_config, f)
         return Path(f.name)
 
@@ -134,7 +132,6 @@ def temp_config_file(sample_config):
 
 
 class TestModelFactory:
-
     def test_available_models_structure(self):
         """Test that AVAILABLE_MODELS has expected structure."""
         assert len(AVAILABLE_MODELS) > 0
@@ -191,7 +188,6 @@ class TestModelFactory:
 
 
 class TestConfigLoading:
-
     def test_load_config_valid(self, temp_config_file, sample_config):
         """Test loading a valid config file."""
         config = load_config(temp_config_file)
@@ -212,7 +208,6 @@ class TestConfigLoading:
 
 
 class TestYOLOTrainer:
-
     def test_trainer_initialization(self, sample_config):
         """Test trainer initializes correctly."""
         trainer = YOLOTrainer(config=sample_config)
@@ -295,7 +290,6 @@ class TestYOLOTrainer:
 
 
 class TestTrainingLogger:
-
     def test_logger_on_train_start(self, sample_config):
         """Test logger handles train start event."""
         logger = TrainingLogger()
@@ -324,7 +318,6 @@ class TestTrainingLogger:
 
 
 class TestModelCheckpoint:
-
     def test_checkpoint_initialization(self, tmp_path):
         """Test checkpoint callback initializes correctly."""
         ckpt = ModelCheckpoint(save_dir=tmp_path)
@@ -384,10 +377,10 @@ class TestModelCheckpoint:
 
 
 class TestCLI:
-
     def test_train_module_import(self):
         """Test that train module can be imported."""
         from train import apply_overrides, parse_args, setup_logging
+
         assert parse_args is not None
         assert setup_logging is not None
         assert apply_overrides is not None
@@ -398,6 +391,7 @@ class TestCLI:
         import sys
 
         from train import parse_args
+
         original_argv = sys.argv
         sys.argv = ["train.py"]
 
@@ -420,10 +414,14 @@ class TestCLI:
         original_argv = sys.argv
         sys.argv = [
             "train.py",
-            "--model", "yolo11s",
-            "--epochs", "50",
-            "--batch-size", "8",
-            "--device", "0",
+            "--model",
+            "yolo11s",
+            "--epochs",
+            "50",
+            "--batch-size",
+            "8",
+            "--device",
+            "0",
         ]
 
         try:

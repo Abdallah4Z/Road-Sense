@@ -71,9 +71,7 @@ def validate_kitti_quality(
     clean_samples = [
         img.name
         for img in images
-        if img.name not in corrupted_images
-        and img.name not in missing_labels
-        and img.name not in invalid_labels
+        if img.name not in corrupted_images and img.name not in missing_labels and img.name not in invalid_labels
     ]
     with open("clean_index.txt", "w") as f:
         for img in clean_samples:

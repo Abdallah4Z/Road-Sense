@@ -80,9 +80,7 @@ class TestGetYoloClassNames:
 class TestFilterClasses:
     def test_basic_filter(self):
         bboxes = [[0.5, 0.5, 0.4, 0.4], [0.3, 0.3, 0.2, 0.2]]
-        result_boxes, result_labels = filter_classes(
-            ["Car", "DontCare"], [0, 1], bboxes, {"Car": 0}, ["DontCare"]
-        )
+        result_boxes, result_labels = filter_classes(["Car", "DontCare"], [0, 1], bboxes, {"Car": 0}, ["DontCare"])
         assert len(result_boxes) == 1
         assert result_labels == [0]
 
@@ -93,9 +91,7 @@ class TestFilterClasses:
         assert len(result_boxes) == 0
 
     def test_unmapped_class_skipped(self):
-        result_boxes, result_labels = filter_classes(
-            ["Unknown"], [0], [[0.5, 0.5, 0.4, 0.4]], {"Car": 0}, []
-        )
+        result_boxes, result_labels = filter_classes(["Unknown"], [0], [[0.5, 0.5, 0.4, 0.4]], {"Car": 0}, [])
         assert len(result_boxes) == 0
 
 

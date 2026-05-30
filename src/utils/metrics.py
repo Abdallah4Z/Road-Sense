@@ -3,9 +3,7 @@ from pathlib import Path
 import torch
 
 
-def yolo_txt_to_boxes_labels(
-    label_path: Path, width: int, height: int
-) -> tuple[torch.Tensor, torch.Tensor]:
+def yolo_txt_to_boxes_labels(label_path: Path, width: int, height: int) -> tuple[torch.Tensor, torch.Tensor]:
     if not label_path.exists():
         return torch.empty((0, 4), dtype=torch.float32), torch.empty((0,), dtype=torch.int64)
 

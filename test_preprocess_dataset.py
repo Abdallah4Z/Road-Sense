@@ -1,23 +1,21 @@
 import os
-import pytest
-import numpy as np
-import cv2
 
+import cv2
+import numpy as np
+import pytest
 from preprocess_dataset import (
-    resize_images,
     convert_labels,
     filter_classes,
-    split_dataset,
+    resize_images,
     save_preprocessed_dataset,
+    split_dataset,
 )
-
-
 
 # Fixtures
 
+
 @pytest.fixture
 def sample_image(tmp_path):
-    
     img = np.random.randint(0, 255, (375, 1242, 3), dtype=np.uint8)
     path = tmp_path / "test_image.jpg"
     cv2.imwrite(str(path), img)
@@ -26,7 +24,6 @@ def sample_image(tmp_path):
 
 @pytest.fixture
 def sample_kitti_lines():
-    
     return [
         "Car 0.0 0 -1.57 100 150 300 250 1.5 1.8 4.0 1.0 1.5 10.0 0.0",
         "Pedestrian 0.0 0 -1.57 400 100 480 300 1.7 0.6 0.8 2.0 1.5 8.0 0.1",
@@ -38,10 +35,9 @@ def sample_kitti_lines():
 
 # 1. resize_images  (3 tests)
 
-class TestResizeImages:
 
+class TestResizeImages:
     def test_output_shape_matches_target(self, sample_image):
-        
         path, _ = sample_image
         result = resize_images([path], target_size=(640, 640))
         assert result[0].shape == (640, 640, 3)
@@ -68,11 +64,11 @@ class TestResizeImages:
 
 # 2. convert_labels  (4 tests)
 
-class TestConvertLabels:
 
+class TestConvertLabels:
     def test_known_classes_are_converted(self, sample_kitti_lines):
         result = convert_labels(sample_kitti_lines, img_w=1242, img_h=375)
-        assert len(result) == 3   # DontCare and Van filtered out
+        assert len(result) == 3  # DontCare and Van filtered out
 
     def test_output_format_is_correct(self, sample_kitti_lines):
         result = convert_labels(sample_kitti_lines, img_w=1242, img_h=375)
@@ -84,8 +80,8 @@ class TestConvertLabels:
             cx, cy, w, h = map(float, parts[1:])
             assert 0.0 <= cx <= 1.0
             assert 0.0 <= cy <= 1.0
-            assert 0.0 <  w  <= 1.0
-            assert 0.0 <  h  <= 1.0
+            assert 0.0 < w <= 1.0
+            assert 0.0 < h <= 1.0
 
     def test_unknown_classes_are_skipped(self):
         lines = [
@@ -103,11 +99,11 @@ class TestConvertLabels:
 
 # 3. filter_classes  (3 tests)
 
-class TestFilterClasses:
 
+class TestFilterClasses:
     def test_filters_correct_classes(self, sample_kitti_lines):
         result = filter_classes(sample_kitti_lines, ["Car", "Pedestrian"])
-        types = [l.split()[0] for l in result]
+        types = [line.split()[0] for line in result]
         assert set(types) == {"Car", "Pedestrian"}
 
     def test_empty_allowed_returns_empty(self, sample_kitti_lines):
@@ -121,13 +117,13 @@ class TestFilterClasses:
 
 # 4. split_dataset  (3 tests)
 
-class TestSplitDataset:
 
+class TestSplitDataset:
     def test_split_ratio_is_correct(self):
         files = [f"img_{i}.jpg" for i in range(100)]
         train, val = split_dataset(files, val_ratio=0.2, seed=42)
         assert len(train) + len(val) == 100
-        assert abs(len(val) - 20) <= 1   # allow ±1 due to rounding
+        assert abs(len(val) - 20) <= 1  # allow ±1 due to rounding
 
     def test_no_overlap_between_splits(self):
         files = [f"img_{i}.jpg" for i in range(50)]
@@ -145,11 +141,11 @@ class TestSplitDataset:
 
 # 5. save_preprocessed_dataset  (3 tests)
 
-class TestSavePreprocessedDataset:
 
+class TestSavePreprocessedDataset:
     def _make_data(self, n=3):
-        images    = [np.zeros((640, 640, 3), dtype=np.uint8) for _ in range(n)]
-        labels    = [["0 0.5 0.5 0.3 0.4"] for _ in range(n)]
+        images = [np.zeros((640, 640, 3), dtype=np.uint8) for _ in range(n)]
+        labels = [["0 0.5 0.5 0.3 0.4"] for _ in range(n)]
         filenames = [f"sample_{i}" for i in range(n)]
         return images, labels, filenames
 
@@ -167,9 +163,7 @@ class TestSavePreprocessedDataset:
 
     def test_val_split_creates_correct_dirs(self, tmp_path):
         images, labels, filenames = self._make_data(2)
-        result = save_preprocessed_dataset(
-            images, labels, filenames, str(tmp_path), split="val"
-        )
+        result = save_preprocessed_dataset(images, labels, filenames, str(tmp_path), split="val")
         assert "val" in result["images_dir"]
         assert os.path.isdir(result["images_dir"])
         assert os.path.isdir(result["labels_dir"])

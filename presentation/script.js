@@ -133,7 +133,7 @@ async function loadDocumentIntoContainer(docItem, container) {
     container.insertBefore(s, container.firstChild);
     return s;
   })();
-  
+
   // Fade out effect
   container.style.opacity = '0.5';
   container.style.transition = 'opacity 0.2s ease';
@@ -144,13 +144,13 @@ async function loadDocumentIntoContainer(docItem, container) {
     const res = await fetch(docItem.path);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const md = await res.text();
-    
+
     setTimeout(() => {
       container.innerHTML = markdownToHtml(md);
       container.style.opacity = '1';
       statusEl.style.display = "none";
     }, 150); // Small delay for smooth transition
-    
+
   } catch (e) {
     container.style.opacity = '1';
     statusEl.textContent = "Could not load document. Ensure you're running a local server.";
@@ -222,10 +222,10 @@ function renderVisuals(filter = "all") {
   const grid = document.getElementById("visualGrid");
   if (!grid) return;
   grid.innerHTML = "";
-  
+
   // Fade out slightly
   grid.style.opacity = 0;
-  
+
   setTimeout(() => {
     const items = filter === "all" ? visuals : visuals.filter(v => v.category === filter);
     items.forEach((item, i) => {
@@ -247,12 +247,12 @@ function openImageViewer(src, title) {
   const img = document.getElementById("imageViewerImage");
   const cap = document.getElementById("imageViewerTitle");
   if (!viewer || !img || !cap) return;
-  
-  img.src = src; 
-  img.alt = title; 
+
+  img.src = src;
+  img.alt = title;
   cap.textContent = title;
-  
-  viewer.classList.add("open"); 
+
+  viewer.classList.add("open");
   viewer.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden"; // Prevent background scroll
 }
@@ -260,8 +260,8 @@ function openImageViewer(src, title) {
 function closeImageViewer() {
   const viewer = document.getElementById("imageViewer");
   if (!viewer) return;
-  
-  viewer.classList.remove("open"); 
+
+  viewer.classList.remove("open");
   viewer.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
 }
@@ -306,16 +306,16 @@ function renderScoreCards() {
 function drawMetricChart() {
   const canvas = document.getElementById("metricChart");
   if (!canvas) return;
-  
+
   // Adjust canvas resolution for high DPI displays
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   canvas.width = rect.width * dpr;
   canvas.height = rect.height * dpr;
-  
+
   const ctx = canvas.getContext("2d");
   ctx.scale(dpr, dpr);
-  
+
   const w = rect.width, h = rect.height;
   const margin = { top: 30, right: 20, bottom: 40, left: 40 };
   const chartW = w - margin.left - margin.right;
@@ -371,7 +371,7 @@ function drawMetricChart() {
   // Legend
   ctx.textAlign = "left";
   ctx.font = "600 12px Manrope";
-  
+
   ctx.fillStyle = accent;
   ctx.beginPath(); ctx.roundRect(w - 140, 14, 12, 12, 2); ctx.fill();
   ctx.fillStyle = textColor;
@@ -415,18 +415,18 @@ function initMenu() {
 /* ─── Scroll Reveal ─── */
 function initReveal() {
   const observer = new IntersectionObserver(
-    entries => { 
-      entries.forEach(e => { 
-        if (e.isIntersecting) { 
+    entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
           e.target.style.animationPlayState = 'running';
-          e.target.classList.add("in"); 
-          observer.unobserve(e.target); 
-        } 
-      }); 
+          e.target.classList.add("in");
+          observer.unobserve(e.target);
+        }
+      });
     },
     { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
   );
-  
+
   document.querySelectorAll(".reveal:not(.in)").forEach((item, i) => {
     // Give natural cascade delay if not explicitly set
     if (!item.style.animationDelay) {
@@ -460,7 +460,7 @@ function init() {
   } else {
     // Home Page
     renderScoreCards();
-    
+
     // Ensure chart renders correctly on load and resize
     const chartCard = document.querySelector('.chart-card');
     if (chartCard) {

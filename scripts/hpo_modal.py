@@ -63,12 +63,14 @@ HPO_SEARCH_SPACE = {
 
 def load_config(path: str) -> dict:
     import yaml
+
     with open(path) as f:
         return yaml.safe_load(f)
 
 
 def fix_data_yaml(original_path: str, data_root: str) -> str:
     import yaml
+
     with open(original_path) as f:
         cfg = yaml.safe_load(f) or {}
     cfg["path"] = data_root
@@ -83,12 +85,18 @@ def fix_data_yaml(original_path: str, data_root: str) -> str:
 
 def suggest_and_apply(trial, base_cfg: dict, space: dict) -> dict:
     import copy
+
     cfg = copy.deepcopy(base_cfg)
     section_map = {
-        "lr0": "training", "lrf": "training", "optimizer": "training",
-        "momentum": "training", "weight_decay": "training",
-        "mosaic": "augmentation", "mixup": "augmentation",
-        "copy_paste": "augmentation", "degrees": "augmentation",
+        "lr0": "training",
+        "lrf": "training",
+        "optimizer": "training",
+        "momentum": "training",
+        "weight_decay": "training",
+        "mosaic": "augmentation",
+        "mixup": "augmentation",
+        "copy_paste": "augmentation",
+        "degrees": "augmentation",
         "hsv_h": "augmentation",
     }
     for name, spec in space.items():
@@ -114,17 +122,29 @@ def build_train_args(cfg: dict, epochs: int) -> dict:
         "batch": d.get("batch_size", 16),
         "epochs": epochs,
         "optimizer": t.get("optimizer", "auto"),
-        "lr0": t["lr0"], "lrf": t["lrf"],
-        "momentum": t["momentum"], "weight_decay": t["weight_decay"],
+        "lr0": t["lr0"],
+        "lrf": t["lrf"],
+        "momentum": t["momentum"],
+        "weight_decay": t["weight_decay"],
         "warmup_epochs": t.get("warmup_epochs", 3.0),
-        "hsv_h": a["hsv_h"], "hsv_s": a.get("hsv_s", 0.7), "hsv_v": a.get("hsv_v", 0.4),
-        "degrees": a["degrees"], "translate": a.get("translate", 0.1),
-        "scale": a.get("scale", 0.5), "flipud": a.get("flipud", 0.0),
+        "hsv_h": a["hsv_h"],
+        "hsv_s": a.get("hsv_s", 0.7),
+        "hsv_v": a.get("hsv_v", 0.4),
+        "degrees": a["degrees"],
+        "translate": a.get("translate", 0.1),
+        "scale": a.get("scale", 0.5),
+        "flipud": a.get("flipud", 0.0),
         "fliplr": a.get("fliplr", 0.5),
-        "mosaic": a["mosaic"], "mixup": a["mixup"], "copy_paste": a["copy_paste"],
-        "box": r.get("box", 7.5), "cls": r.get("cls", 1.0), "dfl": r.get("dfl", 1.5),
-        "device": "0", "workers": 4,
-        "exist_ok": True, "verbose": False,
+        "mosaic": a["mosaic"],
+        "mixup": a["mixup"],
+        "copy_paste": a["copy_paste"],
+        "box": r.get("box", 7.5),
+        "cls": r.get("cls", 1.0),
+        "dfl": r.get("dfl", 1.5),
+        "device": "0",
+        "workers": 4,
+        "exist_ok": True,
+        "verbose": False,
         "project": "/tmp/hpo",  # noqa: S108
         "name": f"trial_{int(time.time())}",
     }
@@ -132,6 +152,7 @@ def build_train_args(cfg: dict, epochs: int) -> dict:
 
 def run_trial(cfg: dict, epochs: int) -> float:
     from ultralytics import YOLO
+
     model = YOLO(cfg["model"]["name"] + ".pt")
     args = build_train_args(cfg, epochs)
     model.train(**args)
@@ -143,11 +164,11 @@ def run_trial(cfg: dict, epochs: int) -> float:
 def run_stage(study, base_cfg: dict, space: dict, trials: int, epochs: int, output_dir: Path):
     results = load_results(output_dir)
     start = len(results)
-    print(f"\n{'='*60}", flush=True)
+    print(f"\n{'=' * 60}", flush=True)
     total = start + trials
     print(f"Stage: {trials} trials × {epochs} epochs (trials {start + 1}-{total})", flush=True)
     print(f"Search space: {list(space.keys())}", flush=True)
-    print(f"{'='*60}", flush=True)
+    print(f"{'=' * 60}", flush=True)
 
     for trial_idx in range(start, total):
         trial = study.ask()
@@ -170,8 +191,10 @@ def run_stage(study, base_cfg: dict, space: dict, trials: int, epochs: int, outp
                 pass
 
         trial_result = {
-            "trial": trial.number, "params": trial.params,
-            "value": map50_95, "state": "COMPLETE" if map50_95 is not None else "FAIL",
+            "trial": trial.number,
+            "params": trial.params,
+            "value": map50_95,
+            "state": "COMPLETE" if map50_95 is not None else "FAIL",
         }
         results.append(trial_result)
         with open(output_dir / "results.json", "w") as f:
@@ -204,12 +227,18 @@ def load_results(output_dir: Path) -> list:
 
 def save_best_config(best_params: dict, output_dir: Path, epochs: int = 100):
     import yaml
+
     cfg = {}
     section_map = {
-        "lr0": "training", "lrf": "training", "optimizer": "training",
-        "momentum": "training", "weight_decay": "training",
-        "mosaic": "augmentation", "mixup": "augmentation",
-        "copy_paste": "augmentation", "degrees": "augmentation",
+        "lr0": "training",
+        "lrf": "training",
+        "optimizer": "training",
+        "momentum": "training",
+        "weight_decay": "training",
+        "mosaic": "augmentation",
+        "mixup": "augmentation",
+        "copy_paste": "augmentation",
+        "degrees": "augmentation",
         "hsv_h": "augmentation",
     }
     for k, v in best_params.items():
@@ -230,8 +259,7 @@ def save_best_config(best_params: dict, output_dir: Path, epochs: int = 100):
     timeout=3600 * 4,
     volumes={"/data": data_volume},
 )
-def run_hpo(trials: int = 20, epochs: int = 10, stage: int = 1,
-            base_config: str = "/data/data/configs/training.yaml"):
+def run_hpo(trials: int = 20, epochs: int = 10, stage: int = 1, base_config: str = "/data/data/configs/training.yaml"):
     import optuna
     from optuna.pruners import MedianPruner
 
@@ -251,8 +279,7 @@ def run_hpo(trials: int = 20, epochs: int = 10, stage: int = 1,
         if not results:
             print("No Stage 1 results found. Run Stage 1 first.")
             return
-        best_params = max((r for r in results if r["value"] is not None),
-                          key=lambda r: r["value"], default=None)
+        best_params = max((r for r in results if r["value"] is not None), key=lambda r: r["value"], default=None)
         if not best_params:
             print("No successful trials from Stage 1.")
             return
@@ -280,9 +307,14 @@ def run_hpo(trials: int = 20, epochs: int = 10, stage: int = 1,
         print(f"  {k}: {v}")
 
     save_best_config(best.params, output_dir)
-    summary = {"best_trial": best.number, "best_value": best.value,
-               "best_params": best.params, "n_trials": trials, "n_epochs": epochs,
-               "stage": stage}
+    summary = {
+        "best_trial": best.number,
+        "best_value": best.value,
+        "best_params": best.params,
+        "n_trials": trials,
+        "n_epochs": epochs,
+        "stage": stage,
+    }
     with open(output_dir / "summary.json", "w") as f:
         json.dump(summary, f, indent=2)
     data_volume.commit()

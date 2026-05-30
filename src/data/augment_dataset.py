@@ -24,21 +24,17 @@ def augment_dataset(
     output_label_dir: str,
     num_images: int | None = None,
     augmentations_per_image: int = 1,
-    preset: str = 'medium',
+    preset: str = "medium",
     min_visibility: float = 0.3,
-    image_size: tuple | None = None
+    image_size: tuple | None = None,
 ) -> dict[str, int]:
-
     # Create output directories
     ensure_dir(Path(output_img_dir))
     ensure_dir(Path(output_label_dir))
 
     # Get list of images
     img_dir_path = Path(img_dir)
-    all_images = sorted(
-        [f for f in img_dir_path.iterdir()
-         if f.suffix.lower() in ['.png', '.jpg', '.jpeg']]
-    )
+    all_images = sorted([f for f in img_dir_path.iterdir() if f.suffix.lower() in [".png", ".jpg", ".jpeg"]])
 
     # Limit number of images if specified
     if num_images:
@@ -46,19 +42,11 @@ def augment_dataset(
 
     # Get augmentation pipeline
     transform = get_custom_augmentation(
-        preset=preset,
-        image_size=image_size,
-        with_bbox=True,
-        min_visibility=min_visibility
+        preset=preset, image_size=image_size, with_bbox=True, min_visibility=min_visibility
     )
 
     # Statistics
-    stats = {
-        'total': len(all_images),
-        'successful': 0,
-        'skipped': 0,
-        'failed': 0
-    }
+    stats = {"total": len(all_images), "successful": 0, "skipped": 0, "failed": 0}
 
     print(f"Starting augmentation of {len(all_images)} images...")
     print(f"Augmentations per image: {augmentations_per_image}")
@@ -79,28 +67,22 @@ def augment_dataset(
             img_height, img_width = image.shape[:2]
 
             # Load labels
-            bboxes, class_labels, class_names = load_kitti_labels(
-                str(label_path), img_width, img_height
-            )
+            bboxes, class_labels, class_names = load_kitti_labels(str(label_path), img_width, img_height)
 
             # Skip if no valid labels
             if not bboxes:
-                stats['skipped'] += 1
+                stats["skipped"] += 1
                 continue
 
             # Generate augmented versions
             for aug_idx in range(augmentations_per_image):
                 try:
                     # Apply augmentation
-                    augmented = transform(
-                        image=image,
-                        bboxes=bboxes,
-                        class_labels=class_labels
-                    )
+                    augmented = transform(image=image, bboxes=bboxes, class_labels=class_labels)
 
-                    aug_img = augmented['image']
-                    aug_boxes = augmented['bboxes']
-                    aug_labels = augmented['class_labels']
+                    aug_img = augmented["image"]
+                    aug_boxes = augmented["bboxes"]
+                    aug_labels = augmented["class_labels"]
 
                     # Skip if all boxes were removed
                     if not aug_boxes:
@@ -109,10 +91,7 @@ def augment_dataset(
                     # Save augmented image
                     out_name = f"aug_{aug_idx}_{img_path.name}"
                     out_img_path = Path(output_img_dir) / out_name
-                    cv2.imwrite(
-                        str(out_img_path),
-                        cv2.cvtColor(aug_img, cv2.COLOR_RGB2BGR)
-                    )
+                    cv2.imwrite(str(out_img_path), cv2.cvtColor(aug_img, cv2.COLOR_RGB2BGR))
 
                     # Save augmented labels
                     out_label_name = f"aug_{aug_idx}_{base_name}.txt"
@@ -123,75 +102,42 @@ def augment_dataset(
                     print(f"\nWarning: Failed augmentation {aug_idx} for {img_path.name}: {e}")
                     continue
 
-            stats['successful'] += 1
+            stats["successful"] += 1
 
         except Exception as e:
             print(f"\nError processing {img_path.name}: {e}")
-            stats['failed'] += 1
+            stats["failed"] += 1
 
     return stats
 
 
 def main() -> None:
     """Main function for command-line usage."""
-    parser = argparse.ArgumentParser(
-        description='Augment KITTI dataset images with bounding boxes'
-    )
+    parser = argparse.ArgumentParser(description="Augment KITTI dataset images with bounding boxes")
 
+    parser.add_argument("--img-dir", type=str, required=True, help="Input image directory")
+    parser.add_argument("--label-dir", type=str, required=True, help="Input label directory")
+    parser.add_argument("--output-img-dir", type=str, required=True, help="Output directory for augmented images")
+    parser.add_argument("--output-label-dir", type=str, required=True, help="Output directory for augmented labels")
+    parser.add_argument("--num-images", type=int, default=None, help="Number of images to process (default: all)")
     parser.add_argument(
-        '--img-dir',
+        "--augmentations-per-image", type=int, default=3, help="Number of augmented versions per image (default: 3)"
+    )
+    parser.add_argument(
+        "--preset",
         type=str,
-        required=True,
-        help='Input image directory'
+        choices=["light", "medium", "heavy"],
+        default="medium",
+        help="Augmentation intensity preset (default: medium)",
     )
     parser.add_argument(
-        '--label-dir',
-        type=str,
-        required=True,
-        help='Input label directory'
+        "--min-visibility", type=float, default=0.3, help="Minimum bbox visibility after augmentation (default: 0.3)"
     )
     parser.add_argument(
-        '--output-img-dir',
-        type=str,
-        required=True,
-        help='Output directory for augmented images'
-    )
-    parser.add_argument(
-        '--output-label-dir',
-        type=str,
-        required=True,
-        help='Output directory for augmented labels'
-    )
-    parser.add_argument(
-        '--num-images',
-        type=int,
-        default=None,
-        help='Number of images to process (default: all)'
-    )
-    parser.add_argument(
-        '--augmentations-per-image',
-        type=int,
-        default=3,
-        help='Number of augmented versions per image (default: 3)'
-    )
-    parser.add_argument(
-        '--preset',
-        type=str,
-        choices=['light', 'medium', 'heavy'],
-        default='medium',
-        help='Augmentation intensity preset (default: medium)'
-    )
-    parser.add_argument(
-        '--min-visibility',
-        type=float,
-        default=0.3,
-        help='Minimum bbox visibility after augmentation (default: 0.3)'
-    )
-    parser.add_argument(
-        '--image-size',
+        "--image-size",
         type=str,
         default=None,
-        help='Target image size as "height,width" (default: None, keeps original)'
+        help='Target image size as "height,width" (default: None, keeps original)',
     )
 
     args = parser.parse_args()
@@ -200,7 +146,7 @@ def main() -> None:
     image_size = None
     if args.image_size:
         try:
-            h, w = map(int, args.image_size.split(','))
+            h, w = map(int, args.image_size.split(","))
             image_size = (h, w)
         except ValueError:
             print("Error: Invalid image size format. Use 'height,width'")
@@ -216,7 +162,7 @@ def main() -> None:
         augmentations_per_image=args.augmentations_per_image,
         preset=args.preset,
         min_visibility=args.min_visibility,
-        image_size=image_size
+        image_size=image_size,
     )
 
     # Print summary
@@ -227,7 +173,7 @@ def main() -> None:
     print(f"Successfully augmented: {stats['successful']}")
     print(f"Skipped (no labels): {stats['skipped']}")
     print(f"Failed: {stats['failed']}")
-    print(f"Success rate: {(stats['successful']/stats['total']*100):.1f}%")
+    print(f"Success rate: {(stats['successful'] / stats['total'] * 100):.1f}%")
     print("=" * 50)
 
 

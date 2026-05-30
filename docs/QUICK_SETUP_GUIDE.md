@@ -1,6 +1,6 @@
 # Quick Setup Guide
-**Project:** Road-Sense - Real-Time Object Detection for Autonomous Vehicles  
-**Purpose:** Get started in 5 minutes  
+**Project:** Road-Sense - Real-Time Object Detection for Autonomous Vehicles
+**Purpose:** Get started in 5 minutes
 **Last Updated:** March 2026
 
 ---

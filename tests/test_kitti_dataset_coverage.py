@@ -1,4 +1,3 @@
-
 import cv2
 import numpy as np
 import pytest
@@ -21,13 +20,12 @@ class TestKITTIDataset:
         img_dir.mkdir(parents=True)
         lbl_dir.mkdir()
         _make_test_image(img_dir / "000000.png")
-        _make_label(lbl_dir / "000000.txt", [
-            "Car 0.0 0 0.0 10 20 50 80 0 0 0 0 0 0 0 0"
-        ])
+        _make_label(lbl_dir / "000000.txt", ["Car 0.0 0 0.0 10 20 50 80 0 0 0 0 0 0 0 0"])
         return img_dir, lbl_dir
 
     def test_init(self, kitti_data):
         from src.data.kitti_dataset import KITTIDataset
+
         img_dir, lbl_dir = kitti_data
         ds = KITTIDataset(str(img_dir), str(lbl_dir))
         assert len(ds) == 1
@@ -38,12 +36,14 @@ class TestKITTIDataset:
 
     def test_init_no_transform(self, kitti_data):
         from src.data.kitti_dataset import KITTIDataset
+
         img_dir, lbl_dir = kitti_data
         ds = KITTIDataset(str(img_dir), str(lbl_dir), transform=None)
         assert len(ds) == 1
 
     def test_image_path_returned(self, kitti_data):
         from src.data.kitti_dataset import KITTIDataset
+
         img_dir, lbl_dir = kitti_data
         ds = KITTIDataset(str(img_dir), str(lbl_dir), return_image_path=True)
         sample = ds[0]
@@ -51,6 +51,7 @@ class TestKITTIDataset:
 
     def test_empty_dataset(self, tmp_path):
         from src.data.kitti_dataset import KITTIDataset
+
         img_dir = tmp_path / "empty_img"
         lbl_dir = tmp_path / "empty_lbl"
         img_dir.mkdir(parents=True)
@@ -60,6 +61,7 @@ class TestKITTIDataset:
 
     def test_no_labels_file(self, tmp_path):
         from src.data.kitti_dataset import KITTIDataset
+
         img_dir = tmp_path / "img"
         img_dir.mkdir(parents=True)
         _make_test_image(img_dir / "000000.png")
@@ -73,6 +75,7 @@ class TestKITTIDataset:
         import torch
 
         from src.data.kitti_dataset import KITTIDatasetTorch
+
         img_dir, lbl_dir = kitti_data
         ds = KITTIDatasetTorch(str(img_dir), str(lbl_dir), normalize=False)
         assert len(ds) == 1
@@ -84,6 +87,7 @@ class TestKITTIDataset:
         import torch
 
         from src.data.kitti_dataset import KITTIDatasetTorch
+
         img_dir, lbl_dir = kitti_data
         ds = KITTIDatasetTorch(str(img_dir), str(lbl_dir), normalize=True)
         sample = ds[0]
@@ -94,11 +98,18 @@ class TestKITTIDataset:
         import torch
 
         from src.data.kitti_dataset import collate_fn
+
         batch = [
-            {"image": torch.zeros(3, 100, 100), "bboxes": torch.tensor([[0.5, 0.5, 0.4, 0.4]]),
-             "labels": torch.tensor([0])},
-            {"image": torch.zeros(3, 100, 100), "bboxes": torch.zeros((0, 4)),
-             "labels": torch.zeros((0,), dtype=torch.long)},
+            {
+                "image": torch.zeros(3, 100, 100),
+                "bboxes": torch.tensor([[0.5, 0.5, 0.4, 0.4]]),
+                "labels": torch.tensor([0]),
+            },
+            {
+                "image": torch.zeros(3, 100, 100),
+                "bboxes": torch.zeros((0, 4)),
+                "labels": torch.zeros((0,), dtype=torch.long),
+            },
         ]
         result = collate_fn(batch)
         assert "images" in result
@@ -107,6 +118,7 @@ class TestKITTIDataset:
 
     def test_create_data_loaders(self, kitti_data):
         from src.data.kitti_dataset import create_data_loaders
+
         img_dir, lbl_dir = kitti_data
         train_loader, val_loader = create_data_loaders(
             train_img_dir=str(img_dir),

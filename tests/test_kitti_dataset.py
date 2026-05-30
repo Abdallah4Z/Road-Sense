@@ -1,7 +1,6 @@
-
-
 def test_kitti_classes():
     from src.data.kitti_utils import CLASS_ID_TO_NAME, KITTI_CLASSES
+
     assert len(KITTI_CLASSES) > 0
     assert "Car" in KITTI_CLASSES
     assert "Pedestrian" in KITTI_CLASSES
@@ -10,6 +9,7 @@ def test_kitti_classes():
 
 def test_kitti_utils_print_stats(capsys):
     from src.data.kitti_utils import print_dataset_statistics
+
     stats = {
         "total_images": 10,
         "total_objects": 20,
@@ -28,6 +28,7 @@ def test_kitti_utils_print_stats(capsys):
 
 def test_yolo_to_pixel():
     from src.data.kitti_utils import yolo_to_pixel
+
     bboxes = [[0.5, 0.5, 0.4, 0.4]]
     pixel = yolo_to_pixel(bboxes, 1000, 800)
     assert len(pixel) == 1
@@ -42,6 +43,7 @@ def test_yolo_to_pixel():
 
 def test_yolo_label_io(tmp_path):
     from src.data.kitti_utils import load_yolo_labels, save_yolo_labels
+
     bboxes = [[0.5, 0.5, 0.4, 0.4]]
     labels = [0]
     lbl_file = tmp_path / "test.txt"
@@ -54,6 +56,7 @@ def test_yolo_label_io(tmp_path):
 
 def test_load_yolo_labels_missing():
     from src.data.kitti_utils import load_yolo_labels
+
     boxes, labels = load_yolo_labels("/nonexistent/file.txt")
     assert len(boxes) == 0
     assert len(labels) == 0
@@ -61,6 +64,7 @@ def test_load_yolo_labels_missing():
 
 def test_save_empty_labels(tmp_path):
     from src.data.kitti_utils import load_yolo_labels, save_yolo_labels
+
     lbl_file = tmp_path / "empty.txt"
     save_yolo_labels(str(lbl_file), [], [])
     boxes, labels = load_yolo_labels(str(lbl_file))

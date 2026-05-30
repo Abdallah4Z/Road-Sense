@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 class TestMain:
     def test_main_parse_only(self):
         from src.models.api_server import main
-        test_args = ["prog", "--port", "9000", "--host", "127.0.0.1",
-                     "--weights", "/fake.pt", "--device", "cpu"]
+
+        test_args = ["prog", "--port", "9000", "--host", "127.0.0.1", "--weights", "/fake.pt", "--device", "cpu"]
         with patch.object(sys, "argv", test_args):
             with patch("src.models.api_server.uvicorn.run") as mock_uvicorn:
                 result = main()
@@ -15,8 +15,8 @@ class TestMain:
 
     def test_main_failure(self):
         from src.models.api_server import main
-        test_args = ["prog", "--port", "9000", "--host", "127.0.0.1",
-                     "--weights", "/fake.pt"]
+
+        test_args = ["prog", "--port", "9000", "--host", "127.0.0.1", "--weights", "/fake.pt"]
         with patch.object(sys, "argv", test_args):
             with patch("src.models.api_server.uvicorn.run", side_effect=RuntimeError("fail")):
                 result = main()
@@ -28,6 +28,7 @@ class TestDrawBoxesFromDetections:
         import numpy as np
 
         from src.models.api_server import draw_boxes_from_detections
+
         img = np.zeros((50, 50, 3), dtype=np.uint8)
         result = draw_boxes_from_detections(img, [])
         assert np.array_equal(img, result)
@@ -38,6 +39,7 @@ class TestCleanupTrackers:
         import time
 
         from src.models.api_server import cleanup_trackers
+
         stale = MagicMock()
         stale.last_update = time.monotonic() - 300
         fresh = MagicMock()
@@ -51,6 +53,7 @@ class TestCleanupTrackers:
         import time
 
         from src.models.api_server import cleanup_trackers
+
         t = MagicMock()
         t.last_update = time.monotonic()
         trackers = {"t1": t}
@@ -63,6 +66,7 @@ class TestTrackState:
         import numpy as np
 
         from src.models.api_server import TrackState
+
         ts = TrackState(track_id=1, class_name="V", bbox=np.array([0, 0, 1, 1]), confidence=0.9)
         assert ts.missed == 0
         assert ts.hits == 1

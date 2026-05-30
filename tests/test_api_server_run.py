@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 class TestMain:
     def test_main_starts_uvicorn(self):
         from src.models.api_server import main
+
         test_args = ["prog", "--port", "9000", "--weights", "/nonexistent.pt"]
         with patch.object(sys, "argv", test_args):
             with patch("src.models.api_server.uvicorn.run"):
@@ -13,10 +14,10 @@ class TestMain:
 
     def test_main_uvicorn_exception(self):
         from src.models.api_server import main
+
         test_args = ["prog", "--port", "9000", "--weights", "/nonexistent.pt"]
         with patch.object(sys, "argv", test_args):
-            with patch("src.models.api_server.uvicorn.run",
-                       side_effect=RuntimeError("fail")):
+            with patch("src.models.api_server.uvicorn.run", side_effect=RuntimeError("fail")):
                 result = main()
                 assert result == 1
 
@@ -26,11 +27,13 @@ class TestLoadModel:
         import pytest
 
         from src.models.api_server import load_model
+
         with pytest.raises(FileNotFoundError):
             load_model("/nonexistent.pt")
 
     def test_load_with_device(self, tmp_path):
         from src.models.api_server import load_model
+
         w = tmp_path / "m.pt"
         w.write_text("x")
         with patch("src.models.api_server.YOLO") as mock_yolo:
@@ -44,6 +47,7 @@ class TestLoadModel:
 class TestSessionTrackerEdge:
     def test_multiple_tracks(self):
         from src.models.api_server import SessionTracker
+
         t = SessionTracker()
         dets = [
             {"bbox": [0, 0, 10, 10], "confidence": 0.9, "class_name": "Vehicle"},
@@ -55,6 +59,7 @@ class TestSessionTrackerEdge:
 
     def test_confidence_decay(self):
         from src.models.api_server import SessionTracker
+
         t = SessionTracker(max_missed=5)
         dets = [{"bbox": [0, 0, 10, 10], "confidence": 0.9, "class_name": "Vehicle"}]
         t.update(dets)

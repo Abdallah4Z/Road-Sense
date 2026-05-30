@@ -159,6 +159,7 @@ Examples:
 def setup_logging(verbose: bool = False, quiet: bool = False) -> None:
     """Configure logging."""
     from src.utils import setup_logging as _setup_logging
+
     _setup_logging(verbose=verbose)
     if quiet:
         logging.getLogger().setLevel(logging.WARNING)
@@ -252,9 +253,7 @@ def predict(
         predict_args["name"] = output_dir.name
 
     logger.info(f"Running inference on: {source}")
-    logger.info(
-        f"Parameters: conf={conf}, iou={iou}, imgsz={imgsz}, device={device or 'auto'}"
-    )
+    logger.info(f"Parameters: conf={conf}, iou={iou}, imgsz={imgsz}, device={device or 'auto'}")
 
     results = model.predict(**predict_args)
 
@@ -291,9 +290,7 @@ def main() -> int:
         # Summary
         if results:
             total_detections = sum(len(r.boxes) for r in results if hasattr(r, "boxes"))
-            logger.info(
-                f"Total detections across all frames/images: {total_detections}"
-            )
+            logger.info(f"Total detections across all frames/images: {total_detections}")
 
         return 0
 

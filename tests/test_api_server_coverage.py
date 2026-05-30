@@ -5,27 +5,32 @@ import pytest
 class TestSessionTracker:
     def test_tracker_init(self):
         from src.models.api_server import SessionTracker
+
         tracker = SessionTracker(iou_threshold=0.3, max_missed=5)
         assert tracker.iou_threshold == 0.3
         assert tracker.max_missed == 5
 
     def test_iou_calculation(self):
         from src.models.api_server import SessionTracker
+
         iou = SessionTracker._iou(np.array([0, 0, 10, 10]), np.array([0, 0, 10, 10]))
         assert iou == pytest.approx(1.0)
 
     def test_iou_no_overlap(self):
         from src.models.api_server import SessionTracker
+
         iou = SessionTracker._iou(np.array([0, 0, 10, 10]), np.array([20, 20, 30, 30]))
         assert iou == 0.0
 
     def test_iou_zero_area(self):
         from src.models.api_server import SessionTracker
+
         iou = SessionTracker._iou(np.array([0, 0, 0, 0]), np.array([0, 0, 10, 10]))
         assert iou == 0.0
 
     def test_tracker_update_new_detection(self):
         from src.models.api_server import SessionTracker
+
         tracker = SessionTracker()
         dets = [{"bbox": [0, 0, 10, 10], "confidence": 0.9, "class_name": "Vehicle"}]
         result = tracker.update(dets)
@@ -34,6 +39,7 @@ class TestSessionTracker:
 
     def test_tracker_update_same_detection(self):
         from src.models.api_server import SessionTracker
+
         tracker = SessionTracker(iou_threshold=0.5)
         dets = [{"bbox": [0, 0, 10, 10], "confidence": 0.9, "class_name": "Vehicle"}]
         result1 = tracker.update(dets)
@@ -42,6 +48,7 @@ class TestSessionTracker:
 
     def test_tracker_missed_frames(self):
         from src.models.api_server import SessionTracker
+
         tracker = SessionTracker(max_missed=2)
         dets = [{"bbox": [0, 0, 10, 10], "confidence": 0.9, "class_name": "Vehicle"}]
         tracker.update(dets)
@@ -51,6 +58,7 @@ class TestSessionTracker:
 
     def test_tracker_max_missed_drops(self):
         from src.models.api_server import SessionTracker
+
         tracker = SessionTracker(max_missed=2)
         dets = [{"bbox": [0, 0, 10, 10], "confidence": 0.9, "class_name": "Vehicle"}]
         tracker.update(dets)
@@ -62,6 +70,7 @@ class TestSessionTracker:
 
     def test_tracker_different_class(self):
         from src.models.api_server import SessionTracker
+
         tracker = SessionTracker()
         tracker.update([{"bbox": [0, 0, 10, 10], "confidence": 0.9, "class_name": "Vehicle"}])
         result = tracker.update([{"bbox": [0, 0, 10, 10], "confidence": 0.9, "class_name": "Pedestrian"}])
@@ -71,12 +80,11 @@ class TestSessionTracker:
 class TestDetectEndpointValidation:
     def test_detect_response_model(self):
         from src.models.api_server import Detection, DetectionResponse
+
         det = Detection(class_name="Vehicle", confidence=0.9, bbox=[0, 0, 10, 10], track_id=1)
         assert det.class_name == "Vehicle"
         resp = DetectionResponse(
-            success=True, detections=[det],
-            annotated_image=None, inference_time_ms=15.0,
-            message="OK"
+            success=True, detections=[det], annotated_image=None, inference_time_ms=15.0, message="OK"
         )
         assert resp.success is True
         assert len(resp.detections) == 1
@@ -87,6 +95,7 @@ class TestTrackState:
         import numpy as np
 
         from src.models.api_server import TrackState
+
         t = TrackState(track_id=1, class_name="Vehicle", bbox=np.array([0, 0, 10, 10]), confidence=0.9)
         assert t.missed == 0
         assert t.hits == 1
@@ -95,7 +104,9 @@ class TestTrackState:
         import numpy as np
 
         from src.models.api_server import TrackState
-        t = TrackState(track_id=2, class_name="Pedestrian", bbox=np.array([5, 5, 15, 15]),
-                       confidence=0.8, missed=3, hits=5)
+
+        t = TrackState(
+            track_id=2, class_name="Pedestrian", bbox=np.array([5, 5, 15, 15]), confidence=0.8, missed=3, hits=5
+        )
         assert t.missed == 3
         assert t.hits == 5

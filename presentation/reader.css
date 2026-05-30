@@ -42,7 +42,7 @@ body {
   grid-template-columns: 240px 1fr;
   gap: 40px;
   /* Crucial: Ensure the grid items can stretch the full height */
-  align-items: start; 
+  align-items: start;
 }
 
 /* 4. Navigation & Buttons */
@@ -82,7 +82,7 @@ h1 {
 .toc-card {
   /* position: sticky ensures it stays in view while scrolling */
   position: sticky;
-  top: 40px; 
+  top: 40px;
   height: fit-content;
   max-height: calc(100vh - 80px); /* Prevents sidebar from being taller than screen */
   overflow-y: auto;
@@ -191,7 +191,7 @@ h1 {
     grid-template-columns: 1fr;
     gap: 30px;
   }
-  
+
   .toc-card {
     position: static; /* Sidebar stops being sticky on small screens */
     border-bottom: 1px solid var(--line);

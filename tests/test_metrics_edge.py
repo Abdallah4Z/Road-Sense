@@ -4,6 +4,7 @@ import torch
 class TestPrecisionRecallEdge:
     def test_different_classes_skipped(self):
         from src.utils.metrics import compute_precision_recall
+
         pb = torch.tensor([[0.0, 0.0, 10.0, 10.0]])
         pl = torch.tensor([0])
         ps = torch.tensor([0.9])
@@ -17,6 +18,7 @@ class TestPrecisionRecallEdge:
 
     def test_no_boxes_predicted(self):
         from src.utils.metrics import compute_precision_recall
+
         empty = torch.empty((0, 4))
         el = torch.empty((0,), dtype=torch.int64)
         es = torch.empty((0,), dtype=torch.float32)
@@ -31,6 +33,7 @@ class TestPrecisionRecallEdge:
 
     def test_partial_match(self):
         from src.utils.metrics import compute_precision_recall
+
         pb = torch.tensor([[0.0, 0.0, 15.0, 15.0], [20.0, 20.0, 30.0, 30.0]])
         pl = torch.tensor([0, 0])
         ps = torch.tensor([0.9, 0.8])
@@ -49,6 +52,7 @@ class TestGetLogger:
         import logging
 
         from src.utils.logger import get_logger
+
         logger = logging.getLogger("test_existing")
         logger.handlers.clear()
         logger.addHandler(logging.StreamHandler())

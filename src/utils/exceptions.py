@@ -52,10 +52,16 @@ def retry(
                         raise
                     logger.warning(
                         "%s failed (attempt %d/%d): %s. Retrying in %.1fs...",
-                        func.__name__, attempt, max_attempts, e, current_delay,
+                        func.__name__,
+                        attempt,
+                        max_attempts,
+                        e,
+                        current_delay,
                     )
                     time.sleep(current_delay)
                     current_delay *= backoff
             return None
+
         return wrapper
+
     return decorator

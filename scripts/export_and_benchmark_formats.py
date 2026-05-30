@@ -75,20 +75,14 @@ class FormatResult:
     error_msg: str = ""
 
 
-def yolo_txt_to_boxes_labels(
-    label_path: Path, width: int, height: int
-) -> tuple[torch.Tensor, torch.Tensor]:
+def yolo_txt_to_boxes_labels(label_path: Path, width: int, height: int) -> tuple[torch.Tensor, torch.Tensor]:
     """Parse YOLO format label file to boxes and labels tensors."""
     if not label_path.exists():
-        return torch.empty((0, 4), dtype=torch.float32), torch.empty(
-            (0,), dtype=torch.int64
-        )
+        return torch.empty((0, 4), dtype=torch.float32), torch.empty((0,), dtype=torch.int64)
 
     content = label_path.read_text(encoding="utf-8").strip()
     if not content:
-        return torch.empty((0, 4), dtype=torch.float32), torch.empty(
-            (0,), dtype=torch.int64
-        )
+        return torch.empty((0, 4), dtype=torch.float32), torch.empty((0,), dtype=torch.int64)
 
     boxes = []
     labels = []
@@ -105,13 +99,9 @@ def yolo_txt_to_boxes_labels(
         labels.append(int(cls))
 
     if not boxes:
-        return torch.empty((0, 4), dtype=torch.float32), torch.empty(
-            (0,), dtype=torch.int64
-        )
+        return torch.empty((0, 4), dtype=torch.float32), torch.empty((0,), dtype=torch.int64)
 
-    return torch.tensor(boxes, dtype=torch.float32), torch.tensor(
-        labels, dtype=torch.int64
-    )
+    return torch.tensor(boxes, dtype=torch.float32), torch.tensor(labels, dtype=torch.int64)
 
 
 def load_validation_set(
@@ -209,8 +199,12 @@ def _copy_pytorch_model() -> FormatResult:
 
 def _export_onnx(model: YOLO, device: str, deps: dict) -> FormatResult:
     onnx_path = model.export(
-        format="onnx", dynamic=True, half=True, simplify=deps["onnxsim"],
-        imgsz=IMAGE_SIZE, device=device,
+        format="onnx",
+        dynamic=True,
+        half=True,
+        simplify=deps["onnxsim"],
+        imgsz=IMAGE_SIZE,
+        device=device,
     )
     onnx_path = Path(onnx_path)
     if onnx_path.parent != EXPORT_DIR:
@@ -224,7 +218,11 @@ def _export_onnx(model: YOLO, device: str, deps: dict) -> FormatResult:
 
 def _export_tensorrt(model: YOLO, device: str) -> FormatResult:
     engine_path = model.export(
-        format="engine", half=True, imgsz=IMAGE_SIZE, device=device, workspace=4,
+        format="engine",
+        half=True,
+        imgsz=IMAGE_SIZE,
+        device=device,
+        workspace=4,
     )
     engine_path = Path(engine_path)
     if engine_path.parent != EXPORT_DIR:
@@ -238,7 +236,9 @@ def _export_tensorrt(model: YOLO, device: str) -> FormatResult:
 
 def _export_torchscript(model: YOLO, device: str) -> FormatResult:
     torchscript_path = model.export(
-        format="torchscript", imgsz=IMAGE_SIZE, device=device,
+        format="torchscript",
+        imgsz=IMAGE_SIZE,
+        device=device,
     )
     torchscript_path = Path(torchscript_path)
     if torchscript_path.parent != EXPORT_DIR:
@@ -288,9 +288,7 @@ def export_models(model: YOLO, device: str) -> list[FormatResult]:
     return results
 
 
-def load_model_for_format(
-    format_name: str, model_path: Path, device: str
-) -> YOLO | None:
+def load_model_for_format(format_name: str, model_path: Path, device: str) -> YOLO | None:
     """Load model in specified format for inference."""
     if format_name == "pytorch":
         return YOLO(str(model_path))
@@ -325,9 +323,7 @@ def benchmark_format(
         raise
 
     # Setup metric
-    metric = MeanAveragePrecision(
-        box_format="xyxy", iou_type="bbox", iou_thresholds=[0.5]
-    )
+    metric = MeanAveragePrecision(box_format="xyxy", iou_type="bbox", iou_thresholds=[0.5])
     latencies = []
 
     # Warmup
@@ -347,9 +343,7 @@ def benchmark_format(
     # Benchmark
     print(f"  Running {BENCHMARK_REPEATS} benchmark iterations...")
     for rep in range(BENCHMARK_REPEATS):
-        for img_path in tqdm(
-            image_paths, desc=f"  Iter {rep + 1}/{BENCHMARK_REPEATS}", leave=False
-        ):
+        for img_path in tqdm(image_paths, desc=f"  Iter {rep + 1}/{BENCHMARK_REPEATS}", leave=False):
             start = time.perf_counter()
             results = model.predict(
                 source=str(img_path),
@@ -477,9 +471,7 @@ def create_visualizations(results: list[FormatResult], output_dir: Path, device:
 
     # 2. Speed comparison (FPS)
     plt.figure(figsize=(10, 6))
-    bars = plt.bar(
-        formats, fps_list, color=["#2ecc71", "#3498db", "#e74c3c", "#f39c12"]
-    )
+    bars = plt.bar(formats, fps_list, color=["#2ecc71", "#3498db", "#e74c3c", "#f39c12"])
     plt.ylabel("FPS")
     plt.title("Speed Comparison Across Formats")
     plt.ylim(0, max(fps_list) * 1.2)
@@ -539,9 +531,7 @@ def create_visualizations(results: list[FormatResult], output_dir: Path, device:
 
     # 5. Latency comparison
     plt.figure(figsize=(10, 6))
-    bars = plt.bar(
-        formats, latencies, color=["#2ecc71", "#3498db", "#e74c3c", "#f39c12"]
-    )
+    bars = plt.bar(formats, latencies, color=["#2ecc71", "#3498db", "#e74c3c", "#f39c12"])
     plt.ylabel("Latency (ms)")
     plt.title("Inference Latency Comparison")
     plt.ylim(0, max(latencies) * 1.2)
@@ -605,9 +595,7 @@ def create_sample_predictions(
                     conf = box.conf[0].item()
                     # Only show our 3 classes
                     if cls_id in [0, 1, 2]:
-                        cv2.rectangle(
-                            img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2
-                        )
+                        cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
                         label = f"{CUSTOM_CLASSES[cls_id]}:{conf:.2f}"
                         cv2.putText(
                             img,
@@ -625,9 +613,7 @@ def create_sample_predictions(
                 axes[row, col].set_ylabel(res.format_name.upper(), fontsize=12)
 
     plt.tight_layout()
-    plt.savefig(
-        output_dir / "sample_predictions_all_formats.png", dpi=150, bbox_inches="tight"
-    )
+    plt.savefig(output_dir / "sample_predictions_all_formats.png", dpi=150, bbox_inches="tight")
     plt.close()
     print("  ✓ Saved: sample_predictions_all_formats.png")
 
@@ -662,9 +648,7 @@ def save_results(
     # Sort by mAP50 (desc) then latency (asc)
     df_valid = df[df["Benchmark Success"]].copy()
     if not df_valid.empty:
-        df_valid = df_valid.sort_values(
-            ["mAP@50", "Latency (ms)"], ascending=[False, True]
-        )
+        df_valid = df_valid.sort_values(["mAP@50", "Latency (ms)"], ascending=[False, True])
         df = pd.concat([df_valid, df[~df["Benchmark Success"]]])  # noqa: E712
 
     # Save CSV

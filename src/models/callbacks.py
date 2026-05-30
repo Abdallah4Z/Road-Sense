@@ -139,10 +139,7 @@ class ModelCheckpoint:
                 self.best_metric_value = current_value
                 self._save_checkpoint("best.pt")
                 self.best_model_path = self.save_dir / "best.pt"
-                logger.info(
-                    f"New best model: {self.metric}={current_value:.4f} "
-                    f"(saved to best.pt)"
-                )
+                logger.info(f"New best model: {self.metric}={current_value:.4f} (saved to best.pt)")
 
     def _save_checkpoint(self, filename: str) -> None:
         """
@@ -177,11 +174,13 @@ class ModelCheckpoint:
         if self.save_dir.exists():
             for ckpt in self.save_dir.glob("*.pt"):
                 stat = ckpt.stat()
-                checkpoints.append({
-                    "name": ckpt.name,
-                    "size_mb": stat.st_size / (1024 * 1024),
-                    "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                })
+                checkpoints.append(
+                    {
+                        "name": ckpt.name,
+                        "size_mb": stat.st_size / (1024 * 1024),
+                        "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    }
+                )
 
         return {
             "save_dir": str(self.save_dir),

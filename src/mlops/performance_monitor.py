@@ -42,12 +42,14 @@ class PerformanceMonitor:
         if self.latencies:
             sorted_lats = sorted(self.latencies)
             n = len(sorted_lats)
-            stats.update({
-                "latency_ms_avg": round(sum(self.latencies) / n, 2),
-                "latency_ms_p50": round(sorted_lats[int(n * 0.50)], 2),
-                "latency_ms_p95": round(sorted_lats[int(n * 0.95)], 2),
-                "latency_ms_p99": round(sorted_lats[int(n * 0.99)], 2),
-            })
+            stats.update(
+                {
+                    "latency_ms_avg": round(sum(self.latencies) / n, 2),
+                    "latency_ms_p50": round(sorted_lats[int(n * 0.50)], 2),
+                    "latency_ms_p95": round(sorted_lats[int(n * 0.95)], 2),
+                    "latency_ms_p99": round(sorted_lats[int(n * 0.99)], 2),
+                }
+            )
 
         if torch.cuda.is_available():
             stats["gpu_memory_allocated_mb"] = round(torch.cuda.memory_allocated() / (1024 * 1024), 2)

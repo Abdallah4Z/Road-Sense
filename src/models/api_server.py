@@ -15,11 +15,13 @@ Endpoints:
 """
 
 import argparse
+import asyncio
 import base64
 import logging
 import sys
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -29,6 +31,7 @@ import numpy as np
 import uvicorn
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 from ultralytics import YOLO
 
@@ -62,6 +65,13 @@ class DetectionResponse(BaseModel):
     message: str
 
 
+class BatchDetectionResponse(BaseModel):
+    success: bool
+    results: list[DetectionResponse]
+    total_time_ms: float
+    message: str
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Inference API Server for Road-Sense")
     parser.add_argument(
@@ -80,10 +90,7 @@ def parse_args() -> argparse.Namespace:
         "--weights",
         type=str,
         default=None,
-        help=(
-            "Path to model weights. If omitted, the server auto-loads from "
-            "models/exports/ (prefers .pt)."
-        ),
+        help=("Path to model weights. If omitted, the server auto-loads from models/exports/ (prefers .pt)."),
     )
     parser.add_argument(
         "--weights-dir",
@@ -176,14 +183,12 @@ def resolve_weights_path(weights: str | None, weights_dir: str) -> Path:
             return exports_explicit
 
         raise FileNotFoundError(
-            "Model weights not found: "
-            f"{explicit} (also checked {rooted_explicit} and {exports_explicit})"
+            f"Model weights not found: {explicit} (also checked {rooted_explicit} and {exports_explicit})"
         )
 
     if not exports_dir.exists() or not exports_dir.is_dir():
         raise FileNotFoundError(
-            f"Weights directory not found: {exports_dir}. "
-            "Provide --weights explicitly or create models/exports/."
+            f"Weights directory not found: {exports_dir}. Provide --weights explicitly or create models/exports/."
         )
 
     preferred_names = [
@@ -202,9 +207,7 @@ def resolve_weights_path(weights: str | None, weights_dir: str) -> Path:
         if matches:
             return matches[0]
 
-    raise FileNotFoundError(
-        f"No model files found in {exports_dir}. Expected .pt, .onnx, or .torchscript files."
-    )
+    raise FileNotFoundError(f"No model files found in {exports_dir}. Expected .pt, .onnx, or .torchscript files.")
 
 
 @dataclass
@@ -309,7 +312,7 @@ class SessionTracker:
 
         output: list[dict[str, Any]] = []
         for track in self.tracks:
-            decayed_conf = max(0.05, track.confidence * (0.92 ** track.missed))
+            decayed_conf = max(0.05, track.confidence * (0.92**track.missed))
             output.append(
                 {
                     "track_id": track.track_id,
@@ -370,9 +373,7 @@ def draw_boxes_from_detections(
 
         cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness=line_thickness)
 
-        (label_w, label_h), baseline = cv2.getTextSize(
-            label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1
-        )
+        (label_w, label_h), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1)
         cv2.rectangle(
             img,
             (x1, y1 - label_h - baseline - 4),
@@ -397,11 +398,7 @@ def draw_boxes_from_detections(
 def cleanup_trackers(trackers: dict[str, "SessionTracker"], max_idle_seconds: float = 120.0) -> None:
     """Drop stale tracking sessions to keep memory bounded."""
     now = time.monotonic()
-    stale_keys = [
-        key
-        for key, tracker in trackers.items()
-        if now - tracker.last_update > max_idle_seconds
-    ]
+    stale_keys = [key for key, tracker in trackers.items() if now - tracker.last_update > max_idle_seconds]
     for key in stale_keys:
         del trackers[key]
 
@@ -435,9 +432,7 @@ def draw_boxes(
         cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness=line_thickness)
 
         # Label background
-        (label_w, label_h), baseline = cv2.getTextSize(
-            label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1
-        )
+        (label_w, label_h), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1)
         cv2.rectangle(
             img,
             (x1, y1 - label_h - baseline - 4),
@@ -477,6 +472,10 @@ trackers: dict[str, SessionTracker] = {}
 trackers_lock = threading.Lock()
 perf_monitor = PerformanceMonitor()
 
+# Inference concurrency
+inference_executor = ThreadPoolExecutor(max_workers=2)
+inference_lock = asyncio.Lock()
+
 
 # FastAPI app
 app = FastAPI(
@@ -493,8 +492,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Compress responses (especially base64 annotated images)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 try:
     from prometheus_fastapi_instrumentator import Instrumentator
+
     Instrumentator().instrument(app).expose(app, endpoint="/metrics", should_close=False)
     logger.info("Prometheus metrics endpoint enabled at /metrics")
 except Exception as e:
@@ -503,7 +506,7 @@ except Exception as e:
 
 @app.on_event("startup")
 async def startup_event() -> None:
-    """Load model on startup."""
+    """Load model on startup and warm up inference pipeline."""
     global model, class_names, loaded_model_path
     resolved_weights = resolve_weights_path(args.weights, args.weights_dir)
     loaded_model_path = str(resolved_weights)
@@ -511,6 +514,15 @@ async def startup_event() -> None:
     model = load_model(str(resolved_weights), device=args.device)
     class_names = getattr(model, "names", {0: "Vehicle", 1: "Pedestrian", 2: "Cyclist"})
     logger.info(f"Model loaded with classes: {class_names}")
+
+    # Warm-up: run dummy inference to pre-compile CUDA kernels and initialize model
+    logger.info("Warming up model with dummy inference...")
+    warmup_img = np.zeros((640, 640, 3), dtype=np.uint8)
+    try:
+        model.predict(warmup_img, verbose=False, device=args.device or "0")
+        logger.info("Model warm-up complete")
+    except Exception as e:
+        logger.warning(f"Model warm-up failed (non-critical): {e}")
 
 
 @app.get("/health")
@@ -528,9 +540,7 @@ async def health_check() -> dict:
 @app.post("/detect", response_model=DetectionResponse)
 async def detect_objects(  # type: ignore[misc]
     image: UploadFile = File(..., description="Image file to run inference on"),
-    conf: float = Form(
-        default=DEFAULT_CONFIDENCE, ge=0.0, le=1.0, description="Confidence threshold"
-    ),
+    conf: float = Form(default=DEFAULT_CONFIDENCE, ge=0.0, le=1.0, description="Confidence threshold"),
     session_id: str = Form(
         default="default",
         description="Client session ID used for temporal tracking",
@@ -559,7 +569,10 @@ async def detect_objects(  # type: ignore[misc]
             raise HTTPException(status_code=400, detail="Could not decode image")
 
         start_time = time.time()
-        results = model.predict(img, conf=conf, verbose=False)
+        async with inference_lock:
+            results = await asyncio.get_event_loop().run_in_executor(
+                inference_executor, model.predict, img, conf, False
+            )
         inference_time = (time.time() - start_time) * 1000
         perf_monitor.record_latency(inference_time)
 
@@ -608,6 +621,104 @@ async def detect_objects(  # type: ignore[misc]
         perf_monitor.record_error()
         logger.error(f"Inference error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/detect_batch", response_model=BatchDetectionResponse)
+async def detect_batch(  # type: ignore[misc]
+    images: list[UploadFile] = File(..., description="List of image files to run inference on"),
+    conf: float = Form(default=DEFAULT_CONFIDENCE, ge=0.0, le=1.0, description="Confidence threshold"),
+) -> BatchDetectionResponse:
+    """
+    Run object detection on multiple images in a single batched request.
+
+    Returns list of detection results, one per input image.
+    """
+    if model is None:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+
+    if not images:
+        raise HTTPException(status_code=400, detail="At least one image is required")
+
+    batch_start = time.time()
+    results_list: list[DetectionResponse] = []
+
+    for img_file in images:
+        if not img_file.content_type.startswith("image/"):
+            results_list.append(
+                DetectionResponse(
+                    success=False,
+                    detections=[],
+                    inference_time_ms=0.0,
+                    message=f"Invalid file type: {img_file.filename}",
+                )
+            )
+            continue
+
+        perf_monitor.record_request()
+        try:
+            contents = await img_file.read()
+            nparr = np.frombuffer(contents, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if img is None:
+                results_list.append(
+                    DetectionResponse(
+                        success=False,
+                        detections=[],
+                        inference_time_ms=0.0,
+                        message=f"Could not decode image: {img_file.filename}",
+                    )
+                )
+                continue
+
+            start_time = time.time()
+            async with inference_lock:
+                results = await asyncio.get_event_loop().run_in_executor(
+                    inference_executor, model.predict, img, conf, False
+                )
+            inference_time = (time.time() - start_time) * 1000
+            perf_monitor.record_latency(inference_time)
+
+            raw_detections = extract_raw_detections(results[0], class_names)
+            annotated_img = draw_boxes_from_detections(img, raw_detections)
+            annotated_b64 = encode_image_to_base64(annotated_img)
+
+            detections = [
+                Detection(
+                    class_name=str(d["class_name"]),
+                    confidence=float(d["confidence"]),
+                    bbox=[float(v) for v in d["bbox"]],
+                )
+                for d in raw_detections
+            ]
+
+            results_list.append(
+                DetectionResponse(
+                    success=True,
+                    detections=detections,
+                    annotated_image=annotated_b64,
+                    inference_time_ms=inference_time,
+                    message=f"Detected {len(detections)} objects",
+                )
+            )
+        except Exception as e:
+            perf_monitor.record_error()
+            logger.error(f"Batch inference error on {img_file.filename}: {e}", exc_info=True)
+            results_list.append(
+                DetectionResponse(
+                    success=False,
+                    detections=[],
+                    inference_time_ms=0.0,
+                    message=str(e),
+                )
+            )
+
+    total_time = (time.time() - batch_start) * 1000
+    return BatchDetectionResponse(
+        success=True,
+        results=results_list,
+        total_time_ms=round(total_time, 2),
+        message=f"Processed {len(results_list)} images",
+    )
 
 
 def main() -> int:

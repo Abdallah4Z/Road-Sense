@@ -108,9 +108,7 @@ class YOLOTrainer:
             Dictionary with training results and metrics.
         """
         if self.model is None:
-            raise RuntimeError(
-                "Model not initialized. Call setup() before train()."
-            )
+            raise RuntimeError("Model not initialized. Call setup() before train().")
 
         self.logger.on_train_start(self.config)
 
@@ -220,7 +218,7 @@ class YOLOTrainer:
         existing = [d for d in project_dir.iterdir() if d.is_dir() and d.name.startswith(exp_name)]
         if existing and not log_cfg.get("exist_ok", False):
             max_num = max(
-                (int(d.name.replace(exp_name, "")) for d in existing if d.name[len(exp_name):].isdigit()),
+                (int(d.name.replace(exp_name, "")) for d in existing if d.name[len(exp_name) :].isdigit()),
                 default=0,
             )
             exp_name = f"{exp_name}{max_num + 1}"
@@ -252,11 +250,9 @@ class YOLOTrainer:
 
         # Log model info
         from .model_factory import get_model_info
+
         info = get_model_info(self.model)
-        logger.info(
-            f"Model loaded: {info['num_parameters'] / 1e6:.2f}M parameters, "
-            f"~{info['size_mb']:.1f} MB"
-        )
+        logger.info(f"Model loaded: {info['num_parameters'] / 1e6:.2f}M parameters, ~{info['size_mb']:.1f} MB")
 
     def _init_callbacks(self) -> None:
         """Initialize training callbacks."""
@@ -371,7 +367,6 @@ class YOLOTrainer:
             "dropout": cfg.get("dropout", 0.0),
             "box": cfg.get("box", 7.5),
             "cls": cfg.get("cls", 1.0),
-            "cls_pw": cfg.get("cls_pw", 1.0),
             "dfl": cfg.get("dfl", 1.5),
         }
 
@@ -502,8 +497,7 @@ class YOLOTrainer:
                     normalized[key] = str((dataset_root / value_path).resolve())
             elif isinstance(value, list):
                 normalized[key] = [
-                    str(Path(p)) if Path(p).is_absolute() else str((dataset_root / p).resolve())
-                    for p in value
+                    str(Path(p)) if Path(p).is_absolute() else str((dataset_root / p).resolve()) for p in value
                 ]
 
         missing_required = []
@@ -518,9 +512,7 @@ class YOLOTrainer:
                         missing_required.append(p)
 
         if missing_required and attempt_autofix and self._should_auto_preprocess(dataset_yaml):
-            logger.warning(
-                "Detected missing processed dataset paths. Running KITTI preprocessing automatically..."
-            )
+            logger.warning("Detected missing processed dataset paths. Running KITTI preprocessing automatically...")
             self._run_kitti_preprocessing()
             return self._prepare_dataset_yaml_internal(attempt_autofix=False)
 
@@ -549,11 +541,7 @@ class YOLOTrainer:
         raw_image_dir = self.project_root / "data/raw/KITTI/training/image_2"
         raw_label_dir = self.project_root / "data/raw/KITTI/training/label_2"
 
-        return (
-            dataset_yaml.resolve() == default_yaml
-            and raw_image_dir.exists()
-            and raw_label_dir.exists()
-        )
+        return dataset_yaml.resolve() == default_yaml and raw_image_dir.exists() and raw_label_dir.exists()
 
     def _run_kitti_preprocessing(self) -> None:
         """Generate processed KITTI train/val/test splits when absent."""

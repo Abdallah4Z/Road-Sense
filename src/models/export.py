@@ -119,6 +119,7 @@ Examples:
 
 def setup_logging(verbose: bool = False, quiet: bool = False) -> None:
     from src.utils import setup_logging as _setup_logging
+
     _setup_logging(verbose=verbose)
     if quiet:
         logging.getLogger().setLevel(logging.WARNING)

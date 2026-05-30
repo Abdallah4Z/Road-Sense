@@ -5,6 +5,7 @@ from unittest.mock import patch
 class TestInferenceParseArgs:
     def test_defaults(self):
         from src.models.inference import parse_args
+
         with patch.object(sys, "argv", ["prog", "--weights", "/fake.pt", "--source", "/fake.jpg"]):
             args = parse_args()
         assert args.weights == "/fake.pt"
@@ -15,10 +16,25 @@ class TestInferenceParseArgs:
 
     def test_custom(self):
         from src.models.inference import parse_args
-        with patch.object(sys, "argv", [
-            "prog", "--weights", "/w.pt", "--source", "/s.jpg",
-            "--output", "/out", "--conf", "0.5", "--device", "cpu", "--verbose",
-        ]):
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "prog",
+                "--weights",
+                "/w.pt",
+                "--source",
+                "/s.jpg",
+                "--output",
+                "/out",
+                "--conf",
+                "0.5",
+                "--device",
+                "cpu",
+                "--verbose",
+            ],
+        ):
             args = parse_args()
         assert args.output == "/out"
         assert args.conf == 0.5
@@ -27,12 +43,14 @@ class TestInferenceParseArgs:
 
     def test_iou_threshold(self):
         from src.models.inference import parse_args
+
         with patch.object(sys, "argv", ["prog", "--weights", "/w.pt", "--source", "/s.jpg", "--iou", "0.6"]):
             args = parse_args()
         assert args.iou == 0.6
 
     def test_imgsz(self):
         from src.models.inference import parse_args
+
         with patch.object(sys, "argv", ["prog", "--weights", "/w.pt", "--source", "/s.jpg", "--imgsz", "1280"]):
             args = parse_args()
         assert args.imgsz == 1280
@@ -41,6 +59,7 @@ class TestInferenceParseArgs:
 class TestRealtimeParseArgs:
     def test_defaults(self):
         from src.models.realtime import parse_args
+
         with patch.object(sys, "argv", ["prog", "--weights", "/fake.pt"]):
             args = parse_args()
         assert args.weights == "/fake.pt"
@@ -50,29 +69,47 @@ class TestRealtimeParseArgs:
 
     def test_custom_source(self):
         from src.models.realtime import parse_args
+
         with patch.object(sys, "argv", ["prog", "--weights", "/w.pt", "--source", "2"]):
             args = parse_args()
         assert args.source == "2"
 
     def test_output(self):
         from src.models.realtime import parse_args
+
         with patch.object(sys, "argv", ["prog", "--weights", "/w.pt", "--output", "out.avi"]):
             args = parse_args()
         assert args.output == "out.avi"
 
     def test_no_view_flag(self):
         from src.models.realtime import parse_args
+
         with patch.object(sys, "argv", ["prog", "--weights", "/w.pt", "--no-view"]):
             args = parse_args()
         assert args.no_view is True
 
     def test_full_options(self):
         from src.models.realtime import parse_args
-        with patch.object(sys, "argv", [
-            "prog", "--weights", "/w.pt", "--source", "video.mp4",
-            "--output", "out.avi", "--conf", "0.3", "--device", "cpu",
-            "--no-view", "--verbose",
-        ]):
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "prog",
+                "--weights",
+                "/w.pt",
+                "--source",
+                "video.mp4",
+                "--output",
+                "out.avi",
+                "--conf",
+                "0.3",
+                "--device",
+                "cpu",
+                "--no-view",
+                "--verbose",
+            ],
+        ):
             args = parse_args()
         assert args.source == "video.mp4"
         assert args.output == "out.avi"

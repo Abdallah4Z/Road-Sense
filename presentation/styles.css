@@ -4,20 +4,20 @@
   --bg-rgb: 9, 9, 11;
   --surface: #18181b;
   --surface-hover: #27272a;
-  
+
   /* Text */
   --ink: #fafafa;
   --muted: #a1a1aa;
-  
+
   /* Borders */
   --line: #27272a;
   --line-hover: #3f3f46;
-  
+
   /* Accents - Cyan / Blue gradient vibe */
   --accent: #0ea5e9;
   --accent-hover: #38bdf8;
   --accent-soft: rgba(14, 165, 233, 0.15);
-  
+
   /* Tags */
   --tag-bg: #1e293b;
   --tag-text: #38bdf8;
@@ -530,17 +530,17 @@ main, .hero-wrapper {
   word-wrap: break-word;
 }
 
-.docs-content h1 { 
-  font-size: 2.25rem; 
-  border-bottom: 1px solid var(--line); 
-  padding-bottom: 1rem; 
-  margin-bottom: 2.5rem; 
+.docs-content h1 {
+  font-size: 2.25rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1rem;
+  margin-bottom: 2.5rem;
 }
 
-.docs-content h2 { 
-  font-size: 1.75rem; 
-  margin-top: 3rem; 
-  margin-bottom: 1.25rem; 
+.docs-content h2 {
+  font-size: 1.75rem;
+  margin-top: 3rem;
+  margin-bottom: 1.25rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -555,8 +555,8 @@ main, .hero-wrapper {
   border-radius: 4px;
 }
 
-.docs-content h3 { 
-  font-size: 1.35rem; 
+.docs-content h3 {
+  font-size: 1.35rem;
   margin-top: 2.5rem;
   margin-bottom: 1rem;
   display: flex;
@@ -858,13 +858,13 @@ main, .hero-wrapper {
   .docs-layout {
     grid-template-columns: 1fr;
   }
-  
+
   .docs-sidebar {
     position: static;
     max-height: none;
     margin-bottom: 2rem;
   }
-  
+
   .results-wrap {
     grid-template-columns: 1fr;
   }
@@ -872,7 +872,7 @@ main, .hero-wrapper {
   .nav-container, .page-nav-inner {
     padding: 1rem;
   }
-  
+
   .menu {
     display: none;
     position: absolute;
@@ -892,7 +892,7 @@ main, .hero-wrapper {
   .menu-toggle {
     display: block;
   }
-  
+
   .theme-toggle {
     display: none; /* Can be moved inside menu if needed */
   }
@@ -902,11 +902,11 @@ main, .hero-wrapper {
   .hero {
     padding: 4rem 1rem;
   }
-  
+
   .panel {
     padding: 1.5rem;
   }
-  
+
   .docs-content {
     padding: 1.5rem;
   }

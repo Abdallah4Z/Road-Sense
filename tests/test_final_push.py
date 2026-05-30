@@ -6,6 +6,7 @@ class TestMetricsEdge:
         import torch
 
         from src.utils.metrics import compute_precision_recall
+
         pb = torch.tensor([[0.0, 0.0, 10.0, 10.0]])
         pl = torch.tensor([0])
         ps = torch.tensor([0.9])
@@ -22,6 +23,7 @@ class TestMetricsEdge:
         import torch
 
         from src.utils.metrics import box_iou
+
         b1 = torch.tensor([[0.0, 0.0, 10.0, 10.0], [20.0, 20.0, 30.0, 30.0]])
         b2 = torch.tensor([[5.0, 5.0, 15.0, 15.0]])
         iou = box_iou(b1, b2)
@@ -33,6 +35,7 @@ class TestLoggerEdge:
         import logging
 
         from src.utils.logger import JSONFormatter
+
         fmt = JSONFormatter()
         record = logging.LogRecord("t", logging.ERROR, "", 0, "err", (), None)
         try:
@@ -46,6 +49,7 @@ class TestLoggerEdge:
 class TestExceptionsEdge:
     def test_retry_rejects_wrong_exception(self):
         from src.utils.exceptions import retry
+
         call_count = 0
 
         @retry(max_attempts=2, delay=0.01, exceptions=(KeyError,))

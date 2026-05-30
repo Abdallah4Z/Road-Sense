@@ -71,9 +71,7 @@ def load_validation_images(val_dir: Path) -> list[Path]:
     return images
 
 
-def load_ground_truths(
-    image_paths: list[Path], labels_root: Path
-) -> dict[str, dict[str, torch.Tensor]]:
+def load_ground_truths(image_paths: list[Path], labels_root: Path) -> dict[str, dict[str, torch.Tensor]]:
     gts = {}
     for img_path in image_paths:
         with Image.open(img_path) as img:
@@ -106,11 +104,7 @@ def map_native_predictions(
         for mapped_cls, coco_classes in NATIVE_COCO_MAP.items():
             if label in coco_classes:
                 mapped_boxes.append(boxes[i].tolist())
-                mapped_labels.append(
-                    list(NATIVE_CLASS_MAP.keys())[
-                        list(NATIVE_CLASS_MAP.values()).index(mapped_cls)
-                    ]
-                )
+                mapped_labels.append(list(NATIVE_CLASS_MAP.keys())[list(NATIVE_CLASS_MAP.values()).index(mapped_cls)])
                 mapped_scores.append(scores[i].item())
                 break
 
@@ -173,13 +167,9 @@ def evaluate_model(
             pred_labels = result.boxes.cls.detach().cpu().to(torch.int64)
 
         if is_native:
-            pred_boxes, pred_labels, pred_scores = map_native_predictions(
-                pred_boxes, pred_labels, pred_scores, conf
-            )
+            pred_boxes, pred_labels, pred_scores = map_native_predictions(pred_boxes, pred_labels, pred_scores, conf)
 
-        all_predictions.append(
-            {"boxes": pred_boxes, "labels": pred_labels, "scores": pred_scores}
-        )
+        all_predictions.append({"boxes": pred_boxes, "labels": pred_labels, "scores": pred_scores})
         all_ground_truths.append({"boxes": gt["boxes"], "labels": gt["labels"]})
 
         if len(pred_boxes) > 0 or len(gt["boxes"]) > 0:
@@ -192,11 +182,7 @@ def evaluate_model(
             if len(pred_labels) > 0:
                 best_pred_idx = pred_scores.argmax().item()
                 pred_label = pred_labels[best_pred_idx].item()
-                confusion_entries.append(
-                    ConfusionEntry(
-                        true_class=true_label, pred_class=pred_label, count=1
-                    )
-                )
+                confusion_entries.append(ConfusionEntry(true_class=true_label, pred_class=pred_label, count=1))
 
     maps = metric.compute()
     map50 = float(maps.get("map_50", torch.tensor(0.0)).item())
@@ -218,9 +204,7 @@ def evaluate_model(
         else:
             per_class_map50[cls_name] = 0.0
 
-    precision_val, recall_val = compute_precision_recall(
-        all_predictions, all_ground_truths
-    )
+    precision_val, recall_val = compute_precision_recall(all_predictions, all_ground_truths)
 
     latency_ms = float(np.mean(latencies)) if latencies else float("nan")
     fps = 1000.0 / latency_ms if latency_ms > 0 else 0.0
@@ -272,19 +256,11 @@ def create_visualizations(
     x = np.arange(len(CUSTOM_CLASSES))
     width = 0.35
 
-    custom_map50 = [
-        custom_result.per_class["mAP50"].get(cls, 0) for cls in CUSTOM_CLASSES
-    ]
-    native_map50 = [
-        native_result.per_class["mAP50"].get(cls, 0) for cls in CUSTOM_CLASSES
-    ]
+    custom_map50 = [custom_result.per_class["mAP50"].get(cls, 0) for cls in CUSTOM_CLASSES]
+    native_map50 = [native_result.per_class["mAP50"].get(cls, 0) for cls in CUSTOM_CLASSES]
 
-    bars1 = ax.bar(
-        x - width / 2, custom_map50, width, label="Custom Model", color="#2ecc71"
-    )
-    bars2 = ax.bar(
-        x + width / 2, native_map50, width, label="YOLOv11m", color="#3498db"
-    )
+    bars1 = ax.bar(x - width / 2, custom_map50, width, label="Custom Model", color="#2ecc71")
+    bars2 = ax.bar(x + width / 2, native_map50, width, label="YOLOv11m", color="#3498db")
 
     ax.set_xlabel("Class")
     ax.set_ylabel("mAP@50")
@@ -339,9 +315,7 @@ def create_visualizations(
         values = [map50, map5095]
         colors = ["#2ecc71", "#e74c3c"]
         bars = ax.bar(metrics, values, color=colors)
-        ax.set_title(
-            f"{model_name}\nLatency: {latency:.1f}ms | FPS: {1000 / latency:.1f}"
-        )
+        ax.set_title(f"{model_name}\nLatency: {latency:.1f}ms | FPS: {1000 / latency:.1f}")
         ax.set_ylim(0, 1)
         for bar in bars:
             ax.annotate(
@@ -365,9 +339,7 @@ def create_visualizations(
     ]
 
     for lat, map_val, label, color in scatter_data:
-        ax.scatter(
-            lat, map_val, s=200, c=color, label=label, edgecolors="black", linewidth=2
-        )
+        ax.scatter(lat, map_val, s=200, c=color, label=label, edgecolors="black", linewidth=2)
         ax.annotate(
             label,
             (lat, map_val),
@@ -410,9 +382,7 @@ def create_visualizations(
             for box in custom_result_img.boxes:
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 cls_id = int(box.cls[0].item())
-                cv2.rectangle(
-                    img_custom, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2
-                )
+                cv2.rectangle(img_custom, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
 
         axes[0, idx].imshow(cv2.cvtColor(img_custom, cv2.COLOR_BGR2RGB))
         axes[0, idx].axis("off")
@@ -431,9 +401,7 @@ def create_visualizations(
                     pass
                 else:
                     continue
-                cv2.rectangle(
-                    img_native, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2
-                )
+                cv2.rectangle(img_native, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
 
         axes[1, idx].imshow(cv2.cvtColor(img_native, cv2.COLOR_BGR2RGB))
         axes[1, idx].axis("off")
@@ -520,9 +488,7 @@ def main():
     print("\n" + "=" * 60)
     print("Evaluating Custom Model")
     print("=" * 60)
-    custom_result, custom_confusion = evaluate_model(
-        custom_model, image_paths, gts, is_native=False, device=device
-    )
+    custom_result, custom_confusion = evaluate_model(custom_model, image_paths, gts, is_native=False, device=device)
     custom_result.model_name = "Custom Model"
     print(f"  mAP@50: {custom_result.map50:.4f}")
     print(f"  mAP@50:95: {custom_result.map50_95:.4f}")
@@ -532,9 +498,7 @@ def main():
     print("\n" + "=" * 60)
     print("Evaluating YOLOv11m (Native)")
     print("=" * 60)
-    native_result, native_confusion = evaluate_model(
-        native_model, image_paths, gts, is_native=True, device=device
-    )
+    native_result, native_confusion = evaluate_model(native_model, image_paths, gts, is_native=True, device=device)
     native_result.model_name = "YOLOv11m"
     print(f"  mAP@50: {native_result.map50:.4f}")
     print(f"  mAP@50:95: {native_result.map50_95:.4f}")

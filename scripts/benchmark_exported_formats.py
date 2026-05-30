@@ -146,9 +146,7 @@ def benchmark_format(
 ) -> BenchmarkResult:
     """Benchmark a single model format."""
     print(f"\nBenchmarking {format_name}...")
-    metric = MeanAveragePrecision(
-        box_format="xyxy", iou_type="bbox", iou_thresholds=[0.5]
-    )
+    metric = MeanAveragePrecision(box_format="xyxy", iou_type="bbox", iou_thresholds=[0.5])
     all_preds = []
     all_gts = []
     latencies = []
@@ -164,9 +162,7 @@ def benchmark_format(
     # Benchmark
     print(f"  Running {REPEATS} iterations...")
     for rep in range(REPEATS):
-        for img_path in tqdm(
-            image_paths, desc=f"  Iter {rep + 1}/{REPEATS}", leave=False
-        ):
+        for img_path in tqdm(image_paths, desc=f"  Iter {rep + 1}/{REPEATS}", leave=False):
             start = time.perf_counter()
             pred = run_predict(model, img_path, device)
             if device.startswith("cuda"):
@@ -230,9 +226,7 @@ def get_model_size_mb(model: YOLO) -> float:
         return 0.0
 
 
-def create_visualizations(
-    results: list[BenchmarkResult], output_dir: Path, device: str
-) -> None:
+def create_visualizations(results: list[BenchmarkResult], output_dir: Path, device: str) -> None:
     """Create comparison plots."""
     print("\nCreating visualizations...")
     ensure_dir(output_dir)
@@ -269,9 +263,7 @@ def create_visualizations(
 
     # Speed
     plt.figure(figsize=(10, 6))
-    bars = plt.bar(
-        formats, fps_list, color=["#2ecc71", "#3498db", "#e74c3c", "#f39c12"]
-    )
+    bars = plt.bar(formats, fps_list, color=["#2ecc71", "#3498db", "#e74c3c", "#f39c12"])
     plt.ylabel("FPS")
     plt.title("Speed Comparison")
     plt.ylim(0, max(fps_list) * 1.2)
@@ -313,9 +305,7 @@ def create_visualizations(
     plt.figure(figsize=(10, 6))
     for fmt, acc, spd in zip(formats, map50s, fps_list):
         plt.scatter(spd, acc, s=200, edgecolors="black", linewidth=2)
-        plt.annotate(
-            fmt.upper(), (spd, acc), xytext=(10, 5), textcoords="offset points"
-        )
+        plt.annotate(fmt.upper(), (spd, acc), xytext=(10, 5), textcoords="offset points")
     plt.xlabel("FPS")
     plt.ylabel("mAP@50")
     plt.title("Speed vs Accuracy Trade-off")
@@ -329,9 +319,7 @@ def create_visualizations(
     create_sample_predictions(valid, output_dir, device)
 
 
-def create_sample_predictions(
-    results: list[BenchmarkResult], output_dir: Path, device: str
-) -> None:
+def create_sample_predictions(results: list[BenchmarkResult], output_dir: Path, device: str) -> None:
     """Show predictions from each format on sample images."""
     print("\nCreating sample predictions...")
     samples = list(VAL_IMAGES_DIR.glob("*.jpg"))[:4]
@@ -361,9 +349,7 @@ def create_sample_predictions(
                     x1, y1, x2, y2 = box.xyxy[0].tolist()
                     cls_id = int(box.cls[0].item())
                     if cls_id in [0, 1, 2]:
-                        cv2.rectangle(
-                            img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2
-                        )
+                        cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
                         cv2.putText(
                             img,
                             f"{CUSTOM_CLASSES[cls_id]}:{box.conf[0].item():.2f}",
@@ -405,9 +391,7 @@ def save_results(results: list[BenchmarkResult], output_dir: Path) -> None:
         )
 
     df = pd.DataFrame(rows)
-    valid = df[df["mAP@50"] > 0].sort_values(
-        ["mAP@50", "Latency (ms)"], ascending=[False, True]
-    )
+    valid = df[df["mAP@50"] > 0].sort_values(["mAP@50", "Latency (ms)"], ascending=[False, True])
     df = pd.concat([valid, df[df["mAP@50"] == 0]])
 
     csv_path = output_dir / "format_comparison_results.csv"
@@ -506,9 +490,7 @@ def main():
                     # CPU is fine if device is CPU
                     pass
                 elif "CUDAExecutionProvider" not in providers and "CUDA" in device:
-                    print(
-                        f"  Skipping ONNX - CUDAExecutionProvider not available (using {providers})"
-                    )
+                    print(f"  Skipping ONNX - CUDAExecutionProvider not available (using {providers})")
                     continue
             except ImportError:
                 print("  Skipping ONNX - onnxruntime not properly installed")
@@ -519,9 +501,7 @@ def main():
             size_mb = model_file.stat().st_size / (1024 * 1024)
 
             # Run benchmark
-            res = benchmark_format(
-                model, fmt_name, model_file, image_paths, gts, device, size_mb
-            )
+            res = benchmark_format(model, fmt_name, model_file, image_paths, gts, device, size_mb)
             results.append(res)
         except Exception as e:
             print(f"  ✗ Failed to benchmark {model_file.name}: {e}")
@@ -529,9 +509,7 @@ def main():
                 BenchmarkResult(
                     format_name=fmt_name,
                     model_path=model_file,
-                    model_size_mb=model_file.stat().st_size / (1024 * 1024)
-                    if model_file.exists()
-                    else 0.0,
+                    model_size_mb=model_file.stat().st_size / (1024 * 1024) if model_file.exists() else 0.0,
                     map50=0.0,
                     map5095=0.0,
                     precision=0.0,
