@@ -142,7 +142,7 @@ Augmentations are applied on-the-fly via the Ultralytics data pipeline, with no 
 ### Approach
 
 The project follows a **transfer learning** approach: starting from COCO-pretrained YOLO weights and fine-tuning on the KITTI dataset. This is proven to:
-- Converge faster (10-20× fewer epochs than from-scratch)
+- Converge faster (10-20× fewer epochs than training from scratch)
 - Achieve higher final accuracy (COCO features transfer well to driving scenes)
 - Require less training data
 
@@ -408,7 +408,7 @@ FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
 
 ### Technical
 
-1. **Transfer learning is highly effective** — COCO-pretrained YOLO achieves strong results on KITTI with minimal fine-tuning (100 epochs). A from-scratch comparison was planned but deprioritized given the strong baseline.
+1. **Transfer learning is highly effective** — COCO-pretrained YOLO achieves strong results on KITTI with minimal fine-tuning (100 epochs). A from-scratch comparison was considered but ultimately deprioritized — transfer learning delivered strong results, and resources were redirected to higher-impact items (deployment optimization, model export, benchmarks).
 
 2. **HPO stage 1 is sufficient for coarse search** — 10-epoch trials effectively identify promising hyperparameter regions. The top 5 trials all converged to Adam/AdamW optimizers, confirming the search was well-constrained.
 
@@ -454,9 +454,9 @@ FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
 
 | Task | Priority | Effort |
 |------|:--------:|:------:|
-| [Custom CNN from scratch](https://github.com/Abdallah4Z/Road-Sense/issues/27) | High | Very Large |
 | [TensorRT optimization](https://github.com/Abdallah4Z/Road-Sense/issues/41) | Low | Medium |
 | [Model versioning & registry](https://github.com/Abdallah4Z/Road-Sense/issues/62) | Low | Medium |
+| [YOLO vs Faster R-CNN comparison](https://github.com/Abdallah4Z/Road-Sense/issues/14) | Medium | Medium |
 | [Multi-dataset training](https://github.com/Abdallah4Z/Road-Sense/issues/28) | High | Large |
 
 ---
