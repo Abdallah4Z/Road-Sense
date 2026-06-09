@@ -127,21 +127,55 @@ def main() -> int:
             fmt_path = Path(info["path"])
             results["tflite_results"][fmt]["size_mb"] = round(fmt_path.stat().st_size / (1024 * 1024), 2)
 
+    if args.data and any(info.get("status") == "exported" for info in tflite_results.values()):
+        logger.info(f"\n--- Evaluating TFLite format accuracy ---")
+        for fmt, info in tflite_results.items():
+            if info.get("status") != "exported":
+                continue
+            fmt_path = info["path"]
+            logger.info(f"  Evaluating {fmt} at {fmt_path}...")
+            try:
+                tflite_model = YOLO(str(fmt_path))
+                tflite_metrics = tflite_model.val(data=str(data_path), verbose=False)
+                metrics = extract_metrics(tflite_metrics)
+                results["tflite_results"][fmt]["metrics"] = metrics
+                logger.info(f"    mAP@50: {metrics.get('mAP50', 0):.4f}, mAP@50:95: {metrics.get('mAP50-95', 0):.4f}")
+            except Exception as e:
+                logger.warning(f"  {fmt} evaluation failed: {e}")
+                results["tflite_results"][fmt]["val_error"] = str(e)
+
     print("\n" + "=" * 60)
     print("QUANTIZATION SUMMARY")
     print("=" * 60)
     print(f"\nSource model: {results['source_weights']}")
     print(f"Source size: {results['source_size_mb']} MB")
 
-    for fmt, info in tflite_results.items():
-        status_icon = "✅" if info.get("status") == "exported" else "❌"
-        size = info.get("size_mb", "N/A")
-        size_str = f"{size} MB" if isinstance(size, (int, float)) else size
-        print(f"{status_icon} {fmt:<15} → {size_str}")
+    has_accuracy = "fp32_baseline" in results
 
-    if "fp32_baseline" in results:
-        print(f"\nFP32 mAP@50: {results['fp32_baseline'].get('mAP50', 0):.4f}")
-        print(f"FP32 mAP@50:95: {results['fp32_baseline'].get('mAP50-95', 0):.4f}")
+    if has_accuracy:
+        header = f"{'Format':<20} {'Size':<10} {'mAP@50':<10} {'mAP@50:95':<12} {'Drop (mAP50-95)':<16}"
+        print(f"\n{header}")
+        print("-" * 68)
+
+        fp32_map = results["fp32_baseline"].get("mAP50-95", 0)
+        print(f"{'FP32 (baseline)':<20} {results['source_size_mb']:<10.1f} "
+              f"{results['fp32_baseline'].get('mAP50', 0):<10.4f} {fp32_map:<12.4f} {'—':<16}")
+
+        for fmt, info in tflite_results.items():
+            if info.get("status") != "exported":
+                continue
+            size = info.get("size_mb", 0)
+            metrics = info.get("metrics", {})
+            fmt_map = metrics.get("mAP50-95", 0)
+            drop = fp32_map - fmt_map
+            status = "✅" if drop <= 0.02 else "⚠️"
+            print(f"{fmt:<20} {size:<10.1f} {metrics.get('mAP50', 0):<10.4f} {fmt_map:<12.4f} {drop:<14.4f} {status}")
+    else:
+        for fmt, info in tflite_results.items():
+            status_icon = "✅" if info.get("status") == "exported" else "❌"
+            size = info.get("size_mb", "N/A")
+            size_str = f"{size} MB" if isinstance(size, (int, float)) else size
+            print(f"{status_icon} {fmt:<15} → {size_str}")
 
     print("=" * 60)
 
