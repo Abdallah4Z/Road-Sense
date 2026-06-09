@@ -65,7 +65,65 @@ def resolve_data_yaml(data_path: str | None) -> str | None:
     return str(path.resolve())
 
 
-def load_and_validate_formats(weights_path: str, data_yaml: str | None, structure_only: bool) -> dict:
+def export_formats(model, export_dir: Path, device: str) -> dict[str, Path]:
+    logger.info(f"\n--- Exporting formats to: {export_dir} ---")
+    export_dir.mkdir(parents=True, exist_ok=True)
+    exported = {}
+
+    # ONNX FP16
+    logger.info("Exporting ONNX FP16...")
+    onnx_path = model.export(format="onnx", half=True, dynamic=True, simplify=True)
+    exported["onnx_fp16"] = Path(onnx_path)
+
+    # TorchScript
+    logger.info("Exporting TorchScript...")
+    ts_path = model.export(format="torchscript")
+    exported["torchscript_traced"] = Path(ts_path)
+
+    # TFLite FP16
+    logger.info("Exporting TFLite FP16...")
+    tflite_fp16 = model.export(format="tflite", int8=False)
+    exported["tflite_fp16"] = Path(tflite_fp16)
+
+    # TFLite INT8
+    logger.info("Exporting TFLite INT8...")
+    tflite_int8 = model.export(format="tflite", int8=True)
+    exported["tflite_int8"] = Path(tflite_int8)
+
+    return exported
+
+
+def validate_format(format_name: str, format_path: Path, data_yaml: str | None) -> dict:
+    from ultralytics import YOLO
+
+    logger.info(f"  Loading {format_name}: {format_path}")
+    result = {"status": "loaded", "path": str(format_path), "format": format_name}
+
+    try:
+        model = YOLO(str(format_path))
+        result["loaded"] = True
+    except Exception as e:
+        logger.error(f"  Failed to load {format_name}: {e}")
+        result["status"] = "failed"
+        result["error"] = str(e)
+        return result
+
+    if data_yaml:
+        try:
+            logger.info(f"  Running accuracy validation for {format_name}...")
+            metrics = model.val(data=data_yaml, verbose=False)
+            result["metrics"] = extract_metrics(metrics)
+            logger.info(f"    mAP@50: {result['metrics'].get('mAP50', 0):.4f}, "
+                        f"mAP@50:95: {result['metrics'].get('mAP50-95', 0):.4f}")
+        except Exception as e:
+            logger.warning(f"  Accuracy validation failed for {format_name}: {e}")
+            result["val_error"] = str(e)
+
+    return result
+
+
+def load_and_validate_formats(weights_path: str, data_yaml: str | None, structure_only: bool,
+                              export_dir: str | None = None) -> dict:
     from ultralytics import YOLO
 
     results = {}
@@ -88,6 +146,19 @@ def load_and_validate_formats(weights_path: str, data_yaml: str | None, structur
         logger.info(f"  PyTorch baseline mAP@50:95: {results['pytorch']['metrics']['mAP50-95']:.4f}")
 
     logger.info("\nPyTorch baseline loaded successfully")
+
+    if structure_only:
+        return results
+
+    # Export to all formats
+    export_dir_path = Path(export_dir) if export_dir else Path("/tmp/exports")
+    exported = export_formats(baseline, export_dir_path, "0")
+
+    # Validate each format
+    for fmt_name, fmt_path in exported.items():
+        logger.info(f"\n--- Validating {fmt_name} ---")
+        results[fmt_name] = validate_format(fmt_name, fmt_path, data_yaml)
+
     return results
 
 
@@ -156,7 +227,7 @@ def main() -> int:
         return 1
 
     data_yaml = resolve_data_yaml(args.data) if not args.structure_only else None
-    results = load_and_validate_formats(weights_path, data_yaml, args.structure_only)
+    results = load_and_validate_formats(weights_path, data_yaml, args.structure_only, export_dir=args.export_dir)
     print_summary(results)
 
     if args.output:
