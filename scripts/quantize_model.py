@@ -24,7 +24,10 @@ import argparse
 import json
 import logging
 import sys
+import time
 from pathlib import Path
+
+import numpy as np
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger("quantize")
@@ -101,14 +104,14 @@ def main() -> int:
                     result["precision"] = float(metrics.box.mp)
                 if hasattr(metrics.box, "mr") and metrics.box.mr is not None:
                     result["recall"] = float(metrics.box.mr)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Could not extract some metrics: {e}")
         return result
 
     if args.data:
         data_path = Path(args.data)
         if data_path.exists():
-            logger.info(f"\n--- Evaluating FP32 baseline (mAP) ---")
+            logger.info("\n--- Evaluating FP32 baseline (mAP) ---")
             try:
                 fp32_metrics = model.val(data=str(data_path))
                 results["fp32_baseline"] = extract_metrics(fp32_metrics)
@@ -128,7 +131,7 @@ def main() -> int:
             results["tflite_results"][fmt]["size_mb"] = round(fmt_path.stat().st_size / (1024 * 1024), 2)
 
     if args.data and any(info.get("status") == "exported" for info in tflite_results.values()):
-        logger.info(f"\n--- Evaluating TFLite format accuracy ---")
+        logger.info("\n--- Evaluating TFLite format accuracy ---")
         for fmt, info in tflite_results.items():
             if info.get("status") != "exported":
                 continue
@@ -181,9 +184,6 @@ def main() -> int:
 
     if args.benchmark:
         logger.info(f"\n--- Running speed benchmark ({args.benchmark_images} images) ---")
-        import time
-        import numpy as np
-
         dummy_image = np.random.randint(0, 255, (args.imgsz, args.imgsz, 3), dtype=np.uint8)
         formats_to_bench = {"pytorch_fp32": model}
 

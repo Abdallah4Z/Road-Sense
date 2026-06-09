@@ -61,8 +61,8 @@ class ONNXRunner:
             available = ort.get_available_providers()
             priority = ["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
             providers = [p for p in priority if p in available]
-        except Exception:
-            pass
+        except (ImportError, RuntimeError) as e:
+            logger.warning(f"Provider auto-detection failed: {e}")
         return providers
 
     def _load_session(self) -> Any:
@@ -87,8 +87,7 @@ class ONNXRunner:
 
         img = image.astype(np.float32) / 255.0
         img = np.transpose(img, (2, 0, 1))
-        img = np.expand_dims(img, axis=0).astype(np.float32)
-        return img
+        return np.expand_dims(img, axis=0).astype(np.float32)
 
     def predict(self, image: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         input_tensor = self.preprocess(image)
@@ -104,7 +103,6 @@ class ONNXRunner:
         scale_y = orig_h / self.imgsz
 
         predictions = predictions.T
-        num_classes = predictions.shape[1] - 4
         boxes, scores, class_ids = [], [], []
 
         for pred in predictions:

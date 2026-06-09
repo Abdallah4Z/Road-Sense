@@ -20,9 +20,8 @@ import argparse
 import json
 import logging
 import sys
+import tempfile
 from pathlib import Path
-
-import yaml
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger("validate_exports")
@@ -47,9 +46,12 @@ TOLERANCES = {
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate exported model accuracy")
     parser.add_argument("--weights", type=str, required=True, help="Path to PyTorch model weights")
-    parser.add_argument("--data", type=str, default=None, help="Path to dataset YAML (required for accuracy validation)")
-    parser.add_argument("--structure-only", action="store_true", help="Only validate file structure, skip accuracy")
-    parser.add_argument("--export-dir", type=str, default="models/exports/validated", help="Directory for temporary exports")
+    parser.add_argument("--data", type=str, default=None,
+                        help="Path to dataset YAML (required for accuracy validation)")
+    parser.add_argument("--structure-only", action="store_true",
+                        help="Only validate file structure, skip accuracy")
+    parser.add_argument("--export-dir", type=str, default="models/exports/validated",
+                        help="Directory for temporary exports")
     parser.add_argument("--device", type=str, default="0", help="Device to run validation on")
     parser.add_argument("--output", type=str, default=None, help="Path to save results JSON")
     return parser.parse_args()
@@ -151,7 +153,7 @@ def load_and_validate_formats(weights_path: str, data_yaml: str | None, structur
         return results
 
     # Export to all formats
-    export_dir_path = Path(export_dir) if export_dir else Path("/tmp/exports")
+    export_dir_path = Path(export_dir) if export_dir else Path(tempfile.mkdtemp(prefix="exports_"))
     exported = export_formats(baseline, export_dir_path, "0")
 
     # Validate each format
@@ -166,8 +168,10 @@ def extract_metrics(metrics) -> dict:
     result = {}
     try:
         if hasattr(metrics, "box"):
-            result["mAP50"] = float(metrics.box.map50) if hasattr(metrics.box, "map50") and metrics.box.map50 is not None else 0.0
-            result["mAP50-95"] = float(metrics.box.map) if hasattr(metrics.box, "map") and metrics.box.map is not None else 0.0
+            m50 = metrics.box.map50
+            result["mAP50"] = float(m50) if m50 is not None else 0.0
+            m = metrics.box.map
+            result["mAP50-95"] = float(m) if m is not None else 0.0
             if hasattr(metrics.box, "mp") and metrics.box.mp is not None:
                 result["precision"] = float(metrics.box.mp)
             if hasattr(metrics.box, "mr") and metrics.box.mr is not None:
@@ -192,7 +196,8 @@ def print_summary(results: dict) -> None:
 
         for fmt, data in results.items():
             if fmt == "pytorch":
-                print(f"{'PyTorch (baseline)':<25} {baseline_map50:<10.4f} {baseline_map5095:<12.4f} {'—':<10} {'✅ baseline'}")
+                label = "PyTorch (baseline)"
+                print(f"{label:<25} {baseline_map50:<10.4f} {baseline_map5095:<12.4f} {'—':<10} {'✅ baseline'}")
                 continue
 
             fmt_map50 = data.get("metrics", {}).get("mAP50", 0)
