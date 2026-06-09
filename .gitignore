@@ -115,6 +115,16 @@ logs/
 .ipynb_checkpoints/
 
 # =====================================
+# Generated Export Artifacts (Too Large)
+# =====================================
+*.tflite
+*.npy
+**/best_saved_model/
+models/checkpoints/HPO_run/exports/
+models/checkpoints/HPO_run/weights/best.onnx
+models/checkpoints/HPO_run/weights/best.torchscript
+
+# =====================================
 # Keep Directory Structure (Empty Dirs)
 # =====================================
 !data/.gitkeep
