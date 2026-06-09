@@ -23,12 +23,13 @@ import json
 import os
 import shutil
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
-import psutil
 import pandas as pd
+import psutil
 import torch
 from PIL import Image
 from torchmetrics.detection import MeanAveragePrecision
@@ -401,7 +402,8 @@ def benchmark_format(
     ram_peak_mb = float(max(ram_history)) if ram_history else 0.0
 
     print(f"  ✓ mAP@50: {map50:.4f}, mAP@50-95: {map5095:.4f}")
-    print(f"  ✓ Latency: avg={latency_ms:.2f}ms, p50={latency_p50:.2f}ms, p95={latency_p95:.2f}ms, p99={latency_p99:.2f}ms")
+    print(f"  ✓ Latency: avg={latency_ms:.2f}ms, p50={latency_p50:.2f}ms, "
+          f"p95={latency_p95:.2f}ms, p99={latency_p99:.2f}ms")
     print(f"  ✓ FPS: {fps:.2f}, Peak RAM: {ram_peak_mb:.1f} MB")
 
     return map50, map5095, latency_ms, latency_p50, latency_p95, latency_p99, fps, ram_peak_mb
