@@ -103,6 +103,62 @@ curl -X POST http://localhost:8000/detect \
 
 ---
 
+### POST /detect_batch
+
+Run object detection on multiple images in a single batched request. Returns a list of detection results, one per input image.
+
+**Request**
+
+| Parameter | Type | Location | Default | Constraints | Description |
+|-----------|------|----------|---------|-------------|-------------|
+| `images` | `UploadFile[]` | Files | required | Must be images | List of JPEG/PNG images to analyze |
+| `conf` | `float` | Form | `0.25` | 0.0 to 1.0 | Confidence threshold |
+
+**Response**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | `bool` | Whether all inferences succeeded |
+| `results` | `DetectionResponse[]` | Array of per-image detection results |
+| `total_time_ms` | `float` | Total processing time for all images |
+| `message` | `string` | Human-readable status message |
+
+**Example**
+
+```bash
+curl -X POST http://localhost:8000/detect_batch \
+  -F "images=@img1.jpg" \
+  -F "images=@img2.jpg" \
+  -F "conf=0.3"
+```
+
+**Response**
+
+```json
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "detections": [
+        {
+          "class_name": "Vehicle",
+          "confidence": 0.92,
+          "bbox": [120, 45, 340, 210]
+        }
+      ],
+      "annotated_image": "data:image/jpeg;base64,...",
+      "inference_time_ms": 82.1,
+      "message": "Detected 1 objects"
+    }
+  ],
+  "total_time_ms": 175.4,
+  "message": "Processed 2 images successfully"
+}
+```
+
+---
+
 ### GET /metrics
 
 Prometheus metrics endpoint. Only available when `prometheus-fastapi-instrumentator` is installed.
