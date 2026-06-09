@@ -98,10 +98,13 @@ The container expects the following structure under `/app/models/`:
 ```
 models/
 ├── checkpoints/
-│   └── best-3classes-exp34332.pt   # PyTorch weights
+│   ├── best-3classes-exp34332.pt      # Baseline PyTorch weights
+│   └── HPO_run/weights/
+│       ├── best.pt                    # HPO-optimized weights
+│       └── best.onnx                  # HPO-optimized ONNX export
 └── exports/
-    ├── best-3classes-exp34332.pt   # (fallback)
-    └── best-3classes-exp34332.onnx # ONNX export
+    ├── best-3classes-exp34332.pt      # (fallback)
+    └── best-3classes-exp34332.onnx    # ONNX export
 ```
 
 ---
