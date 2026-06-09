@@ -240,6 +240,8 @@ Road-Sense/
 | [Deployment Guide](docs/DEPLOYMENT_GUIDE.md) | Local, Docker, and cloud deployment |
 | [Docker Usage Guide](docs/DOCKER_USAGE.md) | Docker build, run, and troubleshooting |
 | [API Documentation](docs/API_DOCUMENTATION.md) | Full API reference |
+| [Final Project Report](docs/FINAL_PROJECT_REPORT.md) | Comprehensive project summary |
+| [Model Evaluation Report](reports/MODEL_EVALUATION_REPORT.md) | Performance metrics and analysis |
 | [Training Report](docs/TRAINING_REPORT_EXP34332.md) | Baseline training results |
 | [HPO Report](reports/HPO_REPORT.md) | Hyperparameter optimization |
 | [Model Comparison](docs/models/MODEL_COMPARISON_REPORT.md) | YOLO vs SSD vs Faster R-CNN |
