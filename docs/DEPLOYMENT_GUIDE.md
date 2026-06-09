@@ -64,9 +64,13 @@ python src/models/api_server.py
 # Custom port and device
 python src/models/api_server.py --port 9000 --device cpu
 
-# With custom weights
+# With custom weights (supports .pt, .onnx, .torchscript)
 python src/models/api_server.py \
     --weights models/exports/best-3classes-exp34332.onnx
+
+# With HPO-optimized model
+python src/models/api_server.py \
+    --weights models/checkpoints/HPO_run/weights/best.pt
 ```
 
 ---
@@ -230,7 +234,60 @@ Pre-configured metrics:
 
 ---
 
-## 6. Troubleshooting
+## 6. Optimization Tools
+
+### Validate Exported Model Accuracy
+
+Compare mAP across all export formats to ensure accuracy is preserved:
+
+```bash
+# Full validation (requires dataset)
+python scripts/validate_exports.py \
+    --weights models/checkpoints/HPO_run/weights/best.pt \
+    --data data/processed/kitti/data.yaml
+
+# Structure-only check (no dataset needed)
+python scripts/validate_exports.py \
+    --weights models/checkpoints/HPO_run/weights/best.pt \
+    --structure-only
+```
+
+### INT8 Quantization
+
+Export and evaluate quantized TFLite models for edge deployment:
+
+```bash
+# Export TFLite (FP16 + INT8) with accuracy comparison
+python scripts/quantize_model.py \
+    --weights models/checkpoints/HPO_run/weights/best.pt \
+    --data data/processed/kitti/data.yaml
+
+# Full pipeline with speed benchmark
+python scripts/quantize_model.py \
+    --weights models/checkpoints/HPO_run/weights/best.pt \
+    --data data/processed/kitti/data.yaml \
+    --benchmark
+```
+
+### CPU Inference Benchmark
+
+Measure and compare ONNX Runtime vs PyTorch CPU inference speed:
+
+```bash
+# Basic benchmark
+python scripts/benchmark_onnx_cpu.py \
+    --weights models/checkpoints/HPO_run/weights/best.pt
+
+# With explicit ONNX path and more images
+python scripts/benchmark_onnx_cpu.py \
+    --weights models/checkpoints/HPO_run/weights/best.pt \
+    --onnx models/exports/best.onnx \
+    --num-images 500
+```
+
+---
+
+## 7. Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
