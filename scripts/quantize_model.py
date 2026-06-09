@@ -177,6 +177,43 @@ def main() -> int:
             size_str = f"{size} MB" if isinstance(size, (int, float)) else size
             print(f"{status_icon} {fmt:<15} → {size_str}")
 
+
+
+    if args.benchmark:
+        logger.info(f"\n--- Running speed benchmark ({args.benchmark_images} images) ---")
+        import time
+        import numpy as np
+
+        dummy_image = np.random.randint(0, 255, (args.imgsz, args.imgsz, 3), dtype=np.uint8)
+        formats_to_bench = {"pytorch_fp32": model}
+
+        for fmt, info in tflite_results.items():
+            if info.get("status") == "exported":
+                try:
+                    formats_to_bench[fmt] = YOLO(str(info["path"]))
+                except Exception as e:
+                    logger.warning(f"  Could not load {fmt} for benchmark: {e}")
+
+        print(f"\n{'Format':<25} {'Avg (ms)':<12} {'FPS':<10}")
+        print("-" * 47)
+
+        for name, bench_model in formats_to_bench.items():
+            times = []
+            warmup = 5
+            total = args.benchmark_images
+
+            for i in range(total + warmup):
+                start = time.perf_counter()
+                bench_model.predict(dummy_image, verbose=False, device=args.device if name == "pytorch_fp32" else "cpu")
+                elapsed = (time.perf_counter() - start) * 1000
+                if i >= warmup:
+                    times.append(elapsed)
+
+            avg_ms = float(np.mean(times))
+            fps = 1000.0 / avg_ms if avg_ms > 0 else 0
+            results.setdefault("benchmark", {})[name] = {"avg_ms": round(avg_ms, 2), "fps": round(fps, 2)}
+            print(f"{name:<25} {avg_ms:<12.2f} {fps:<10.1f}")
+
     print("=" * 60)
 
     if args.output:
