@@ -218,6 +218,30 @@ def save_results(results: dict, output_path: str) -> None:
     logger.info(f"Results saved to: {path}")
 
 
+def check_tolerances(results: dict) -> bool:
+    all_pass = True
+    baseline = results.get("pytorch", {})
+    baseline_map = baseline.get("metrics", {}).get("mAP50-95", 0)
+
+    print("\n--- Tolerance Check ---")
+    for fmt, tol in TOLERANCES.items():
+        if fmt not in results:
+            continue
+        fmt_metrics = results[fmt].get("metrics", {})
+        if not fmt_metrics:
+            print(f"  {fmt:<25} ⏭️  no metrics (data not available)")
+            continue
+        fmt_map = fmt_metrics.get("mAP50-95", 0)
+        drop = baseline_map - fmt_map
+        passed = drop <= tol
+        if not passed:
+            all_pass = False
+        status = "✅ PASS" if passed else "❌ FAIL"
+        print(f"  {fmt:<25} drop={drop:.4f} (tol={tol:.3f}) {status}")
+
+    return all_pass
+
+
 def main() -> int:
     args = parse_args()
     weights_path = str(Path(args.weights).resolve())
@@ -232,6 +256,12 @@ def main() -> int:
 
     if args.output:
         save_results(results, args.output)
+
+    if not args.structure_only and data_yaml:
+        all_pass = check_tolerances(results)
+        if not all_pass:
+            logger.warning("Some formats exceeded accuracy drop tolerance!")
+            return 1
 
     return 0
 
