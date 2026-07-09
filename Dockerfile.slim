@@ -1,0 +1,16 @@
+FROM ultralytics/ultralytics:latest-cpu
+
+WORKDIR /app
+
+COPY pyproject.toml requirements.txt src/ configs/ ./
+COPY src/ src/
+COPY configs/ configs/
+
+RUN pip install --no-cache-dir -e . && \
+    pip install --no-cache-dir prometheus-client prometheus-fastapi-instrumentator
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+EXPOSE 8000
+
+CMD ["python3", "src/models/api_server.py", "--port", "8000", "--host", "0.0.0.0"]

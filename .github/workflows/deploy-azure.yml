@@ -1,0 +1,56 @@
+name: Build & Push to GHCR, Deploy to Azure
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          file: Dockerfile
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to ACI
+        run: |
+          az container delete --resource-group road-sense-rg --name road-sense-api --yes 2>/dev/null || true
+          az container create \
+            --resource-group road-sense-rg \
+            --name road-sense-api \
+            --image ghcr.io/abdallah4z/road-sense:latest \
+            --dns-name-label road-sense-api \
+            --ports 8000 \
+            --cpu 4 \
+            --memory 8
