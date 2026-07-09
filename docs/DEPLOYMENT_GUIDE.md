@@ -219,7 +219,72 @@ Docker Compose includes a health check that runs every 30 seconds.
 
 ---
 
-## 5. Monitoring
+## 5. Cloud Deployment
+
+### Azure Container Instances (Simplest)
+
+Deploy the API server to Azure Container Instances with a single script:
+
+```bash
+# Prerequisites
+az login
+docker --version
+
+# Deploy (creates resource group, ACR, builds/pushes image, starts container)
+chmod +x infra/azure/deploy.sh
+./infra/azure/deploy.sh
+```
+
+After deployment, the API is available at:
+```
+http://road-sense-api.eastus.azurecontainer.io:8000
+```
+
+**Architecture:**
+
+```
+Client → ACI (road-sense-api) :8000
+            ├── /health     → {"status": "ok"}
+            ├── /detect     → POST image → detection results
+            └── /metrics    → Prometheus metrics
+```
+
+### Azure VM with GPU (Production)
+
+For GPU-accelerated inference, create a VM with an NVIDIA GPU:
+
+```bash
+# Create GPU VM
+az vm create \
+    --resource-group road-sense-rg \
+    --name road-sense-vm \
+    --size Standard_NC6s_v3 \
+    --image Ubuntu2204 \
+    --admin-username azureuser \
+    --generate-ssh-keys
+
+# SSH and deploy
+ssh azureuser@<vm-ip>
+sudo apt update && sudo apt install -y docker.io nvidia-docker2
+sudo systemctl restart docker
+sudo docker run -d \
+    --name road-sense \
+    --gpus all \
+    -p 8000:8000 \
+    -v /data/models:/app/models \
+    --restart unless-stopped \
+    ghcr.io/abdallah4z/road-sense:latest
+```
+
+### Clean Up
+
+```bash
+az group delete --name road-sense-rg --yes --no-wait
+```
+
+---
+
+## 6. Monitoring
 
 Prometheus metrics are available at `/metrics` when the server starts:
 
@@ -234,7 +299,7 @@ Pre-configured metrics:
 
 ---
 
-## 6. Optimization Tools
+## 7. Optimization Tools
 
 ### Validate Exported Model Accuracy
 
@@ -287,7 +352,7 @@ python scripts/benchmark_onnx_cpu.py \
 
 ---
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
