@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: road-sense
 
 jobs:
   build-and-push:
@@ -31,7 +31,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ghcr.io/abdallah4z/road-sense:latest
           file: Dockerfile
 
   deploy:
@@ -50,6 +50,9 @@ jobs:
             --resource-group road-sense-rg \
             --name road-sense-api \
             --image ghcr.io/abdallah4z/road-sense:latest \
+            --registry-login-server ghcr.io \
+            --registry-username Abdallah4Z \
+            --registry-password ${{ secrets.GITHUB_TOKEN }} \
             --dns-name-label road-sense-api \
             --ports 8000 \
             --cpu 4 \
