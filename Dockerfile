@@ -30,8 +30,10 @@ COPY --from=builder /app/src/ /app/src/
 COPY --from=builder /app/configs/ /app/configs/
 COPY --from=builder /app/pyproject.toml /app/pyproject.toml
 
-COPY models/checkpoints/ /app/models/checkpoints/
-COPY models/exports/ /app/models/exports/
+# Models are mounted as a volume at runtime
+# COPY models/checkpoints/ /app/models/checkpoints/
+# COPY models/exports/ /app/models/exports/
+# Use: docker run -v /path/to/models:/app/models
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
