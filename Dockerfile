@@ -40,6 +40,8 @@ COPY models/checkpoints/HPO_run/weights/best.pt /app/models/checkpoints/HPO_run/
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
+RUN mkdir -p /app/models/exports
+
 EXPOSE 8000
 
-CMD ["python3", "src/models/api_server.py", "--port", "8000", "--host", "0.0.0.0"]
+CMD ["python3", "src/models/api_server.py", "--port", "8000", "--host", "0.0.0.0", "--weights", "models/checkpoints/HPO_run/weights/best.pt"]
