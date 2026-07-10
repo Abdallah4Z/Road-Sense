@@ -570,9 +570,10 @@ async def detect_objects(  # type: ignore[misc]
 
         start_time = time.time()
         async with inference_lock:
-            results = await asyncio.get_event_loop().run_in_executor(
-                inference_executor, model.predict, img, conf, False
+            preds = await asyncio.get_event_loop().run_in_executor(
+                inference_executor, lambda: model.predict(img, conf=conf, verbose=False)
             )
+            results = list(preds) if hasattr(preds, '__iter__') else [preds]
         inference_time = (time.time() - start_time) * 1000
         perf_monitor.record_latency(inference_time)
 
@@ -672,9 +673,10 @@ async def detect_batch(  # type: ignore[misc]
 
             start_time = time.time()
             async with inference_lock:
-                results = await asyncio.get_event_loop().run_in_executor(
-                    inference_executor, model.predict, img, conf, False
+                preds = await asyncio.get_event_loop().run_in_executor(
+                    inference_executor, lambda: model.predict(img, conf=conf, verbose=False)
                 )
+                results = list(preds) if hasattr(preds, '__iter__') else [preds]
             inference_time = (time.time() - start_time) * 1000
             perf_monitor.record_latency(inference_time)
 
