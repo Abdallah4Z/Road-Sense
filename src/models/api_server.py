@@ -28,6 +28,7 @@ from typing import Any
 
 import cv2
 import numpy as np
+import torch
 import uvicorn
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -518,9 +519,10 @@ async def startup_event() -> None:
     # Warm-up: run dummy inference to pre-compile CUDA kernels and initialize model
     logger.info("Warming up model with dummy inference...")
     warmup_img = np.zeros((640, 640, 3), dtype=np.uint8)
+    warmup_device = args.device if args.device else ("0" if torch.cuda.is_available() else "cpu")
     try:
-        model.predict(warmup_img, verbose=False, device=args.device or "0")
-        logger.info("Model warm-up complete")
+        model.predict(warmup_img, verbose=False, device=warmup_device)
+        logger.info("Model warm-up complete (device=%s)", warmup_device)
     except Exception as e:
         logger.warning(f"Model warm-up failed (non-critical): {e}")
 
