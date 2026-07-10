@@ -51,7 +51,12 @@ select { padding: 8px 12px; background: #0f172a; color: #e2e8f0; border: 1px sol
 <body>
 <div class="container">
 <h1> Road-Sense Detection Demo</h1>
-<p class="subtitle">Live inference on your images &mdash; <span id="apiStatus" style="color:#f87171">checking...</span></p>
+<div id="httpsWarning" style="display:none;background:#7f1d1d;border:1px solid #f87171;border-radius:8px;padding:16px;margin-bottom:16px">
+<strong> HTTPS mixed content blocked</strong><br>
+GitHub Pages blocks HTTP requests from HTTPS pages. Open the demo directly from the API server:<br>
+<a id="directLink" href="http://road-sense-api.swedencentral.azurecontainer.io:8000/" style="color:#38bdf8" target="_blank">http://road-sense-api.swedencentral.azurecontainer.io:8000/</a>
+</div>
+<p class="subtitle" id="statusLine">Live inference on your images &mdash; <span id="apiStatus" style="color:#f87171">checking...</span></p>
 
 <div class="endpoints">
 <strong>API:</strong> <code id="apiUrlDisplay">http://road-sense-api.swedencentral.azurecontainer.io:8000</code>
@@ -189,6 +194,17 @@ async function detect() {
 
 // Health check on load
 async function checkHealth() {
+  const isHttps = window.location.protocol === 'https:';
+  const isApiOrigin = window.location.port === '8000' || window.location.hostname.includes('azurecontainer');
+  
+  if (isHttps && !isApiOrigin) {
+    document.getElementById('httpsWarning').style.display = 'block';
+    apiStatus.textContent = 'use API URL below';
+    apiStatus.style.color = '#facc15';
+    document.getElementById('statusLine').innerHTML = 'Live inference on your images — <span style="color:#facc15">open the API URL directly</span>';
+    return;
+  }
+  
   try {
     const r = await fetch(`${getApiBase()}/health`);
     if (r.ok) { apiStatus.textContent = 'online'; apiStatus.style.color = '#4ade80'; }
