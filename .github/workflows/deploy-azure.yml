@@ -56,4 +56,5 @@ jobs:
             --dns-name-label road-sense-api \
             --ports 8000 \
             --cpu 4 \
-            --memory 8
+            --memory 8 \
+            --os-type Linux
