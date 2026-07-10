@@ -38,6 +38,9 @@ COPY --from=builder /app/pyproject.toml /app/pyproject.toml
 # Copy model weights directly into image
 COPY models/checkpoints/HPO_run/weights/best.pt /app/models/checkpoints/HPO_run/weights/best.pt
 
+# Copy demo frontend
+COPY presentation/demo.html /app/presentation/demo.html
+
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 RUN mkdir -p /app/models/exports

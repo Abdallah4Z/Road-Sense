@@ -13,7 +13,6 @@ Dockerfile
 docker-compose.yml
 README.md
 reports/
-presentation/
 experiments/
 notebooks/
 docs/
