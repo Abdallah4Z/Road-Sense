@@ -35,14 +35,11 @@ COPY --from=builder /app/pyproject.toml /app/pyproject.toml
 # COPY models/exports/ /app/models/exports/
 # Use: docker run -v /path/to/models:/app/models
 
-# Model is downloaded at startup by scripts/startup.sh
-RUN pip install --no-cache-dir requests
+# Copy model weights directly into image
+COPY models/checkpoints/HPO_run/weights/best.pt /app/models/checkpoints/HPO_run/weights/best.pt
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 EXPOSE 8000
 
-COPY scripts/startup.sh /app/scripts/startup.sh
-RUN chmod +x /app/scripts/startup.sh
-
-CMD ["/app/scripts/startup.sh"]
+CMD ["python3", "src/models/api_server.py", "--port", "8000", "--host", "0.0.0.0"]

@@ -1,5 +1,4 @@
 data/
-models/
 .git/
 *.md
 __pycache__/
