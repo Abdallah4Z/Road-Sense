@@ -33,6 +33,8 @@ import uvicorn
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from ultralytics import YOLO
 
@@ -495,6 +497,20 @@ app.add_middleware(
 
 # Compress responses (especially base64 annotated images)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Serve demo frontend at root
+project_root = Path(__file__).resolve().parents[2]
+demo_dir = project_root / "presentation"
+if demo_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(demo_dir)), name="static")
+
+
+@app.get("/", response_class=HTMLResponse)
+async def demo_page() -> str:
+    demo_path = demo_dir / "demo.html"
+    if demo_path.exists():
+        return demo_path.read_text()
+    return "<h1>Road-Sense API</h1><p>See <a href='/docs'>/docs</a> for API docs</p>"
 
 try:
     from prometheus_fastapi_instrumentator import Instrumentator
