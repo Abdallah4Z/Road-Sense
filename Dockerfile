@@ -40,7 +40,6 @@ COPY models/checkpoints/HPO_run/weights/best.pt /app/models/checkpoints/HPO_run/
 
 # Copy demo frontend
 COPY presentation/demo.html /app/presentation/demo.html
-COPY presentation/css /app/presentation/css
 COPY presentation/js /app/presentation/js
 
 ENV PYTHONUNBUFFERED=1
