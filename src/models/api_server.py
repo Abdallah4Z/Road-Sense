@@ -515,7 +515,7 @@ async def demo_page() -> str:
 try:
     from prometheus_fastapi_instrumentator import Instrumentator
 
-    Instrumentator().instrument(app).expose(app, endpoint="/metrics", should_close=False)
+    Instrumentator().instrument(app).expose(app, endpoint="/metrics", should_gzip=False)
     logger.info("Prometheus metrics endpoint enabled at /metrics")
 except Exception as e:
     logger.warning("Prometheus metrics disabled: %s", e)
