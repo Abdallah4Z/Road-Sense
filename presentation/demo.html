@@ -6,307 +6,519 @@
 <title>Road-Sense &mdash; Real-Time Object Detection API</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
 :root {
-  --bg: #070b15;
-  --surface: #0d1525;
-  --surface2: #141f35;
-  --border: #1a2d4a;
-  --text: #e8edf5;
+  --bg: #0a0e17;
+  --surface: #111827;
+  --surface2: #1a2332;
+  --border: #1e2d45;
+  --text: #e2e8f0;
   --text2: #7b8db3;
+  --text3: #4a5a7a;
   --accent: #38bdf8;
-  --accent2: #7c3aed;
+  --accent2: #6366f1;
   --green: #4ade80;
   --red: #f87171;
   --yellow: #facc15;
-  --radius: 12px;
-  --shadow: 0 4px 40px rgba(56,189,248,0.06);
+  --radius: 10px;
+  --radius-lg: 16px;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
-::selection { background: var(--accent); color: var(--bg); }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+::selection { background: var(--accent); color: #000; }
 
-/* Animated grid background */
-body::before {
-  content: ''; position: fixed; inset: 0;
-  background-image:
-    linear-gradient(rgba(56,189,248,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56,189,248,0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-  pointer-events: none; z-index: 0;
-}
+/* Layout */
+.wrapper { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+section { padding: 64px 0; }
+.section-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 8px; }
+.section-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.section-desc { color: var(--text2); font-size: 15px; max-width: 640px; margin-bottom: 32px; }
 
-/* Glow orbs */
-body::after {
-  content: ''; position: fixed; top: -30%; right: -20%;
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(56,189,248,0.06) 0%, transparent 70%);
-  pointer-events: none; z-index: 0;
-}
+/* Navbar */
+.nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.nav-l { display: flex; align-items: center; gap: 32px; }
+.nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--text); text-decoration: none; }
+.nav-logo svg { width: 28px; height: 28px; }
+.nav-links { display: flex; gap: 20px; }
+.nav-links a { color: var(--text2); text-decoration: none; font-size: 13px; font-weight: 500; transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-r { display: flex; align-items: center; gap: 16px; }
+.status-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; }
+.dot { width: 7px; height: 7px; border-radius: 50%; }
+.dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot.off { background: var(--text3); }
+.nav-link-btn { padding: 6px 16px; border-radius: 6px; background: var(--accent); color: #000 !important; font-weight: 600; }
 
-.nav { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 20px 40px; max-width: 1400px; margin: 0 auto; }
-.nav-logo { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 20px; color: var(--text); text-decoration: none; }
-.nav-logo svg { width: 32px; height: 32px; }
-.nav-links { display: flex; gap: 24px; align-items: center; }
-.nav-links a { color: var(--text2); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
-.nav-links a:hover { color: var(--accent); }
-.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite; }
-.status-dot.online { background: var(--green); box-shadow: 0 0 8px var(--green); }
-.status-dot.offline { background: var(--red); }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-.hero { position: relative; z-index: 1; text-align: center; padding: 60px 20px 40px; max-width: 800px; margin: 0 auto; }
-.hero-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 100px; background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.15); font-size: 13px; font-weight: 500; color: var(--accent); margin-bottom: 24px; }
-.hero h1 { font-size: clamp(36px, 5vw, 56px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 16px; background: linear-gradient(135deg, #e8edf5 0%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.hero p { font-size: 18px; color: var(--text2); line-height: 1.6; max-width: 600px; margin: 0 auto 32px; }
-
-.quick-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
-.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; border: none; }
-.btn-primary { background: var(--accent); color: var(--bg); }
-.btn-primary:hover { background: #7dd3fc; transform: translateY(-1px); box-shadow: 0 8px 30px rgba(56,189,248,0.25); }
+/* Hero */
+.hero { padding: 80px 0 64px; text-align: center; }
+.hero h1 { font-size: clamp(32px, 5vw, 52px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 16px; }
+.hero h1 span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero p { font-size: 16px; color: var(--text2); max-width: 560px; margin: 0 auto 32px; }
+.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; border: none; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { background: #7dd3fc; transform: translateY(-1px); }
 .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-secondary:hover { background: var(--border); transform: translateY(-1px); }
-.btn-ghost { background: transparent; color: var(--text2); }
-.btn-ghost:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.btn-secondary:hover { background: var(--border); }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surface2); }
 
-.container { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 20px 60px; }
+/* Metrics bar */
+.metrics-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 40px; }
+.metric-item { background: var(--surface); padding: 20px; text-align: center; }
+.metric-value { font-size: 24px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+.metric-value.green { color: var(--green); }
+.metric-value.yellow { color: var(--yellow); }
+.metric-label { font-size: 12px; color: var(--text2); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* Endpoint cards */
-.endpoints { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 40px; }
-.ep-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; transition: all 0.2s; }
-.ep-card:hover { border-color: rgba(56,189,248,0.2); box-shadow: 0 0 30px rgba(56,189,248,0.04); }
-.ep-method { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; margin-right: 8px; }
-.ep-method.get { background: rgba(56,189,248,0.12); color: var(--accent); }
-.ep-method.post { background: rgba(74,222,128,0.12); color: var(--green); }
-.ep-path { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 500; color: var(--text); }
-.ep-desc { font-size: 13px; color: var(--text2); margin-top: 6px; }
-.ep-status { font-size: 12px; margin-top: 8px; }
-.ep-status .check { color: var(--green); }
+/* Cards grid */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; transition: border 0.2s; }
+.card:hover { border-color: rgba(56,189,248,0.15); }
+.card-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 18px; }
+.card-icon.blue { background: rgba(56,189,248,0.1); }
+.card-icon.green { background: rgba(74,222,128,0.1); }
+.card-icon.purple { background: rgba(99,102,241,0.1); }
+.card-icon.yellow { background: rgba(250,204,21,0.1); }
+.card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.card p { font-size: 13px; color: var(--text2); line-height: 1.5; }
+.card .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; margin-bottom: 8px; }
+.tag.get { background: rgba(56,189,248,0.12); color: var(--accent); }
+.tag.post { background: rgba(74,222,128,0.12); color: var(--green); }
+.card-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 13px; color: var(--accent); text-decoration: none; font-weight: 500; }
 
-/* Demo section */
-.section-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-.section-title span { color: var(--text2); font-weight: 400; }
+/* Live demo grid */
 .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
-.card-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+.upload-area { border: 2px dashed var(--border); border-radius: 10px; padding: 40px 24px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; }
+.upload-area:hover { border-color: var(--accent); background: rgba(56,189,248,0.02); }
+.upload-area.dragover { border-color: var(--green); background: rgba(74,222,128,0.04); }
+.upload-icon { font-size: 36px; margin-bottom: 8px; }
+.upload-area p { color: var(--text2); font-size: 14px; }
+.result-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.result-stat { text-align: center; padding: 12px; background: var(--bg); border-radius: 8px; }
+.result-num { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+.result-label { font-size: 11px; color: var(--text2); text-transform: uppercase; margin-top: 2px; }
 
-.api-url { width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px; margin-bottom: 16px; outline: none; transition: border 0.2s; }
-.api-url:focus { border-color: var(--accent); }
+/* Charts */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+.chart-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text2); }
+.chart-card canvas { max-height: 220px; }
+.chart-card.wide { grid-column: span 2; }
 
-.dropzone { border: 2px dashed var(--border); border-radius: 8px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; }
-.dropzone:hover { border-color: var(--accent); background: rgba(56,189,248,0.02); }
-.dropzone.dragover { border-color: var(--green); background: rgba(74,222,128,0.04); }
-.dropzone-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
-.dropzone p { color: var(--text2); font-size: 14px; }
-.controls-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.controls-row label { font-size: 13px; color: var(--text2); }
-.controls-row input[type=range] { accent-color: var(--accent); }
-.controls-row .val { color: var(--accent); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
-.btn-icon { display: inline-flex; align-items: center; gap: 6px; }
+/* Doc cards */
+.doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.doc-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: inherit; transition: all 0.2s; }
+.doc-item:hover { border-color: rgba(56,189,248,0.2); }
+.doc-icon { font-size: 20px; width: 32px; text-align: center; }
+.doc-info { flex: 1; }
+.doc-name { font-size: 14px; font-weight: 600; }
+.doc-desc { font-size: 12px; color: var(--text2); margin-top: 1px; }
 
-/* Results */
-.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
-.stat-box { text-align: center; padding: 16px; background: var(--bg); border-radius: 8px; }
-.stat-num { font-size: 28px; font-weight: 700; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
-.stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+/* Arch diagram */
+.arch { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; text-align: center; }
+.arch-flow { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 20px 0; font-size: 13px; }
+.arch-box { padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; font-weight: 500; }
+.arch-box.accent { border-color: var(--accent); color: var(--accent); }
+.arch-arrow { color: var(--text3); font-size: 18px; }
 
-.preview-img { width: 100%; border-radius: 8px; margin-top: 12px; background: var(--bg); }
-.detection-list { margin-top: 12px; }
-.det-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
-.det-item:last-child { border-bottom: none; }
-.det-class { font-weight: 600; color: var(--accent); }
-.det-conf { color: var(--green); font-family: 'JetBrains Mono', monospace; }
-.det-bbox { color: var(--text2); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-.error-box { color: var(--red); font-size: 13px; margin-top: 8px; padding: 8px 12px; background: rgba(248,113,113,0.06); border-radius: 6px; }
-.loading { display: flex; flex-direction: column; align-items: center; padding: 40px; }
-.spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
-@keyframes spin { to { transform: rotate(360deg); } }
+/* Monitoring live */
+.monitor-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+.monitor-chart { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+.monitor-chart h3 { font-size: 14px; font-weight: 600; color: var(--text2); margin-bottom: 12px; }
+.monitor-list { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+.monitor-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.monitor-row:last-child { border: none; }
+.monitor-key { color: var(--text2); }
+.monitor-val { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
 
-.footer { position: relative; z-index: 1; text-align: center; padding: 40px; color: var(--text2); font-size: 13px; border-top: 1px solid var(--border); max-width: 1400px; margin: 0 auto; }
+/* Alert banner */
+.alert-banner { display: none; background: linear-gradient(135deg, #1a0a0a, #2d0a0a); border: 1px solid var(--red); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 24px; font-size: 14px; }
+.alert-banner strong { color: var(--red); }
+.alert-banner a { color: var(--accent); }
+
+/* Video embed */
+.video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.video-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.video-card video { width: 100%; display: block; }
+.video-card .vcaption { padding: 12px 16px; font-size: 13px; color: var(--text2); }
+
+/* Footer */
+.footer { padding: 32px 0; border-top: 1px solid var(--border); text-align: center; color: var(--text3); font-size: 13px; }
 .footer a { color: var(--accent); text-decoration: none; }
 
 @media (max-width: 768px) {
-  .demo-grid { grid-template-columns: 1fr; }
-  .nav { padding: 16px 20px; flex-wrap: wrap; gap: 12px; }
-  .hero { padding: 40px 20px 24px; }
+  .demo-grid, .charts-grid, .monitor-grid, .video-grid { grid-template-columns: 1fr; }
+  .chart-card.wide { grid-column: span 1; }
+  .nav-links { display: none; }
 }
-
-/* HTTPS warning */
-.https-warning { display: none; background: linear-gradient(135deg, #1a0a0a, #2d0a0a); border: 1px solid var(--red); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; font-size: 14px; }
-.https-warning strong { color: var(--red); }
-.https-warning a { color: var(--accent); }
 </style>
 </head>
 <body>
 
-<nav class="nav">
-  <a href="/" class="nav-logo">
-    <svg viewBox="0 0 32 32" fill="none"><rect x="2" y="2" width="28" height="28" rx="8" stroke="#38bdf8" stroke-width="2"/><path d="M10 22V12l6 5 6-5v10" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Road-Sense
-  </a>
-  <div class="nav-links">
-    <span id="statusBadge"><span class="status-dot offline"></span><span id="statusText">Offline</span></span>
-    <a href="/docs" target="_blank">API Docs</a>
-    <a href="/health" target="_blank">Health</a>
-    <a href="https://github.com/Abdallah4Z/Road-Sense" target="_blank">GitHub</a>
+<!-- HTTPS Warning -->
+<div class="alert-banner" id="httpsWarn">
+  <strong>HTTPS mixed content</strong> &mdash; Open the API URL directly for full functionality:<br>
+  <a href="http://road-sense-api.swedencentral.azurecontainer.io:8000/" target="_blank">http://road-sense-api.swedencentral.azurecontainer.io:8000/</a>
+</div>
+
+<!-- Navbar -->
+<nav class="nav wrapper">
+  <div class="nav-l">
+    <a href="/" class="nav-logo">
+      <svg viewBox="0 0 28 28" fill="none"><rect x="1" y="1" width="26" height="26" rx="7" stroke="currentColor" stroke-width="2"/><path d="M9 20V11l5 4 5-4v9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Road-Sense
+    </a>
+    <div class="nav-links">
+      <a href="#api">API</a>
+      <a href="#demo">Demo</a>
+      <a href="#monitor">Monitoring</a>
+      <a href="#performance">Benchmarks</a>
+      <a href="#docs">Docs</a>
+    </div>
+  </div>
+  <div class="nav-r">
+    <span class="status-badge" id="navStatus"><span class="dot off"></span> Connecting...</span>
+    <a href="/docs" class="btn btn-primary" style="padding:6px 14px;font-size:13px">API Docs</a>
   </div>
 </nav>
 
-<section class="hero">
-  <div class="hero-badge">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-    Live on Azure Container Instances
-  </div>
-  <h1>Real-Time Object Detection<br>for Autonomous Vehicles</h1>
-  <p>YOLO11m model deployed on Azure — detects Vehicles, Pedestrians, and Cyclists in real-time. Upload an image to try it live.</p>
-  <div class="quick-actions">
-    <a href="/docs" class="btn btn-primary">API Documentation</a>
-    <a href="/health" class="btn btn-secondary">System Health</a>
-    <a href="https://github.com/Abdallah4Z/Road-Sense" class="btn btn-ghost">View on GitHub</a>
+<!-- Hero -->
+<section class="hero wrapper">
+  <h1>Real-Time Object Detection<br>for <span>Autonomous Vehicles</span></h1>
+  <p>YOLO11m deployed on Azure Container Instances. Detects Vehicles, Pedestrians, and Cyclists. 36+ FPS on GPU, sub-700ms on CPU.</p>
+  <div class="hero-actions">
+    <a href="#demo" class="btn btn-primary">Try Live Demo</a>
+    <a href="/docs" class="btn btn-secondary">API Documentation</a>
+    <a href="https://github.com/Abdallah4Z/Road-Sense" class="btn btn-ghost">GitHub</a>
   </div>
 </section>
 
-<div class="container">
-  <div class="https-warning" id="httpsWarning">
-    <strong>HTTPS mixed content blocked</strong> &mdash; Open the API URL directly to use the demo:<br>
-    <a href="http://road-sense-api.swedencentral.azurecontainer.io:8000/" target="_blank">http://road-sense-api.swedencentral.azurecontainer.io:8000/</a>
+<!-- Live Metrics Bar -->
+<section class="wrapper" style="padding-top:0">
+  <div class="metrics-bar" id="metricsBar">
+    <div class="metric-item"><div class="metric-value" id="mUptime">--</div><div class="metric-label">Uptime</div></div>
+    <div class="metric-item"><div class="metric-value" id="mRam">--</div><div class="metric-label">RAM (MB)</div></div>
+    <div class="metric-item"><div class="metric-value" id="mRequests">--</div><div class="metric-label">Requests</div></div>
+    <div class="metric-item"><div class="metric-value" id="mLatency">--</div><div class="metric-label">p50 Latency (ms)</div></div>
+    <div class="metric-item"><div class="metric-value green" id="mModel">--</div><div class="metric-label">Model Status</div></div>
   </div>
+</section>
 
-  <div class="endpoints">
-    <div class="ep-card"><span class="ep-method get">GET</span><span class="ep-path">/health</span><div class="ep-desc">System status, model info, RAM, latency stats</div><div class="ep-status"><span class="check">✓</span> Always available</div></div>
-    <div class="ep-card"><span class="ep-method post">POST</span><span class="ep-path">/detect</span><div class="ep-desc">Upload image &rarr; returns detections + annotated image</div><div class="ep-status"><span class="check">✓</span> ~650ms on CPU</div></div>
-    <div class="ep-card"><span class="ep-method get">GET</span><span class="ep-path">/docs</span><div class="ep-desc">Interactive Swagger UI &mdash; try all endpoints</div><div class="ep-status"><span class="check">✓</span> OpenAPI 3.0</div></div>
-    <div class="ep-card"><span class="ep-method get">GET</span><span class="ep-path">/metrics</span><div class="ep-desc">Prometheus metrics for monitoring &amp; alerting</div><div class="ep-status"><span class="check">✓</span> Prometheus format</div></div>
+<!-- API Endpoints -->
+<section class="wrapper" id="api">
+  <div class="section-label">Endpoints</div>
+  <h2 class="section-title">API</h2>
+  <p class="section-desc">RESTful API deployed on Azure Container Instances (Sweden Central). All endpoints return JSON.</p>
+  <div class="card-grid">
+    <div class="card"><span class="tag get">GET</span><h3>/health</h3><p>System status, model info, RAM usage, latency percentiles, request counts, error rate.</p><a href="/health" class="card-link">Check now →</a></div>
+    <div class="card"><span class="tag post">POST</span><h3>/detect</h3><p>Upload an image → returns JSON detections (class, confidence, bbox, track_id) + base64 annotated image.</p></div>
+    <div class="card"><span class="tag post">POST</span><h3>/detect_batch</h3><p>Upload multiple images → returns array of detection results, one per image. Supports up to 10 images.</p></div>
+    <div class="card"><span class="tag get">GET</span><h3>/docs</h3><p>Interactive Swagger UI — try all endpoints directly in the browser with live responses.</p><a href="/docs" class="card-link">Open Swagger →</a></div>
+    <div class="card"><span class="tag get">GET</span><h3>/redoc</h3><p>ReDoc alternative API documentation with schema details and code samples.</p><a href="/redoc" class="card-link">Open ReDoc →</a></div>
+    <div class="card"><span class="tag get">GET</span><h3>/metrics</h3><p>Prometheus-formatted metrics for production monitoring. Compatible with Grafana dashboards.</p></div>
   </div>
+</section>
 
-  <div class="section-title">Live Demo <span>&mdash; Upload an image to test</span></div>
+<!-- Live Demo -->
+<section class="wrapper" id="demo">
+  <div class="section-label">Try it</div>
+  <h2 class="section-title">Live Detection Demo</h2>
+  <p class="section-desc">Upload an image and see the model detect objects in real time. Works with any photo containing vehicles, pedestrians, or cyclists.</p>
   <div class="demo-grid">
-    <div class="card">
-      <div class="card-title">Input</div>
-      <input type="text" id="apiUrl" class="api-url" value="http://road-sense-api.swedencentral.azurecontainer.io:8000" placeholder="API URL">
-      <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-        <div class="dropzone-icon">📷</div>
-        <p>Drop an image here or click to browse</p>
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px">Input</h3>
+      <input type="text" id="apiUrl" class="api-url" style="width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;margin-bottom:12px;outline:none" value="http://road-sense-api.swedencentral.azurecontainer.io:8000">
+      <div class="upload-area" id="dropzone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">📷</div>
+        <p>Drop an image or click to browse</p>
         <input type="file" id="fileInput" accept="image/*" hidden>
       </div>
-      <div class="controls-row">
-        <label>Confidence: <span class="val" id="confVal">0.25</span></label>
-        <input type="range" id="confSlider" min="0" max="100" value="25" oninput="document.getElementById('confVal').textContent=(this.value/100).toFixed(2)">
-        <button class="btn btn-primary btn-icon" id="detectBtn" onclick="detect()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          Detect
-        </button>
-        <button class="btn btn-secondary" onclick="resetDemo()">Clear</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label style="font-size:12px;color:var(--text2)">Confidence: <strong id="confVal" style="color:var(--accent)">0.25</strong></label>
+        <input type="range" min="0" max="100" value="25" oninput="document.getElementById('confVal').textContent=(this.value/100).toFixed(2)" style="flex:1;max-width:120px;accent-color:var(--accent)">
+        <button class="btn btn-primary" id="detectBtn" onclick="detect()" style="padding:8px 16px;font-size:13px"> Detect</button>
+        <button class="btn btn-ghost" onclick="resetDemo()" style="padding:8px 16px;font-size:13px">Clear</button>
       </div>
       <div id="preview"></div>
     </div>
-
-    <div class="card">
-      <div class="card-title">Results</div>
-      <div id="loading" class="loading" style="display:none"><div class="spinner"></div><span style="color:var(--text2);font-size:14px">Running inference...</span></div>
-      <div id="results">
-        <div class="stats-row" id="statsRow">
-          <div class="stat-box"><div class="stat-num" id="objCount">-</div><div class="stat-label">Objects</div></div>
-          <div class="stat-box"><div class="stat-num" id="infTime">-</div><div class="stat-label">Latency (ms)</div></div>
-          <div class="stat-box"><div class="stat-num" id="fps">-</div><div class="stat-label">FPS</div></div>
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px">Results</h3>
+      <div id="loading" style="display:none;text-align:center;padding:40px"><div class="dot on" style="width:32px;height:32px;margin:0 auto 12px;animation:pulse 0.8s infinite"></div><span style="color:var(--text2);font-size:13px">Running inference...</span></div>
+      <div id="results" style="display:none">
+        <div class="result-strip">
+          <div class="result-stat"><div class="result-num" id="objCount">-</div><div class="result-label">Objects</div></div>
+          <div class="result-stat"><div class="result-num" id="infTime">-</div><div class="result-label">Latency (ms)</div></div>
+          <div class="result-stat"><div class="result-num" id="fpsDisplay">-</div><div class="result-label">FPS</div></div>
         </div>
-        <img id="resultImg" class="preview-img" style="display:none">
-        <div id="detections" class="detection-list"></div>
-        <div id="error" class="error-box"></div>
+        <img id="resultImg" style="width:100%;border-radius:8px;background:var(--bg)">
+        <div id="detectionList" style="margin-top:8px"></div>
+        <div id="errorMsg" style="color:var(--red);font-size:13px;margin-top:8px;padding:8px 12px;background:rgba(248,113,113,0.06);border-radius:6px"></div>
       </div>
     </div>
   </div>
-</div>
+</section>
 
-<footer class="footer">
+<!-- Monitoring -->
+<section class="wrapper" id="monitor">
+  <div class="section-label">Live</div>
+  <h2 class="section-title">Monitoring</h2>
+  <p class="section-desc">Real-time performance metrics streamed from the API server. Updated on page load.</p>
+  <div class="monitor-grid">
+    <div class="monitor-chart">
+      <h3>Latency Distribution</h3>
+      <canvas id="latencyChart"></canvas>
+    </div>
+    <div class="monitor-list">
+      <h3 style="font-size:14px;font-weight:600;color:var(--text2);margin-bottom:12px">System Stats</h3>
+      <div class="monitor-row"><span class="monitor-key">Uptime</span><span class="monitor-val" id="statUptime">--</span></div>
+      <div class="monitor-row"><span class="monitor-key">RAM Usage</span><span class="monitor-val" id="statRam">--</span></div>
+      <div class="monitor-row"><span class="monitor-key">Total Requests</span><span class="monitor-val" id="statReqs">--</span></div>
+      <div class="monitor-row"><span class="monitor-key">Error Rate</span><span class="monitor-val" id="statErrors">--</span></div>
+      <div class="monitor-row"><span class="monitor-key">p50 Latency</span><span class="monitor-val" id="statP50">--</span></div>
+      <div class="monitor-row"><span class="monitor-key">p95 Latency</span><span class="monitor-val" id="statP95">--</span></div>
+      <div class="monitor-row"><span class="monitor-key">p99 Latency</span><span class="monitor-val" id="statP99">--</span></div>
+      <div class="monitor-row"><span class="monitor-key">Model Loaded</span><span class="monitor-val" id="statModel">--</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Performance Benchmarks -->
+<section class="wrapper" id="performance">
+  <div class="section-label">Benchmarks</div>
+  <h2 class="section-title">Performance</h2>
+  <p class="section-desc">Measured on NVIDIA RTX 3050 (GPU) and Azure Container Instances (CPU). YOLO11m HPO model.</p>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Export Format FPS</h3>
+      <canvas id="fpsChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Model Size</h3>
+      <canvas id="sizeChart"></canvas>
+    </div>
+    <div class="chart-card wide">
+      <h3>Latency Percentiles by Format</h3>
+      <canvas id="perfChart"></canvas>
+    </div>
+  </div>
+  <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
+    <a href="https://github.com/Abdallah4Z/Road-Sense/blob/main/reports/MODEL_EVALUATION_REPORT.md" class="btn btn-ghost" style="font-size:13px">Full Evaluation Report →</a>
+    <a href="https://github.com/Abdallah4Z/Road-Sense/blob/main/docs/models/MODEL_COMPARISON_REPORT.md" class="btn btn-ghost" style="font-size:13px">Model Comparison →</a>
+    <a href="https://github.com/Abdallah4Z/Road-Sense/blob/main/reports/TRAINING_COMPARISON_REPORT.md" class="btn btn-ghost" style="font-size:13px">Training Comparison →</a>
+  </div>
+</section>
+
+<!-- Demo Video -->
+<section class="wrapper" id="video">
+  <div class="section-label">Demo</div>
+  <h2 class="section-title">Detection in Action</h2>
+  <p class="section-desc">KITTI driving sequence (2011_09_26_drive_0005) processed with YOLO11m. All 3 classes detected with IoU tracking.</p>
+</section>
+
+<!-- Documentation -->
+<section class="wrapper" id="docs">
+  <div class="section-label">Resources</div>
+  <h2 class="section-title">Documentation</h2>
+  <p class="section-desc">Project reports, deployment guides, and technical documentation.</p>
+  <div class="doc-grid">
+    <a href="https://github.com/Abdallah4Z/Road-Sense/blob/main/reports/MODEL_EVALUATION_REPORT.md" class="doc-item"><span class="doc-icon">📊</span><div class="doc-info"><div class="doc-name">Model Evaluation Report</div><div class="doc-desc">Full performance metrics, per-class analysis, error analysis</div></div></a>
+    <a href="https://github.com/Abdallah4Z/Road-Sense/blob/main/docs/models/MODEL_COMPARISON_REPORT.md" class="doc-item"><span class="doc-icon">⚖️</span><div class="doc-info"><div class="doc-name">Model Comparison</div><div class="doc-desc">YOLO vs SSD vs Faster R-CNN on COCO128 and KITTI</div></div></a>
+    <a href="https://github.com/Abdallah4Z/Road-Sense/blob/main/reports/TRAINING_COMPARISON_REPORT.md" class="doc-item"><span class="doc-icon">📈</span><div class="doc-info"><div class="doc-name">Training Comparison</div><div class="doc-desc">YOLO11m vs Faster R-CNN fine-tuning results</div></div></a>
+    <a href="https://github.com/Abdallah4Z/Road-Sense/blob/main/docs/DEPLOYMENT_GUIDE.md" class="doc-item"><span class="doc-icon">🚀</span><div class="doc-info"><div class="doc-name">Deployment Guide</div><div class="doc-desc">Local, Docker, and Azure deployment instructions</div></div></a>
+    <a href="https://github.com/Abdallah4Z/Road-Sense/blob/main/docs/API_DOCUMENTATION.md" class="doc-item"><span class="doc-icon">📡</span><div class="doc-info"><div class="doc-name">API Documentation</div><div class="doc-desc">Endpoints, request/response formats, code examples</div></div></a>
+    <a href="https://github.com/Abdallah4Z/Road-Sense/blob/main/docs/FINAL_PROJECT_REPORT.md" class="doc-item"><span class="doc-icon">📄</span><div class="doc-info"><div class="doc-name">Final Report</div><div class="doc-desc">Comprehensive project summary, methodology, results</div></div></a>
+    <a href="https://github.com/Abdallah4Z/Road-Sense/blob/main/docs/MODEL_DEVELOPMENT_SUMMARY.md" class="doc-item"><span class="doc-icon">📋</span><div class="doc-info"><div class="doc-name">Model Development Summary</div><div class="doc-desc">Final model selection, optimization, KPIs</div></div></a>
+    <a href="https://github.com/Abdallah4Z/Road-Sense/blob/main/infra/azure/README.md" class="doc-item"><span class="doc-icon">☁️</span><div class="doc-info"><div class="doc-name">Azure Deployment</div><div class="doc-desc">Infrastructure scripts, deployment workflow</div></div></a>
+    <a href="/docs" class="doc-item"><span class="doc-icon">🔌</span><div class="doc-info"><div class="doc-name">Swagger UI</div><div class="doc-desc">Interactive API explorer with built-in request testing</div></div></a>
+    <a href="https://github.com/Abdallah4Z/Road-Sense" class="doc-item"><span class="doc-icon">💻</span><div class="doc-info"><div class="doc-name">Source Code</div><div class="doc-desc">Full repository on GitHub</div></div></a>
+  </div>
+</section>
+
+<!-- Architecture -->
+<section class="wrapper">
+  <div class="section-label">System</div>
+  <h2 class="section-title">Architecture</h2>
+  <p class="section-desc">End-to-end deployment pipeline from development to production.</p>
+  <div class="arch">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px">
+      <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px">Training</div><div class="arch-box">Modal Cloud<br><span style="font-size:11px;color:var(--text2)">A100/A10G GPU</span></div></div>
+      <div style="display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text3)">→</div>
+      <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px">Artifacts</div><div class="arch-box">GHCR<br><span style="font-size:11px;color:var(--text2)">Container Registry</span></div></div>
+      <div style="display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text3)">→</div>
+      <div><div style="font-size:12px;color:var(--text2);margin-bottom:4px">Deployment</div><div class="arch-box accent">Azure ACI<br><span style="font-size:11px;color:var(--accent)">swedencentral</span></div></div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;font-size:12px;color:var(--text2)">
+      <span>YOLO11m</span><span>·</span><span>FastAPI</span><span>·</span><span>ONNX Runtime</span><span>·</span><span>Prometheus</span><span>·</span><span>Docker</span><span>·</span><span>GitHub Actions</span>
+    </div>
+  </div>
+</section>
+
+<footer class="footer wrapper">
   Built with YOLO11m · FastAPI · Azure Container Instances · <a href="https://github.com/Abdallah4Z/Road-Sense">GitHub</a>
 </footer>
 
 <script>
+const BASE = 'http://road-sense-api.swedencentral.azurecontainer.io:8000';
+
+// === Live Metrics from /health ===
+async function loadHealth() {
+  try {
+    const r = await fetch(`${BASE}/health`);
+    if (!r.ok) throw new Error('Health check failed');
+    const d = await r.json();
+
+    document.getElementById('navStatus').innerHTML = '<span class="dot on"></span> Online';
+    document.getElementById('mUptime').textContent = formatUptime(d.stats.uptime_seconds);
+    document.getElementById('mRam').textContent = d.stats.ram_rss_mb?.toFixed(0) || '--';
+    document.getElementById('mRequests').textContent = d.stats.total_requests ?? 0;
+    document.getElementById('mLatency').textContent = d.stats.latency_ms_p50?.toFixed(1) || '--';
+    document.getElementById('mModel').textContent = d.model_loaded ? 'Loaded' : 'Offline';
+    document.getElementById('mModel').className = 'metric-value ' + (d.model_loaded ? 'green' : '');
+
+    document.getElementById('statUptime').textContent = formatUptime(d.stats.uptime_seconds);
+    document.getElementById('statRam').textContent = (d.stats.ram_rss_mb?.toFixed(1) || '--') + ' MB';
+    document.getElementById('statReqs').textContent = d.stats.total_requests ?? 0;
+    const errRate = ((d.stats.error_rate ?? 0) * 100).toFixed(1);
+    document.getElementById('statErrors').textContent = errRate + '%';
+    document.getElementById('statP50').textContent = (d.stats.latency_ms_p50?.toFixed(1) || '--') + ' ms';
+    document.getElementById('statP95').textContent = (d.stats.latency_ms_p95?.toFixed(1) || '--') + ' ms';
+    document.getElementById('statP99').textContent = (d.stats.latency_ms_p99?.toFixed(1) || '--') + ' ms';
+    document.getElementById('statModel').textContent = d.model_loaded ? '✅ Yes' : '❌ No';
+
+    // Latency distribution chart
+    if (d.stats.latency_ms_p50 != null) {
+      new Chart(document.getElementById('latencyChart'), {
+        type: 'bar',
+        data: {
+          labels: ['p50', 'p95', 'p99'],
+          datasets: [{
+            data: [d.stats.latency_ms_p50, d.stats.latency_ms_p95 || 0, d.stats.latency_ms_p99 || 0],
+            backgroundColor: ['rgba(56,189,248,0.6)', 'rgba(99,102,241,0.6)', 'rgba(248,113,113,0.6)'],
+            borderColor: ['#38bdf8', '#6366f1', '#f87171'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#7b8db3' } }, x: { ticks: { color: '#7b8db3' } } }
+        }
+      });
+    }
+  } catch(e) {
+    document.getElementById('navStatus').innerHTML = '<span class="dot off"></span> Offline';
+  }
+}
+
+// === Benchmark Charts ===
+const benchmarkData = {
+  labels: ['PyTorch', 'ONNX FP16', 'TorchScript'],
+  fps: [33.6, 44.1, 33.2],
+  sizes: [38.8, 38.3, 77.0],
+  p50: [29.5, 21.9, 29.8],
+  p95: [32.1, 28.2, 33.3],
+  p99: [33.2, 34.4, 34.4]
+};
+
+function makeChart(id, type, labels, data, label, color, opts) {
+  new Chart(document.getElementById(id), {
+    type,
+    data: { labels, datasets: [{ label, data, backgroundColor: color, borderColor: color, borderWidth: 1 }] },
+    options: { responsive: true, maintainAspectRatio: true, ...opts,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#7b8db3' } }, x: { ticks: { color: '#7b8db3' } } }
+    }
+  });
+}
+makeChart('fpsChart', 'bar', benchmarkData.labels, benchmarkData.fps, 'FPS', 'rgba(56,189,248,0.6)', {});
+makeChart('sizeChart', 'bar', benchmarkData.labels, benchmarkData.sizes, 'MB', 'rgba(99,102,241,0.6)', {});
+
+new Chart(document.getElementById('perfChart'), {
+  type: 'bar',
+  data: {
+    labels: benchmarkData.labels,
+    datasets: [
+      { label: 'p50', data: benchmarkData.p50, backgroundColor: 'rgba(56,189,248,0.6)', borderColor: '#38bdf8', borderWidth: 1 },
+      { label: 'p95', data: benchmarkData.p95, backgroundColor: 'rgba(99,102,241,0.6)', borderColor: '#6366f1', borderWidth: 1 },
+      { label: 'p99', data: benchmarkData.p99, backgroundColor: 'rgba(248,113,113,0.6)', borderColor: '#f87171', borderWidth: 1 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { labels: { color: '#7b8db3', font: { size: 11 } } } },
+    scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#7b8db3' } }, x: { ticks: { color: '#7b8db3' } } }
+  }
+});
+
+function formatUptime(s) {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+// === HTTPS Detection ===
+if (window.location.protocol === 'https:' && !window.location.hostname.includes('azurecontainer')) {
+  document.getElementById('httpsWarn').style.display = 'block';
+  document.getElementById('navStatus').innerHTML = '<span class="dot off"></span> Use API URL';
+}
+
+// === Demo ===
 const apiUrl = document.getElementById('apiUrl');
-const fileInput = document.getElementById('fileInput');
-const dropzone = document.getElementById('dropzone');
-const detectBtn = document.getElementById('detectBtn');
-const resultImg = document.getElementById('resultImg');
-const detections = document.getElementById('detections');
-const error = document.getElementById('error');
-const loading = document.getElementById('loading');
-const results = document.getElementById('results');
-const objCount = document.getElementById('objCount');
-const infTime = document.getElementById('infTime');
-const fps = document.getElementById('fps');
-
-function getBase() { return apiUrl.value.replace(/\/+$/, ''); }
-
-dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('dragover'); if (e.dataTransfer.files.length) fileInput.files = e.dataTransfer.files; loadPreview(); });
-fileInput.addEventListener('change', loadPreview);
+['dropzone','fileInput','preview','results','loading','resultImg','detectionList','errorMsg'].forEach(id => {
+  window[id] = document.getElementById(id);
+});
+document.getElementById('dropzone').addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+document.getElementById('dropzone').addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+document.getElementById('dropzone').addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('dragover'); if (e.dataTransfer.files.length) document.getElementById('fileInput').files = e.dataTransfer.files; loadPreview(); });
+document.getElementById('fileInput').addEventListener('change', loadPreview);
 
 function loadPreview() {
-  const file = fileInput.files[0];
+  const file = document.getElementById('fileInput').files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => { document.getElementById('preview').innerHTML = `<img src="${e.target.result}" style="width:100%;border-radius:6px;margin-top:12px;max-height:240px;object-fit:contain;background:var(--bg)">`; };
-  reader.readAsDataURL(file);
-  error.textContent = '';
+  const r = new FileReader();
+  r.onload = e => { document.getElementById('preview').innerHTML = `<img src="${e.target.result}" style="width:100%;border-radius:6px;margin-top:12px;max-height:200px;object-fit:contain;background:var(--bg)">`; };
+  r.readAsDataURL(file);
+  document.getElementById('errorMsg').textContent = '';
 }
 
 function resetDemo() {
-  fileInput.value = '';
+  document.getElementById('fileInput').value = '';
   document.getElementById('preview').innerHTML = '';
-  resultImg.style.display = 'none';
-  detections.innerHTML = '';
-  error.textContent = '';
-  objCount.textContent = '-'; infTime.textContent = '-'; fps.textContent = '-';
+  document.getElementById('resultImg').style.display = 'none';
+  document.getElementById('detectionList').innerHTML = '';
+  document.getElementById('errorMsg').textContent = '';
+  document.getElementById('results').style.display = 'none';
 }
 
 async function detect() {
-  const file = fileInput.files[0];
-  if (!file) { error.textContent = 'Select an image first'; return; }
-  detectBtn.disabled = true;
-  error.textContent = '';
-  loading.style.display = 'flex';
-  results.style.display = 'none';
-
+  const file = document.getElementById('fileInput').files[0];
+  if (!file) { document.getElementById('errorMsg').textContent = 'Select an image'; return; }
+  document.getElementById('detectBtn').disabled = true;
+  document.getElementById('errorMsg').textContent = '';
+  loading.style.display = 'block';
+  document.getElementById('results').style.display = 'none';
   const fd = new FormData();
   fd.append('image', file);
   fd.append('conf', (document.getElementById('confSlider').value / 100).toFixed(2));
-
   try {
-    const r = await fetch(`${getBase()}/detect`, { method: 'POST', body: fd });
+    const r = await fetch(`${apiUrl.value.replace(/\/+$/, '')}/detect`, { method: 'POST', body: fd });
     if (!r.ok) { const e = await r.json(); throw new Error(e.detail || `HTTP ${r.status}`); }
     const d = await r.json();
-    resultImg.src = d.annotated_image;
-    resultImg.style.display = 'block';
-    objCount.textContent = d.detections.length;
-    infTime.textContent = d.inference_time_ms.toFixed(0);
-    fps.textContent = (1000 / d.inference_time_ms).toFixed(1);
-    detections.innerHTML = d.detections.map(x =>
-      `<div class="det-item"><span class="det-class">${x.class_name}</span><span class="det-conf">${(x.confidence*100).toFixed(0)}%</span><span class="det-bbox">[${x.bbox.map(v=>v.toFixed(0)).join(', ')}]</span></div>`
+    document.getElementById('resultImg').src = d.annotated_image;
+    document.getElementById('resultImg').style.display = 'block';
+    document.getElementById('objCount').textContent = d.detections.length;
+    document.getElementById('infTime').textContent = d.inference_time_ms.toFixed(0);
+    document.getElementById('fpsDisplay').textContent = (1000 / d.inference_time_ms).toFixed(1);
+    document.getElementById('detectionList').innerHTML = d.detections.map(x =>
+      `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--accent);font-weight:600">${x.class_name}</span><span style="color:var(--green);font-family:'JetBrains Mono',monospace">${(x.confidence*100).toFixed(0)}%</span><span style="color:var(--text2);font-family:'JetBrains Mono',monospace;font-size:11px">[${x.bbox.map(v=>v.toFixed(0)).join(', ')}]</span></div>`
     ).join('');
-    results.style.display = 'block';
-  } catch (e) { error.textContent = `Error: ${e.message}`; results.style.display = 'block'; }
-  finally { detectBtn.disabled = false; loading.style.display = 'none'; }
+    document.getElementById('results').style.display = 'block';
+  } catch(e) { document.getElementById('errorMsg').textContent = `Error: ${e.message}`; document.getElementById('results').style.display = 'block'; }
+  finally { document.getElementById('detectBtn').disabled = false; loading.style.display = 'none'; }
 }
 
-// Status check
-async function checkStatus() {
-  const isHttps = location.protocol === 'https:';
-  if (isHttps && location.port !== '8000') {
-    document.getElementById('httpsWarning').style.display = 'block';
-    document.getElementById('statusBadge').innerHTML = '<span class="status-dot offline"></span>Use API URL';
-    return;
-  }
-  try {
-    const r = await fetch(`${getBase()}/health`);
-    if (r.ok) {
-      document.getElementById('statusBadge').innerHTML = '<span class="status-dot online"></span>Online';
-      document.getElementById('statusText').textContent = 'Online';
-    }
-  } catch { document.getElementById('statusBadge').innerHTML = '<span class="status-dot offline"></span>Offline'; }
-}
-checkStatus();
+loadHealth();
 </script>
 </body>
 </html>
