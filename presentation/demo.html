@@ -1,32 +1,26 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Road-Sense — Real-Time Object Detection API</title>
-<meta name="description" content="YOLO11m object detection API deployed on Azure. Real-time vehicle, pedestrian, and cyclist detection with live monitoring.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Crect x='1' y='1' width='26' height='26' rx='7' stroke='%2338bdf8' stroke-width='2' fill='none'/%3E%3Cpath d='M9 20V11l5 4 5-4v9' stroke='%2338bdf8' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<title>Road-Sense — Object Detection API</title>
+<meta name="description" content="YOLO11m fine-tuned on KITTI, served as a live REST API. Vehicle, pedestrian, and cyclist detection at 36+ FPS on GPU and 650ms p50 on CPU.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Crect x='3' y='3' width='22' height='22' rx='6' fill='none' stroke='%23E8E8E9' stroke-width='1.5'/%3E%3Cpath d='M9 18.5L14 8l5 10.5M10.8 15.2h6.4' fill='none' stroke='%23E8E8E9' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="/static/css/theme.css">
-<link rel="stylesheet" href="/static/css/layout.css">
-<link rel="stylesheet" href="/static/css/components.css">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
-<div id="httpsBanner" class="banner banner--warn" hidden>
-  <strong>Mixed Content Blocked.</strong>
-  <span>HTTPS pages cannot call HTTP APIs. Open the demo from the API server directly:</span>
-  <a href="http://road-sense-api.swedencentral.azurecontainer.io:8000/" target="_blank" rel="noopener">
-    road-sense-api.swedencentral.azurecontainer.io:8000
-  </a>
-</div>
 
-<header class="topbar">
+<header class="topbar" id="top">
   <div class="topbar__inner">
     <a href="#top" class="topbar__brand">
-      <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M9 20V11l5 4 5-4v9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>Road-Sense</span>
+      <svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true">
+        <rect x="3" y="3" width="22" height="22" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M9 18.5L14 8l5 10.5M10.8 15.2h6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-name">Road-Sense</span>
     </a>
     <nav class="topbar__nav" aria-label="Primary">
       <a href="#api">API</a>
@@ -36,277 +30,458 @@
       <a href="#docs">Docs</a>
     </nav>
     <div class="topbar__right">
-      <span class="status" id="navStatus"><span class="status__dot" data-state="loading"></span><span data-state="loading">checking</span></span>
-      <a href="/docs" class="btn btn--primary btn--sm">API Reference</a>
+      <span class="status" id="navStatus">
+        <span class="status__dot" data-state="loading"></span>
+        <span data-state="loading">checking</span>
+      </span>
+      <a href="https://github.com/Abdallah4Z/Road-Sense" class="iconbtn" aria-label="GitHub" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      </a>
     </div>
   </div>
 </header>
 
-<main id="top">
-  <section class="hero">
-    <div class="hero__inner">
-      <p class="hero__eyebrow">YOLO11m &middot; FastAPI &middot; Azure Container Instances</p>
-      <h1 class="hero__title">Real-time object detection<br><span class="text-accent">for autonomous vehicles</span></h1>
-      <p class="hero__lede">Three-class detection &mdash; Vehicles, Pedestrians, Cyclists &mdash; with sub-second latency on CPU and 36+ FPS on GPU. Deployed as a live REST API with Prometheus monitoring.</p>
-      <div class="hero__cta">
-        <a href="#playground" class="btn btn--primary">Open Playground</a>
-        <a href="/health" class="btn btn--ghost" target="_blank" rel="noopener">Health <span class="kbd">/health</span></a>
-        <a href="https://github.com/Abdallah4Z/Road-Sense" class="btn btn--ghost" target="_blank" rel="noopener">GitHub <span class="kbd">/</span></a>
+<main>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero__grid">
+    <div class="hero__copy">
+      <p class="eyebrow">YOLO11m &middot; FastAPI &middot; Azure Container Instances</p>
+      <h1 class="h1">Object detection API<br>for <em>autonomous</em> vision.</h1>
+      <p class="lede">Three-class detection &mdash; Vehicle, Pedestrian, Cyclist &mdash; at 44.1 FPS on GPU, 650 ms p50 on CPU. YOLO11m fine-tuned on KITTI, deployed as a live REST endpoint.</p>
+      <div class="cta-row">
+        <a href="#playground" class="btn btn--primary">Run inference <span class="btn__arrow">&rarr;</span></a>
+        <a href="/docs" class="btn btn--ghost" target="_blank" rel="noopener">Open API reference <span class="btn__arrow">&nearr;</span></a>
+      </div>
+      <p class="routes">GET /health &middot; POST /detect &middot; POST /detect_batch</p>
+    </div>
+    <div class="hero__terminal">
+      <div class="terminal" data-copy-target="curl-demo">
+        <div class="terminal__bar">
+          <span class="terminal__lights">
+            <span class="light light--r"></span>
+            <span class="light light--y"></span>
+            <span class="light light--g"></span>
+          </span>
+          <span class="terminal__title">road-sense &mdash; POST /detect</span>
+          <button class="terminal__copy" data-copy="curl-demo" type="button" aria-label="Copy command">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4.5" y="4.5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M2.5 11V3.5A1 1 0 013.5 2.5H11" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <span>Copy</span>
+          </button>
+        </div>
+        <pre class="terminal__body"><code id="curl-demo"><span class="t-prompt">$</span> <span class="t-cmd">curl</span> -X POST http://road-sense-api.swedencentral.azurecontainer.io:8000/detect \
+   -F <span class="t-str">"image=@kitti_frame_000123.png"</span> \
+   -F <span class="t-str">"conf=0.25"</span> \
+   -F <span class="t-str">"session_id=demo-1"</span>
+
+<span class="t-dim"># 200 OK &middot; 1.42s &middot; application/json</span>
+{
+  <span class="t-key">"success"</span>: <span class="t-bool">true</span>,
+  <span class="t-key">"detections"</span>: [
+    {
+      <span class="t-key">"class_name"</span>: <span class="t-str">"Vehicle"</span>,
+      <span class="t-key">"confidence"</span>: <span class="t-num">0.92</span>,
+      <span class="t-key">"bbox"</span>: [<span class="t-num">234.5</span>, <span class="t-num">412.1</span>, <span class="t-num">458.2</span>, <span class="t-num">528.7</span>],
+      <span class="t-key">"track_id"</span>: <span class="t-num">1</span>
+    },
+    {
+      <span class="t-key">"class_name"</span>: <span class="t-str">"Pedestrian"</span>,
+      <span class="t-key">"confidence"</span>: <span class="t-num">0.87</span>,
+      <span class="t-key">"bbox"</span>: [<span class="t-num">612.3</span>, <span class="t-num">401.8</span>, <span class="t-num">638.1</span>, <span class="t-num">489.5</span>],
+      <span class="t-key">"track_id"</span>: <span class="t-num">2</span>
+    },
+    {
+      <span class="t-key">"class_name"</span>: <span class="t-str">"Cyclist"</span>,
+      <span class="t-key">"confidence"</span>: <span class="t-num">0.74</span>,
+      <span class="t-key">"bbox"</span>: [<span class="t-num">78.2</span>, <span class="t-num">380.5</span>, <span class="t-num">142.8</span>, <span class="t-num">478.2</span>],
+      <span class="t-key">"track_id"</span>: <span class="t-num">3</span>
+    }
+  ],
+  <span class="t-key">"inference_time_ms"</span>: <span class="t-num">647.3</span>,
+  <span class="t-key">"message"</span>: <span class="t-str">"Detected 3 tracked objects"</span>
+}</code></pre>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section class="strip">
-    <div class="strip__inner">
-      <div class="stat"><span class="stat__label">Uptime</span><span class="stat__value" data-key="uptime">&mdash;</span></div>
-      <div class="stat"><span class="stat__label">Memory</span><span class="stat__value" data-key="ram">&mdash;</span></div>
-      <div class="stat"><span class="stat__label">Requests</span><span class="stat__value" data-key="requests">&mdash;</span></div>
-      <div class="stat"><span class="stat__label">p50 Latency</span><span class="stat__value" data-key="p50">&mdash;</span></div>
-      <div class="stat"><span class="stat__label">Error Rate</span><span class="stat__value" data-key="error-rate">&mdash;</span></div>
-      <div class="stat"><span class="stat__label">Model</span><span class="stat__value" data-key="model">&mdash;</span></div>
+<!-- LIVE STATUS STRIP -->
+<section class="strip" aria-label="Live system status">
+  <div class="strip__inner">
+    <div class="strip__cell">
+      <span class="strip__label">Uptime</span>
+      <span class="strip__value" data-key="uptime">&mdash;</span>
     </div>
-  </section>
-
-  <section id="api" class="section">
-    <header class="section__head">
-      <p class="section__eyebrow">API</p>
-      <h2 class="section__title">Endpoints</h2>
-      <p class="section__lede">REST API over JSON. Base URL: <code class="inline-code" data-api-base>http://road-sense-api.swedencentral.azurecontainer.io:8000</code></p>
-    </header>
-    <div class="grid grid--3" id="apiGrid"></div>
-  </section>
-
-  <section id="playground" class="section section--alt">
-    <header class="section__head">
-      <p class="section__eyebrow">Playground</p>
-      <h2 class="section__title">Live Detection</h2>
-      <p class="section__lede">Upload any image with vehicles, pedestrians, or cyclists. Returns bounding boxes, class labels, confidence scores, and a base64-encoded annotated image.</p>
-    </header>
-    <div class="playground">
-      <div class="playground__input">
-        <label class="field">
-          <span class="field__label">API Base URL</span>
-          <input type="url" id="apiBaseInput" class="field__input field__input--mono" value="http://road-sense-api.swedencentral.azurecontainer.io:8000">
-        </label>
-        <div class="field">
-          <span class="field__label">Image</span>
-          <div class="dropzone" id="dropzone" tabindex="0">
-            <input type="file" id="fileInput" accept="image/*" hidden>
-            <div class="dropzone__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-            </div>
-            <p class="dropzone__primary">Drop an image or click to browse</p>
-            <p class="dropzone__secondary" id="dropzoneInfo">No file selected</p>
-          </div>
-          <div class="field" id="previewWrap" hidden>
-            <div class="preview-frame">
-              <img id="previewImg" alt="Selected image preview">
-            </div>
-          </div>
-        </div>
-        <div class="controls">
-          <div class="slider">
-            <div class="slider__header">
-              <span class="slider__label">Confidence Threshold</span>
-              <span class="slider__value" id="confVal">0.25</span>
-            </div>
-            <input type="range" id="confSlider" min="0" max="100" step="1" value="25">
-            <div class="slider__scale">
-              <span>0.00</span>
-              <span>0.50</span>
-              <span>1.00</span>
-            </div>
-          </div>
-          <div class="btn-group">
-            <button type="button" class="btn btn--primary" id="detectBtn">Run Detection</button>
-            <button type="button" class="btn btn--ghost" id="resetBtn">Clear</button>
-          </div>
-        </div>
-      </div>
-      <div class="playground__output">
-        <div class="output__placeholder" id="outputPlaceholder">
-          <div class="output__placeholder-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
-          </div>
-          <p>Run detection to see results</p>
-        </div>
-        <div class="output__loading" id="outputLoading" hidden>
-          <div class="spinner"></div>
-          <p>Running inference...</p>
-        </div>
-        <div class="output__content" id="outputContent" hidden>
-          <div class="metrics-row">
-            <div class="metric-tile"><span class="metric-tile__label">Objects</span><span class="metric-tile__value" id="outObjects">&mdash;</span></div>
-            <div class="metric-tile"><span class="metric-tile__label">Latency</span><span class="metric-tile__value" id="outLatency">&mdash;</span></div>
-            <div class="metric-tile"><span class="metric-tile__label">Throughput</span><span class="metric-tile__value" id="outFps">&mdash;</span></div>
-          </div>
-          <div class="annotated-frame">
-            <img id="annotatedImg" alt="Annotated image with detection boxes">
-          </div>
-          <div class="detection-table-wrap">
-            <table class="detection-table">
-              <thead>
-                <tr><th>Class</th><th>Confidence</th><th>Track ID</th><th class="ta-r">BBox (x1, y1, x2, y2)</th></tr>
-              </thead>
-              <tbody id="detectionTbody"></tbody>
-            </table>
-          </div>
-        </div>
-        <div class="output__error" id="outputError" hidden></div>
-      </div>
+    <div class="strip__cell">
+      <span class="strip__label">Memory</span>
+      <span class="strip__value" data-key="ram">&mdash;</span>
     </div>
-  </section>
-
-  <section id="monitoring" class="section">
-    <header class="section__head">
-      <p class="section__eyebrow">Observability</p>
-      <h2 class="section__title">Live Monitoring</h2>
-      <p class="section__lede">Real-time performance metrics streamed from the API server's <code class="inline-code">/health</code> endpoint. Auto-refreshes every 10 seconds.</p>
-    </header>
-    <div class="monitor-grid">
-      <div class="card">
-        <header class="card__head">
-          <h3>Latency Distribution</h3>
-          <span class="card__sub" id="latencyUpdated">updating&hellip;</span>
-        </header>
-        <div class="chart-wrap"><canvas id="latencyChart"></canvas></div>
-      </div>
-      <div class="card">
-        <header class="card__head">
-          <h3>System Metrics</h3>
-          <span class="card__sub" id="systemUpdated">updating&hellip;</span>
-        </header>
-        <dl class="kv">
-          <dt>Model loaded</dt><dd id="kvModel">&mdash;</dd>
-          <dt>Model path</dt><dd class="mono kv-path" id="kvPath">&mdash;</dd>
-          <dt>RAM RSS</dt><dd id="kvRam">&mdash;</dd>
-          <dt>Total requests</dt><dd id="kvReqs">&mdash;</dd>
-          <dt>p50 / p95 / p99</dt><dd class="mono" id="kvPercentiles">&mdash;</dd>
-          <dt>Tracking</dt><dd id="kvTracking">&mdash;</dd>
-        </dl>
-      </div>
-      <div class="card card--wide">
-        <header class="card__head">
-          <h3>Request Throughput</h3>
-          <span class="card__sub">last 60s &middot; simulated from local metrics</span>
-        </header>
-        <div class="chart-wrap"><canvas id="throughputChart"></canvas></div>
-      </div>
+    <div class="strip__cell">
+      <span class="strip__label">Requests</span>
+      <span class="strip__value" data-key="requests">&mdash;</span>
     </div>
-  </section>
-
-  <section id="benchmarks" class="section section--alt">
-    <header class="section__head">
-      <p class="section__eyebrow">Performance</p>
-      <h2 class="section__title">Benchmarks</h2>
-      <p class="section__lede">Measured on NVIDIA RTX 3050 (4 GB VRAM) at 640&times;640 inference size. YOLO11m HPO checkpoint. Single-image latency, no batching.</p>
-    </header>
-    <div class="bench-grid">
-      <div class="card">
-        <header class="card__head"><h3>Throughput</h3><span class="card__sub">FPS by format</span></header>
-        <div class="chart-wrap"><canvas id="fpsChart"></canvas></div>
-      </div>
-      <div class="card">
-        <header class="card__head"><h3>Latency p95</h3><span class="card__sub">milliseconds</span></header>
-        <div class="chart-wrap"><canvas id="latencyBarChart"></canvas></div>
-      </div>
-      <div class="card">
-        <header class="card__head"><h3>Model Size</h3><span class="card__sub">megabytes</span></header>
-        <div class="chart-wrap"><canvas id="sizeChart"></canvas></div>
-      </div>
-      <div class="card card--wide">
-        <header class="card__head">
-          <h3>Accuracy vs Speed Trade-off</h3>
-          <span class="card__sub">mAP@50 vs FPS</span>
-        </header>
-        <div class="chart-wrap"><canvas id="scatterChart"></canvas></div>
-      </div>
+    <div class="strip__cell">
+      <span class="strip__label">p50 Latency</span>
+      <span class="strip__value" data-key="p50">&mdash;</span>
     </div>
-    <div class="bench-summary">
-      <div class="bench-summary__cell"><span class="bench-summary__label">Recommended</span><span class="bench-summary__value">ONNX FP16</span><span class="bench-summary__hint">44.1 FPS, zero accuracy loss</span></div>
-      <div class="bench-summary__cell"><span class="bench-summary__label">Smallest</span><span class="bench-summary__value">TFLite INT8</span><span class="bench-summary__hint">19.7 MB, 51% size reduction</span></div>
-      <div class="bench-summary__cell"><span class="bench-summary__label">Fastest CPU</span><span class="bench-summary__value">ONNX Runtime</span><span class="bench-summary__hint">3.1 FPS vs 2.4 FPS PyTorch</span></div>
+    <div class="strip__cell">
+      <span class="strip__label">Error Rate</span>
+      <span class="strip__value" data-key="error">&mdash;</span>
     </div>
-  </section>
+    <div class="strip__cell">
+      <span class="strip__label">Model</span>
+      <span class="strip__value" data-key="model">&mdash;</span>
+    </div>
+  </div>
+</section>
 
-  <section id="docs" class="section">
-    <header class="section__head">
-      <p class="section__eyebrow">Documentation</p>
-      <h2 class="section__title">Project Resources</h2>
-      <p class="section__lede">Reports, deployment guides, and architectural documentation.</p>
-    </header>
-    <div class="docs-grid" id="docsGrid"></div>
-  </section>
-
-  <section class="section section--alt">
-    <header class="section__head">
-      <p class="section__eyebrow">System</p>
-      <h2 class="section__title">Architecture</h2>
-      <p class="section__lede">Training in the cloud, inference at the edge, observability on every layer.</p>
-    </header>
-    <div class="arch">
-      <div class="arch__stage">
-        <div class="arch__row">
-          <div class="arch__node">
-            <div class="arch__node-icon">⚙</div>
-            <div class="arch__node-name">GitHub Actions</div>
-            <div class="arch__node-meta">CI / CD</div>
+<!-- PLAYGROUND -->
+<section id="playground" class="section">
+  <div class="section__head">
+    <p class="eyebrow">Playground</p>
+    <h2 class="h2">Run a real detection.</h2>
+    <p class="lede">Upload any frame from a driving scene. Returns bounding boxes, class labels, confidence scores, and an annotated image &mdash; same path the API takes in production.</p>
+  </div>
+  <div class="playground">
+    <div class="playground__panel">
+      <div class="field">
+        <label class="field__label" for="apiBaseInput">Endpoint</label>
+        <input type="url" id="apiBaseInput" class="field__input field__input--mono" value="http://road-sense-api.swedencentral.azurecontainer.io:8000" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <span class="field__label">Image</span>
+        <div class="dropzone" id="dropzone" tabindex="0">
+          <input type="file" id="fileInput" accept="image/*" hidden>
+          <div class="dropzone__inner" id="dropzoneEmpty">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v2.5A1.5 1.5 0 005.5 20h13a1.5 1.5 0 001.5-1.5V16"/></svg>
+            <p>Drop an image or click to browse</p>
+            <p class="dropzone__hint">PNG, JPEG, WebP &middot; max 10 MB</p>
           </div>
-          <div class="arch__arrow"></div>
-          <div class="arch__node">
-            <div class="arch__node-icon">▣</div>
-            <div class="arch__node-name">GHCR</div>
-            <div class="arch__node-meta">ghcr.io/abdallah4z/road-sense</div>
-          </div>
-          <div class="arch__arrow"></div>
-          <div class="arch__node arch__node--accent">
-            <div class="arch__node-icon">▣</div>
-            <div class="arch__node-name">Azure ACI</div>
-            <div class="arch__node-meta">swedencentral &middot; 4 CPU &middot; 8 GB</div>
-          </div>
-          <div class="arch__arrow"></div>
-          <div class="arch__node">
-            <div class="arch__node-icon">⊡</div>
-            <div class="arch__node-name">FastAPI</div>
-            <div class="arch__node-meta">uvicorn &middot; port 8000</div>
-          </div>
-        </div>
-        <div class="arch__row">
-          <div class="arch__node arch__node--alt">
-            <div class="arch__node-icon">▦</div>
-            <div class="arch__node-name">Modal Cloud</div>
-            <div class="arch__node-meta">A100 GPU &middot; HPO training</div>
-          </div>
-          <div class="arch__arrow arch__arrow--down">→</div>
-          <div class="arch__node arch__node--alt">
-            <div class="arch__node-icon">◐</div>
-            <div class="arch__node-name">YOLO11m (best.pt)</div>
-            <div class="arch__node-meta">38.8 MB &middot; 3 classes</div>
+          <div class="dropzone__preview" id="dropzonePreview" hidden>
+            <img id="previewImg" alt="Selected image preview">
+            <button type="button" class="dropzone__clear" id="clearFile" aria-label="Remove image">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
           </div>
         </div>
       </div>
-      <ul class="arch__legend">
-        <li><span class="dot dot--blue"></span>Build &amp; deploy pipeline</li>
-        <li><span class="dot dot--green"></span>Training &amp; model artifacts</li>
-        <li><span class="dot dot--accent"></span>Production API runtime</li>
-      </ul>
+      <div class="field">
+        <div class="field__row">
+          <label class="field__label" for="confSlider">Confidence</label>
+          <span class="field__value" id="confVal">0.25</span>
+        </div>
+        <input type="range" id="confSlider" min="0" max="100" step="1" value="25">
+        <div class="field__scale"><span>0.00</span><span>0.50</span><span>1.00</span></div>
+      </div>
+      <button type="button" class="btn btn--primary btn--block" id="detectBtn">Run detection</button>
     </div>
-  </section>
+    <div class="playground__output">
+      <div class="output__placeholder" id="outputPlaceholder">
+        <p>Results will appear here.</p>
+      </div>
+      <div class="output__loading" id="outputLoading" hidden>
+        <span class="spinner"></span>
+        <p>Running inference&hellip;</p>
+      </div>
+      <div class="output__error" id="outputError" hidden></div>
+      <div class="output__content" id="outputContent" hidden>
+        <div class="output__metrics">
+          <div class="output__metric"><span class="output__metric-label">Objects</span><span class="output__metric-value" id="outObjects">&mdash;</span></div>
+          <div class="output__metric"><span class="output__metric-label">Latency</span><span class="output__metric-value" id="outLatency">&mdash;</span></div>
+          <div class="output__metric"><span class="output__metric-label">Throughput</span><span class="output__metric-value" id="outFps">&mdash;</span></div>
+        </div>
+        <div class="output__image">
+          <img id="annotatedImg" alt="Annotated detection result">
+        </div>
+        <div class="output__table-wrap">
+          <table class="dtable">
+            <thead>
+              <tr><th>Class</th><th>Conf</th><th>Track</th><th class="dtable__num">BBox (x1, y1, x2, y2)</th></tr>
+            </thead>
+            <tbody id="detectionTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MONITORING -->
+<section id="monitoring" class="section">
+  <div class="section__head">
+    <p class="eyebrow">Observability</p>
+    <h2 class="h2">Live system metrics.</h2>
+    <p class="lede">Polled from <code class="inline-code">/health</code> every 10 seconds. Latency percentiles are computed server-side over a rolling 100-request window.</p>
+  </div>
+  <div class="monitor">
+    <div class="monitor__panel">
+      <div class="monitor__head">
+        <h3 class="h3">Latency distribution</h3>
+        <span class="monitor__sub" id="latencyUpdated">updating&hellip;</span>
+      </div>
+      <div class="latency-bars" id="latencyBars">
+        <div class="lbar" data-key="p50">
+          <span class="lbar__label">p50</span>
+          <span class="lbar__track"><span class="lbar__fill"></span></span>
+          <span class="lbar__value">&mdash;</span>
+        </div>
+        <div class="lbar" data-key="p95">
+          <span class="lbar__label">p95</span>
+          <span class="lbar__track"><span class="lbar__fill"></span></span>
+          <span class="lbar__value">&mdash;</span>
+        </div>
+        <div class="lbar" data-key="p99">
+          <span class="lbar__label">p99</span>
+          <span class="lbar__track"><span class="lbar__fill"></span></span>
+          <span class="lbar__value">&mdash;</span>
+        </div>
+      </div>
+      <div class="latency-aux" id="latencyAux">
+        <div><span>avg</span><b data-key="avg">&mdash;</b></div>
+        <div><span>max</span><b data-key="max">&mdash;</b></div>
+      </div>
+    </div>
+    <div class="monitor__panel">
+      <div class="monitor__head">
+        <h3 class="h3">Throughput</h3>
+        <span class="monitor__sub">last 60 s &middot; req/s</span>
+      </div>
+      <div class="throughput">
+        <div class="throughput__head">
+          <span class="throughput__now" id="throughputNow">&mdash;</span>
+          <span class="throughput__unit">req/s</span>
+        </div>
+        <svg class="throughput__chart" id="throughputChart" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true">
+          <line class="tput__grid" x1="0" y1="30" x2="600" y2="30"/>
+          <line class="tput__grid" x1="0" y1="60" x2="600" y2="60"/>
+          <line class="tput__grid" x1="0" y1="90" x2="600" y2="90"/>
+          <path class="tput__area" id="throughputArea" d=""/>
+          <path class="tput__line" id="throughputLine" d=""/>
+        </svg>
+        <div class="throughput__axis">
+          <span>60s ago</span>
+          <span>30s</span>
+          <span>now</span>
+        </div>
+      </div>
+    </div>
+    <div class="monitor__panel monitor__panel--kv">
+      <div class="monitor__head">
+        <h3 class="h3">System</h3>
+        <span class="monitor__sub" id="systemUpdated">updating&hellip;</span>
+      </div>
+      <dl class="kv">
+        <dt>Model loaded</dt><dd id="kvModel">&mdash;</dd>
+        <dt>Weights</dt><dd class="kv__mono" id="kvPath">&mdash;</dd>
+        <dt>RAM RSS</dt><dd id="kvRam">&mdash;</dd>
+        <dt>Tracking</dt><dd id="kvTracking">&mdash;</dd>
+        <dt>Total requests</dt><dd id="kvReqs">&mdash;</dd>
+        <dt>Errors</dt><dd id="kvErrors">&mdash;</dd>
+        <dt>RPS (cumulative)</dt><dd id="kvRps">&mdash;</dd>
+        <dt>Budget</dt><dd id="kvBudget">&mdash;</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- BENCHMARKS -->
+<section id="benchmarks" class="section">
+  <div class="section__head">
+    <p class="eyebrow">Benchmarks</p>
+    <h2 class="h2">Format comparison.</h2>
+    <p class="lede">Single-image latency at 640&times;640, NVIDIA RTX 3050 (4 GB VRAM), no batching. YOLO11m HPO checkpoint, identical weights across all formats.</p>
+  </div>
+  <div class="bench">
+    <table class="btable">
+      <thead>
+        <tr>
+          <th>Format</th>
+          <th class="btable__num">Size</th>
+          <th class="btable__num">FPS</th>
+          <th class="btable__num">p50</th>
+          <th class="btable__num">p95</th>
+          <th class="btable__num">p99</th>
+          <th>mAP@50</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="btable__winner">
+          <td><span class="btable__name">ONNX FP16</span><span class="btable__tag">recommended</span></td>
+          <td class="btable__num">38.3 MB</td>
+          <td class="btable__num btable__strong">44.1</td>
+          <td class="btable__num">22.7 ms</td>
+          <td class="btable__num">28.4 ms</td>
+          <td class="btable__num">34.5 ms</td>
+          <td>0.935</td>
+          <td class="btable__note">Best speed/accuracy trade-off</td>
+        </tr>
+        <tr>
+          <td><span class="btable__name">PyTorch</span></td>
+          <td class="btable__num">38.8 MB</td>
+          <td class="btable__num">33.6</td>
+          <td class="btable__num">29.8 ms</td>
+          <td class="btable__num">35.2 ms</td>
+          <td class="btable__num">42.1 ms</td>
+          <td>0.935</td>
+          <td class="btable__note">Baseline; used by the API server</td>
+        </tr>
+        <tr>
+          <td><span class="btable__name">TorchScript</span></td>
+          <td class="btable__num">77.0 MB</td>
+          <td class="btable__num">33.2</td>
+          <td class="btable__num">30.1 ms</td>
+          <td class="btable__num">38.7 ms</td>
+          <td class="btable__num">45.2 ms</td>
+          <td>0.935</td>
+          <td class="btable__note">No measurable speedup, 2&times; size</td>
+        </tr>
+        <tr>
+          <td><span class="btable__name">TFLite INT8</span><span class="btable__tag btable__tag--alt">edge</span></td>
+          <td class="btable__num">19.7 MB</td>
+          <td class="btable__num">&mdash;</td>
+          <td class="btable__num">&mdash;</td>
+          <td class="btable__num">&mdash;</td>
+          <td class="btable__num">&mdash;</td>
+          <td>0.935</td>
+          <td class="btable__note">Zero accuracy loss, 49% smaller</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="bench__kpi">mAP@50 = 0.935 &middot; p50 = 650 ms on CPU &middot; 390 MB RAM idle</p>
+  </div>
+</section>
+
+<!-- API -->
+<section id="api" class="section">
+  <div class="section__head">
+    <p class="eyebrow">API</p>
+    <h2 class="h2">Endpoints.</h2>
+    <p class="lede">REST over JSON. CORS is open. All requests are multipart for <code class="inline-code">/detect</code> and <code class="inline-code">/detect_batch</code>.</p>
+  </div>
+  <div class="api">
+    <table class="atable">
+      <thead>
+        <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="m m--get">GET</span></td>
+          <td class="atable__path">/health</td>
+          <td>Liveness probe. Returns server status, loaded model path, and rolling performance stats.</td>
+        </tr>
+        <tr>
+          <td><span class="m m--post">POST</span></td>
+          <td class="atable__path">/detect</td>
+          <td>Run detection on a single image. Multipart form: <code class="inline-code">image</code> (file), <code class="inline-code">conf</code> (float, 0&ndash;1), <code class="inline-code">session_id</code> (string, for tracking).</td>
+        </tr>
+        <tr>
+          <td><span class="m m--post">POST</span></td>
+          <td class="atable__path">/detect_batch</td>
+          <td>Run detection on a list of images in a single request. Returns one response per input image plus a total time.</td>
+        </tr>
+        <tr>
+          <td><span class="m m--get">GET</span></td>
+          <td class="atable__path">/docs</td>
+          <td>Interactive OpenAPI / Swagger UI generated by FastAPI.</td>
+        </tr>
+        <tr>
+          <td><span class="m m--get">GET</span></td>
+          <td class="atable__path">/metrics</td>
+          <td>Prometheus metrics. Includes default FastAPI instrumentation plus request and latency histograms.</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="api__tabs">
+      <div class="tabs">
+        <button class="tab is-active" data-tab="swagger" type="button">Swagger</button>
+        <button class="tab" data-tab="curl" type="button">cURL</button>
+      </div>
+      <div class="tabs__panel is-active" data-panel="swagger">
+        <pre class="snippet"><code><span class="t-dim"># Open in browser</span>
+<span class="t-cmd">open</span> http://road-sense-api.swedencentral.azurecontainer.io:8000/docs</code></pre>
+      </div>
+      <div class="tabs__panel" data-panel="curl">
+        <pre class="snippet"><code><span class="t-cmd">curl</span> -X POST http://road-sense-api.swedencentral.azurecontainer.io:8000/detect \
+  -F <span class="t-str">"image=@frame.jpg"</span> \
+  -F <span class="t-str">"conf=0.25"</span> \
+  -F <span class="t-str">"session_id=demo-1"</span></code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section class="section">
+  <div class="section__head">
+    <p class="eyebrow">Architecture</p>
+    <h2 class="h2">From commit to inference.</h2>
+    <p class="lede">One pipeline, one container, one model. No background workers, no message brokers, no GPU in production.</p>
+  </div>
+  <div class="arch">
+    <div class="arch__line">
+      <div class="arch__node">
+        <span class="arch__node-name">GitHub Actions</span>
+        <span class="arch__node-sub">CI / CD</span>
+      </div>
+      <span class="arch__arrow">&rarr;</span>
+      <div class="arch__node">
+        <span class="arch__node-name">GHCR</span>
+        <span class="arch__node-sub">ghcr.io/abdallah4z/road-sense</span>
+      </div>
+      <span class="arch__arrow">&rarr;</span>
+      <div class="arch__node arch__node--accent">
+        <span class="arch__node-name">Azure ACI</span>
+        <span class="arch__node-sub">sweden central &middot; 4 CPU &middot; 8 GB</span>
+      </div>
+      <span class="arch__arrow">&rarr;</span>
+      <div class="arch__node">
+        <span class="arch__node-name">FastAPI + YOLO11m</span>
+        <span class="arch__node-sub">uvicorn :8000</span>
+      </div>
+      <span class="arch__arrow">&rarr;</span>
+      <div class="arch__node arch__node--dim">
+        <span class="arch__node-name">Client</span>
+        <span class="arch__node-sub">JSON response</span>
+      </div>
+    </div>
+    <p class="arch__note">Training runs separately on Modal (A100 GPU) and is not part of the inference path. HPO checkpoints are exported to ONNX FP16 and committed alongside the source.</p>
+  </div>
+</section>
+
+<!-- DOCS -->
+<section id="docs" class="section">
+  <div class="section__head">
+    <p class="eyebrow">Docs</p>
+    <h2 class="h2">References.</h2>
+  </div>
+  <table class="dtable2">
+    <thead>
+      <tr><th>Resource</th><th>Path</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>OpenAPI / Swagger UI</td><td><a href="/docs" target="_blank" rel="noopener" class="extlink">/docs <span class="extlink__arrow">&nearr;</span></a></td></tr>
+      <tr><td>Health endpoint</td><td><a href="/health" target="_blank" rel="noopener" class="extlink">/health <span class="extlink__arrow">&nearr;</span></a></td></tr>
+      <tr><td>Prometheus metrics</td><td><a href="/metrics" target="_blank" rel="noopener" class="extlink">/metrics <span class="extlink__arrow">&nearr;</span></a></td></tr>
+      <tr><td>Project repository</td><td><a href="https://github.com/Abdallah4Z/Road-Sense" target="_blank" rel="noopener" class="extlink">github.com/Abdallah4Z/Road-Sense <span class="extlink__arrow">&nearr;</span></a></td></tr>
+      <tr><td>Benchmark reports</td><td><a href="https://github.com/Abdallah4Z/Road-Sense/tree/main/reports" target="_blank" rel="noopener" class="extlink">reports/ <span class="extlink__arrow">&nearr;</span></a></td></tr>
+      <tr><td>Container image</td><td><span class="dtable2__path">ghcr.io/abdallah4z/road-sense:latest</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
 </main>
 
 <footer class="footer">
   <div class="footer__inner">
-    <p class="footer__line">Road-Sense &middot; YOLO11m &middot; MIT License</p>
-    <p class="footer__sub">
-      <a href="https://github.com/Abdallah4Z/Road-Sense" target="_blank" rel="noopener">Source</a>
-      <span class="footer__sep">/</span>
-      <a href="/docs" target="_blank" rel="noopener">API</a>
-      <span class="footer__sep">/</span>
-      <a href="/health" target="_blank" rel="noopener">Health</a>
+    <p class="footer__line">&copy; 2025 Abdallah Ait Oubelli &middot; MIT License</p>
+    <p class="footer__line footer__line--dim">
+      <a href="https://github.com/Abdallah4Z/Road-Sense" target="_blank" rel="noopener">github.com/Abdallah4Z/Road-Sense</a>
     </p>
   </div>
 </footer>
 
-<script type="module" src="/static/js/app.js"></script>
+<script src="/static/js/app.js" defer></script>
 </body>
 </html>
