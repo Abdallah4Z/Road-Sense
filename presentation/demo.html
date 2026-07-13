@@ -5,51 +5,57 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>road-sense — yolov11m detection api</title>
 <meta name="description" content="Real-time object detection API. YOLO11m. Vehicle, Pedestrian, Cyclist.">
-<meta name="theme-color" content="#0a0c12">
+<meta name="theme-color" content="#080c12">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ===== DESIGN TOKENS ===== */
 :root {
-  --bg: #0a0c12;
-  --bg1: #0e1118;
-  --bg2: #14171f;
-  --bg3: #1a1e28;
-  --line: #1f2430;
-  --line2: #171b24;
-  --text: #e4e4e7;
-  --dim: #6b7280;
+  --bg: #080c12;
+  --bg1: #0c1017;
+  --bg2: #12161e;
+  --bg3: #181c26;
+  --line: #1c222c;
+  --line2: #15191f;
+  --text: #e8eaed;
+  --dim: #717680;
   --mid: #9ca3af;
-  --xdim: #374151;
-  --accent: #22d3ee;
-  --accent2: #06b6d4;
+  --xdim: #3a4150;
+  --cyan: #22d3ee;
+  --cyan-dim: #22d3ee20;
+  --cyan-glow: 0 0 24px #22d3ee40;
   --green: #4ade80;
   --amber: #fbbf24;
   --red: #f87171;
   --blue: #60a5fa;
-  --purple: #a78bfa;
+  --purple: #c084fc;
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-*::selection { background: var(--accent); color: #000; }
-html { scroll-behavior: smooth; font-size: 15px; }
-body { font-family: var(--sans); color: var(--text); background: var(--bg); overflow-x: hidden; }
-
-/* ===== SCANLINE OVERLAY ===== */
-body::after {
-  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
-  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(34,211,238,0.015) 2px, rgba(34,211,238,0.015) 4px);
+*::selection { background: var(--cyan); color: #000; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans); color: var(--text); background: var(--bg);
+  overflow-x: hidden; font-size: 15px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ===== GRID BACKGROUND ===== */
 .grid-bg {
   position: fixed; inset: 0; pointer-events: none; z-index: 0;
   background-image:
-    linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
-  background-size: 80px 80px;
-  mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 70%);
+    linear-gradient(rgba(34,211,238,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 50% at 50% 40%, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 50% at 50% 40%, black 30%, transparent 70%);
+}
+
+/* ===== SCANLINES ===== */
+body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(34,211,238,0.012) 2px, rgba(34,211,238,0.012) 4px);
 }
 
 /* ===== LAYOUT ===== */
@@ -59,364 +65,276 @@ section { position: relative; z-index: 1; }
 /* ===== NAV ===== */
 .nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  padding: 0 40px; height: 56px;
-  display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid var(--line);
-  background: rgba(10,12,18,0.85); backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  height: 56px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; border-bottom: 1px solid var(--line);
+  background: rgba(8,12,18,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
 }
-.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
-.nav-brand svg { width: 24px; height: 24px; color: var(--accent); }
-.nav-brand span { font-weight: 600; font-size: 15px; }
+.nav-brand {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; color: var(--text);
+}
+.nav-brand svg { width: 22px; height: 22px; color: var(--cyan); }
+.nav-brand span { font-weight: 700; font-size: 14px; }
 .nav-brand .v { color: var(--dim); font-size: 11px; margin-left: 4px; font-family: var(--mono); }
-.nav-links { display: flex; gap: 24px; }
+.nav-links { display: flex; gap: 28px; }
 .nav-links a {
-  font-size: 12.5px; color: var(--dim); text-decoration: none;
-  font-family: var(--mono); letter-spacing: 0.02em;
-  transition: color 0.2s;
+  font-size: 12px; color: var(--dim); text-decoration: none; font-family: var(--mono);
+  letter-spacing: 0.03em; transition: color 0.15s;
 }
-.nav-links a:hover { color: var(--accent); }
+.nav-links a:hover { color: var(--text); }
 .nav-right { display: flex; align-items: center; gap: 12px; }
-.hud-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 10px; border-radius: 4px; font-size: 11px;
-  font-family: var(--mono); border: 1px solid var(--line);
-  color: var(--dim);
+.badge {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+  border-radius: 4px; font-size: 11px; font-family: var(--mono);
+  border: 1px solid var(--line); color: var(--dim);
 }
-.hud-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--green); box-shadow: 0 0 8px var(--green);
-}
-.hud-dot.off { background: var(--dim); box-shadow: none; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+.dot.off { background: var(--dim); box-shadow: none; animation: none; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-.hud-dot { animation: pulse 2s infinite; }
 
 /* ===== HERO ===== */
 .hero {
-  min-height: 100vh; display: flex; flex-direction: column;
-  justify-content: center; padding-top: 56px; position: relative;
-  overflow: hidden;
+  min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+  padding-top: 56px; position: relative; z-index: 1;
 }
-.hero-inner { display: grid; grid-template-columns: 1fr 1.1fr; gap: 60px; align-items: center; }
-.hero-text { max-width: 520px; }
+.hero-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 50px; align-items: center; }
+.hero-text { max-width: 480px; }
 .hero-tag {
-  font-size: 11px; font-family: var(--mono); letter-spacing: 0.15em;
-  text-transform: uppercase; color: var(--accent); margin-bottom: 16px;
+  font-size: 10px; font-family: var(--mono); letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--cyan); margin-bottom: 16px;
   display: flex; align-items: center; gap: 8px;
 }
-.hero-tag::before {
-  content: ''; width: 24px; height: 1px; background: var(--accent);
-}
+.hero-tag::before { content: ''; width: 20px; height: 1px; background: var(--cyan); }
 .hero-title {
-  font-size: 3.2rem; font-weight: 700; line-height: 1.05;
-  letter-spacing: -0.03em; margin-bottom: 20px; color: var(--text);
+  font-size: clamp(2.2rem, 4vw, 3.4rem); font-weight: 700; line-height: 1.08;
+  letter-spacing: -0.03em; margin-bottom: 18px;
 }
-.hero-title em {
-  font-style: normal; background: linear-gradient(135deg, var(--accent), var(--accent2));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.hero-desc {
-  font-size: 1.05rem; line-height: 1.65; color: var(--dim); margin-bottom: 32px;
-}
-.hero-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+.hero-title .glow { color: var(--cyan); text-shadow: 0 0 40px var(--cyan-dim); }
+.hero-desc { font-size: 1rem; color: var(--dim); margin-bottom: 28px; max-width: 420px; }
+.hero-btns { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 500;
-  border: 1px solid var(--line); background: var(--bg1); color: var(--text);
-  text-decoration: none; transition: all 0.2s; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+  border-radius: 8px; font-size: 13px; font-weight: 500; border: 1px solid var(--line);
+  background: var(--bg1); color: var(--text); text-decoration: none; transition: all 0.15s;
 }
-.btn:hover { border-color: var(--accent); color: var(--accent); background: var(--bg2); }
-.btn-primary {
-  background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600;
-}
-.btn-primary:hover { background: #5de0f7; border-color: #5de0f7; color: #000; }
-.btn .arrow { transition: transform 0.2s; }
+.btn:hover { border-color: var(--cyan); color: var(--cyan); background: var(--bg2); }
+.btn-p { background: var(--cyan); color: #000; border-color: var(--cyan); font-weight: 600; }
+.btn-p:hover { background: #5de0f7; border-color: #5de0f7; }
+.arrow { transition: transform 0.15s; }
 .btn:hover .arrow { transform: translateX(3px); }
 
-/* ===== HUD MOCKUP ===== */
-.hero-visual { position: relative; }
-.hud-card {
+/* ===== 3D HUD CARD ===== */
+.hud-wrap { perspective: 1200px; }
+.hud {
   background: var(--bg1); border: 1px solid var(--line); border-radius: 12px;
   overflow: hidden; position: relative;
-  transform: perspective(1000px) rotateY(-2deg) rotateX(1deg);
-  transition: transform 0.4s ease;
-  box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+  transform: rotateX(2deg) rotateY(-2deg);
+  transform-origin: center center; transition: transform 0.35s ease-out;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 60px rgba(34,211,238,0.04);
 }
-.hud-card:hover {
-  transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
-}
+.hud:hover { transform: rotateX(0deg) rotateY(0deg) scale(1.01); }
 .hud-bar {
   display: flex; align-items: center; padding: 10px 14px;
   border-bottom: 1px solid var(--line); background: var(--bg2); gap: 8px;
 }
 .hud-bar .dots { display: flex; gap: 6px; }
-.hud-bar .dot { width: 10px; height: 10px; border-radius: 50%; }
-.hud-bar .dot:nth-child(1) { background: #ff5f57; }
-.hud-bar .dot:nth-child(2) { background: #febc2e; }
-.hud-bar .dot:nth-child(3) { background: #28c840; }
-.hud-bar .title { flex: 1; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--dim); }
-.hud-bar .status { font-family: var(--mono); font-size: 11px; color: var(--green); }
+.hud-bar .d { width: 10px; height: 10px; border-radius: 50%; }
+.hud-bar .d:nth-child(1) { background: #ff5f57; }
+.hud-bar .d:nth-child(2) { background: #febc2e; }
+.hud-bar .d:nth-child(3) { background: #28c840; }
+.hud-bar .title { flex: 1; text-align: center; font-size: 11px; color: var(--dim); font-family: var(--mono); }
+.hud-bar .status { font-size: 11px; color: var(--green); font-family: var(--mono); }
 
-/* Detection image mockup */
-.detection-img {
+/* Detection viewport */
+.viewport {
   position: relative; width: 100%; aspect-ratio: 16/9;
-  background: var(--bg2); overflow: hidden;
+  background: #0d1117; overflow: hidden;
 }
-.detection-img .bg {
+.viewport .scene {
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, #1a1e28 0%, #0e1118 50%, #1a1e28 100%);
+  background: linear-gradient(135deg, #0d1117, #12161e, #0d1117);
 }
-.detection-img svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.bbox {
-  fill: none; stroke-width: 2; rx: 2; ry: 2;
-  animation: boxDraw 0.8s ease-out forwards;
-}
-.bbox-vehicle { stroke: #22d3ee; }
-.bbox-pedestrian { stroke: #fbbf24; }
-.bbox-cyclist { stroke: #a78bfa; }
-.bbox-label {
-  font-family: 'JetBrains Mono', monospace; font-size: 11px;
-  fill: white; font-weight: 600;
-}
-@keyframes boxDraw { from { stroke-dasharray: 1000; stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
-.scanline {
+.viewport svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bbox { fill: none; stroke-width: 2; stroke-dasharray: 8 4; animation: draw 0.8s ease-out forwards; }
+.bbox-v { stroke: var(--cyan); }
+.bbox-p { stroke: var(--amber); }
+.bbox-c { stroke: var(--purple); }
+.bbox-lbl { font-family: var(--mono); font-size: 10px; fill: white; font-weight: 600; }
+@keyframes draw { from{stroke-dashoffset:200} to{stroke-dashoffset:0} }
+.scan {
   position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(180deg, rgba(34,211,238,0.05) 0%, transparent 30%, transparent 70%, rgba(34,211,238,0.03) 100%);
-  animation: scanMove 3s ease-in-out infinite alternate;
+  background: linear-gradient(180deg, rgba(34,211,238,0.06) 0%, transparent 40%, transparent 60%, rgba(34,211,238,0.04) 100%);
+  animation: scanMove 4s ease-in-out infinite alternate;
 }
-@keyframes scanMove { from { transform: translateY(-10px); } to { transform: translateY(10px); } }
+@keyframes scanMove { from{transform:translateY(-8px)} to{transform:translateY(8px)} }
 .hud-overlay {
-  position: absolute; top: 12px; right: 12px; bottom: 12px; width: 200px;
-  background: rgba(10,12,18,0.7); backdrop-filter: blur(4px);
-  border-left: 1px solid var(--line); padding: 12px; font-family: var(--mono);
+  position: absolute; top: 0; right: 0; bottom: 0; width: 180px;
+  background: rgba(8,12,18,0.75); backdrop-filter: blur(6px);
+  border-left: 1px solid var(--line); padding: 14px; font-family: var(--mono);
   font-size: 10px; color: var(--dim);
 }
-.hud-overlay .val { color: var(--accent); font-weight: 500; }
-.hud-overlay .lbl { color: var(--xdim); text-transform: uppercase; letter-spacing: 0.08em; font-size: 9px; margin-bottom: 2px; }
-.hud-overlay .metric { margin-bottom: 14px; }
-.hud-overlay .metric .num { font-size: 22px; color: var(--text); font-weight: 600; }
-.hud-overlay .bar { height: 3px; background: var(--line); border-radius: 2px; margin-top: 4px; }
-.hud-overlay .bar-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+.hud-overlay .m { margin-bottom: 14px; }
+.hud-overlay .m .l { font-size: 9px; color: var(--xdim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+.hud-overlay .m .v { font-size: 20px; color: var(--text); font-weight: 600; }
+.hud-overlay .m .bar { height: 3px; background: var(--line); border-radius: 2px; margin-top: 4px; }
+.hud-overlay .m .bar-f { height: 100%; background: var(--cyan); border-radius: 2px; }
 
 /* ===== STRIP ===== */
 .strip {
-  display: grid; grid-template-columns: repeat(6, 1fr); border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line); background: var(--bg1); position: relative; z-index: 1;
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background: var(--bg1); position: relative; z-index: 1;
 }
-.strip-cell {
-  padding: 16px 20px; border-right: 1px solid var(--line);
-}
-.strip-cell:last-child { border-right: none; }
-.strip-lbl { font-size: 10px; color: var(--xdim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-.strip-val { font-size: 1.15rem; font-weight: 600; font-family: var(--mono); color: var(--text); font-variant-numeric: tabular-nums; }
-.strip-val.accent { color: var(--accent); }
+.strip-c { padding: 14px 16px; border-right: 1px solid var(--line); }
+.strip-c:last-child { border-right: none; }
+.strip-l { font-size: 9px; color: var(--xdim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 3px; }
+.strip-v { font-size: 1.1rem; font-weight: 600; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.strip-v.cyan { color: var(--cyan); }
 
 /* ===== SECTION ===== */
-.section { padding: 80px 0; position: relative; z-index: 1; }
-.section-label {
-  font-size: 11px; font-family: var(--mono); letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
+.sec { padding: 80px 0; position: relative; z-index: 1; }
+.sec-lab {
+  font-size: 10px; font-family: var(--mono); letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--cyan); margin-bottom: 8px;
   display: flex; align-items: center; gap: 8px;
 }
-.section-label::before {
-  content: ''; width: 16px; height: 1px; background: var(--accent);
-}
-.section-title {
-  font-size: 1.6rem; font-weight: 700; margin-bottom: 12px;
-  letter-spacing: -0.02em;
-}
-.section-desc { color: var(--dim); font-size: 0.95rem; max-width: 600px; line-height: 1.6; }
+.sec-lab::before { content: ''; width: 16px; height: 1px; background: var(--cyan); }
+.sec-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.02em; }
+.sec-desc { color: var(--dim); font-size: 0.9rem; max-width: 560px; line-height: 1.6; }
 
 /* ===== FEATURE CARDS ===== */
-.feature-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
-  margin-top: 40px;
+.features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 32px; }
+.fcard {
+  background: var(--bg1); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px; transition: all 0.25s;
+  transform: perspective(600px) rotateX(1.5deg);
 }
-.feature-card {
-  background: var(--bg1); border: 1px solid var(--line); border-radius: 12px;
-  padding: 24px; transition: all 0.3s ease;
-  transform: perspective(800px) rotateX(2deg);
-  cursor: default;
+.fcard:hover {
+  border-color: rgba(34,211,238,0.3); transform: perspective(600px) rotateX(0deg) translateY(-3px);
+  box-shadow: 0 8px 30px rgba(34,211,238,0.06);
 }
-.feature-card:hover {
-  border-color: var(--accent);
-  transform: perspective(800px) rotateX(0deg) translateY(-4px);
-  box-shadow: 0 12px 40px rgba(34,211,238,0.1);
+.fcard .ic {
+  width: 36px; height: 36px; border-radius: 8px; display: flex;
+  align-items: center; justify-content: center; margin-bottom: 12px;
+  background: var(--cyan-dim); color: var(--cyan); font-size: 16px;
 }
-.feature-card .icon {
-  width: 40px; height: 40px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 14px; font-size: 18px;
-  background: rgba(34,211,238,0.08); color: var(--accent);
-}
-.feature-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-.feature-card p { font-size: 13px; color: var(--dim); line-height: 1.5; }
+.fcard h3 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.fcard p { font-size: 12px; color: var(--dim); line-height: 1.5; }
 
 /* ===== PLAYGROUND ===== */
-.playground {
-  display: grid; grid-template-columns: 380px 1fr; gap: 16px;
-  margin-top: 32px;
+.pg { display: grid; grid-template-columns: 340px 1fr; gap: 14px; margin-top: 28px; }
+.pg-in, .pg-out { background: var(--bg1); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+.pg-lab { font-size: 10px; font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); margin-bottom: 6px; }
+.pg-in input[type="text"] {
+  width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line);
+  border-radius: 4px; color: var(--text); font-family: var(--mono); font-size: 11.5px; outline: none;
 }
-.pg-input, .pg-output {
-  background: var(--bg1); border: 1px solid var(--line); border-radius: 12px;
-  padding: 20px;
+.pg-in input:focus { border-color: var(--cyan); }
+.drop {
+  border: 1.5px dashed var(--line); border-radius: 6px; padding: 24px; text-align: center;
+  cursor: pointer; transition: all 0.15s; margin-top: 10px;
 }
-.pg-label {
-  font-size: 11px; font-family: var(--mono); letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--dim); margin-bottom: 8px;
+.drop:hover { border-color: var(--cyan); background: rgba(34,211,238,0.02); }
+.drop p { font-size: 12px; color: var(--dim); }
+.drop .h { font-size: 10px; color: var(--xdim); margin-top: 3px; }
+.crow { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.crow label { font-size: 11px; color: var(--dim); min-width: 70px; }
+.crow input[type="range"] { flex: 1; accent-color: var(--cyan); }
+.crow .cv { font-family: var(--mono); font-size: 11px; color: var(--cyan); min-width: 32px; text-align: right; }
+.btn-go {
+  width: 100%; padding: 10px; margin-top: 14px; font-size: 13px;
+  background: var(--cyan); color: #000; border: none; border-radius: 6px;
+  font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s;
 }
-.pg-input input[type="text"] {
-  width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--line);
-  border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 12.5px;
-  outline: none; transition: border-color 0.2s;
-}
-.pg-input input:focus { border-color: var(--accent); }
-.dropzone {
-  border: 2px dashed var(--line); border-radius: 8px; padding: 32px;
-  text-align: center; cursor: pointer; transition: all 0.2s; margin-top: 12px;
-}
-.dropzone:hover { border-color: var(--accent); background: rgba(34,211,238,0.02); }
-.dropzone p { color: var(--dim); font-size: 13px; }
-.dropzone .hint { font-size: 11px; color: var(--xdim); margin-top: 4px; }
-.conf-row { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
-.conf-row label { font-size: 12px; color: var(--dim); min-width: 90px; }
-.conf-row input[type="range"] { flex: 1; accent-color: var(--accent); }
-.conf-row .val { font-family: var(--mono); font-size: 12px; color: var(--accent); min-width: 36px; text-align: right; }
-.btn-detect {
-  width: 100%; padding: 12px; margin-top: 16px; font-size: 14px;
-  background: var(--accent); color: #000; border: none; border-radius: 8px;
-  font-weight: 600; cursor: pointer; transition: all 0.2s;
-}
-.btn-detect:hover { background: #5de0f7; }
-.btn-detect:disabled { opacity: 0.5; cursor: not-allowed; }
-.pg-empty {
-  display: flex; align-items: center; justify-content: center;
-  height: 100%; color: var(--xdim); font-family: var(--mono); font-size: 13px;
-  min-height: 360px;
-}
-.pg-loading { display: flex; align-items: center; justify-content: center; gap: 8px; height: 100%; color: var(--accent); min-height: 360px; }
-.pg-loading::before {
-  content: ''; width: 16px; height: 16px; border: 2px solid var(--accent);
-  border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.pg-result { display: none; height: 100%; }
-.pg-result.on { display: block; }
-.pg-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
-.pg-metric { background: var(--bg2); border-radius: 8px; padding: 12px; text-align: center; }
-.pg-metric .val { font-size: 20px; font-weight: 700; font-family: var(--mono); color: var(--text); }
-.pg-metric .lbl { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
-.pg-img { background: var(--bg2); border-radius: 8px; padding: 4px; margin-bottom: 12px; max-height: 280px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.pg-img img { max-width: 100%; max-height: 272px; border-radius: 4px; }
-.pg-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.pg-table th { text-align: left; padding: 8px 10px; background: var(--bg2); color: var(--dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--line); }
-.pg-table td { padding: 6px 10px; border-bottom: 1px solid var(--line2); }
-.pg-table .cls { color: var(--accent); font-weight: 500; }
-.pg-table .conf { color: var(--amber); font-family: var(--mono); font-size: 11px; }
-.pg-table .bbox { color: var(--dim); font-family: var(--mono); font-size: 11px; }
-.pg-error { padding: 10px 12px; background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); border-radius: 6px; color: var(--red); font-size: 12px; }
+.btn-go:hover { background: #5de0f7; }
+.btn-go:disabled { opacity: 0.4; cursor: not-allowed; }
+.pg-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--xdim); font-family: var(--mono); font-size: 12px; min-height: 320px; }
+.pg-load { display: flex; align-items: center; justify-content: center; gap: 8px; height: 100%; color: var(--cyan); min-height: 320px; }
+.pg-load::before { content:''; width:14px; height:14px; border:2px solid var(--cyan); border-top-color:transparent; border-radius:50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.pg-res { display: none; }
+.pg-res.on { display: block; }
+.pg-met { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 10px; }
+.pg-m { background: var(--bg2); border-radius: 6px; padding: 10px; text-align: center; }
+.pg-m .v { font-size: 18px; font-weight: 700; font-family: var(--mono); }
+.pg-m .l { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 3px; }
+.pg-img { background: var(--bg2); border-radius: 6px; padding: 3px; max-height: 260px; overflow: hidden; margin-bottom: 10px; }
+.pg-img img { max-width: 100%; max-height: 254px; border-radius: 3px; }
+.pg-tbl { width: 100%; border-collapse: collapse; font-size: 11px; }
+.pg-tbl th { text-align: left; padding: 6px 8px; background: var(--bg2); color: var(--dim); font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--line); }
+.pg-tbl td { padding: 4px 8px; border-bottom: 1px solid var(--line2); }
+.pg-tbl .cls { color: var(--cyan); font-weight: 500; }
+.pg-tbl .cn { color: var(--amber); font-family: var(--mono); }
+.pg-tbl .bx { color: var(--xdim); font-family: var(--mono); font-size: 10px; }
+.pg-err { padding: 8px 10px; background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); border-radius: 4px; color: var(--red); font-size: 11px; }
 
-/* ===== BENCH TABLE ===== */
-.bench-table {
-  width: 100%; border-collapse: collapse; margin-top: 24px;
-  background: var(--bg1); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
-}
-.bench-table th {
-  text-align: left; padding: 12px 16px; background: var(--bg2);
-  font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
-  color: var(--dim); font-weight: 500; border-bottom: 1px solid var(--line);
-}
-.bench-table td {
-  padding: 12px 16px; border-bottom: 1px solid var(--line2);
-  font-family: var(--mono); font-size: 13px;
-}
-.bench-table tr:last-child td { border-bottom: none; }
-.bench-table .num { text-align: right; font-variant-numeric: tabular-nums; }
-.bench-table .winner { background: rgba(34,211,238,0.04); }
-.bench-table .winner td:first-child { border-left: 2px solid var(--accent); }
-.bench-table .tag {
-  display: inline-block; padding: 2px 6px; border-radius: 3px;
-  background: rgba(34,211,238,0.12); color: var(--accent); font-size: 9px;
-  font-weight: 600; margin-left: 6px; letter-spacing: 0.04em;
-}
+/* ===== BENCH ===== */
+.bench { border: 1px solid var(--line); background: var(--bg1); border-radius: 10px; overflow: hidden; margin-top: 28px; }
+.bench table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.bench th { text-align: left; padding: 10px 14px; background: var(--bg2); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); border-bottom: 1px solid var(--line); }
+.bench td { padding: 10px 14px; border-bottom: 1px solid var(--line2); font-family: var(--mono); font-size: 12px; }
+.bench tr:last-child td { border-bottom: none; }
+.bench .n { text-align: right; font-variant-numeric: tabular-nums; }
+.bench .win { background: rgba(34,211,238,0.04); }
+.bench .win td:first-child { border-left: 2px solid var(--cyan); }
+.bench .tag { display:inline-block; padding:2px 5px; background:var(--cyan); color:#000; font-size:8px; font-weight:700; letter-spacing:0.04em; margin-left:5px; border-radius:2px; }
+.bench .s { color: var(--dim); font-size: 10.5px; }
 
 /* ===== API TABLE ===== */
-.api-table {
-  width: 100%; border-collapse: collapse; margin-top: 24px;
-  background: var(--bg1); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
-}
-.api-table th {
-  text-align: left; padding: 12px 16px; background: var(--bg2);
-  font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
-  color: var(--dim); font-weight: 500; border-bottom: 1px solid var(--line);
-}
-.api-table td {
-  padding: 12px 16px; border-bottom: 1px solid var(--line2); font-size: 13px;
-}
-.api-table tr:last-child td { border-bottom: none; }
-.m-get, .m-post {
-  display: inline-block; padding: 2px 6px; border-radius: 3px;
-  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
-}
-.m-get { background: rgba(34,211,238,0.12); color: var(--accent); }
-.m-post { background: rgba(74,222,128,0.12); color: var(--green); }
-.api-table .path { font-family: var(--mono); font-weight: 500; }
-.api-table .desc { color: var(--dim); font-size: 12px; }
+.api { border: 1px solid var(--line); background: var(--bg1); border-radius: 10px; overflow: hidden; margin-top: 28px; }
+.api table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.api th { text-align: left; padding: 10px 14px; background: var(--bg2); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); border-bottom: 1px solid var(--line); }
+.api td { padding: 10px 14px; border-bottom: 1px solid var(--line2); }
+.api tr:last-child td { border-bottom: none; }
+.mg { display:inline-block; padding:2px 5px; background:rgba(34,211,238,0.12); color:var(--cyan); font-size:9px; font-weight:600; letter-spacing:0.04em; border-radius:2px; }
+.mp { display:inline-block; padding:2px 5px; background:rgba(74,222,128,0.12); color:var(--green); font-size:9px; font-weight:600; letter-spacing:0.04em; border-radius:2px; }
+.api .pa { font-family: var(--mono); font-weight: 500; }
+.api a.pa:hover { color: var(--cyan); }
+.api .ds { color: var(--dim); font-size: 11.5px; }
 
 /* ===== DOCS ===== */
-.docs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 24px; }
-.doc-card {
+.docs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 28px; }
+.doc {
   background: var(--bg1); border: 1px solid var(--line); border-radius: 8px;
-  padding: 16px 18px; display: flex; align-items: center; gap: 12px;
-  text-decoration: none; color: var(--text); transition: all 0.2s;
+  padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+  text-decoration: none; color: var(--text); transition: all 0.15s;
 }
-.doc-card:hover { border-color: var(--accent); }
-.doc-card .icon { font-size: 18px; width: 32px; text-align: center; }
-.doc-card .name { font-size: 13px; font-weight: 500; }
-.doc-card .desc { font-size: 11px; color: var(--dim); margin-top: 2px; }
+.doc:hover { border-color: rgba(34,211,238,0.3); }
+.doc .ic { font-size: 16px; width: 28px; text-align: center; }
+.doc .nm { font-size: 12px; font-weight: 500; }
+.doc .dt { font-size: 10.5px; color: var(--dim); margin-top: 2px; }
 
-/* ===== ARCHITECTURE ===== */
-.arch-flow {
-  display: flex; align-items: center; justify-content: center;
-  gap: 0; margin-top: 32px; flex-wrap: wrap;
-}
-.arch-node {
-  background: var(--bg1); border: 1px solid var(--line); border-radius: 10px;
-  padding: 16px 20px; text-align: center; min-width: 130px;
-  transition: all 0.3s; position: relative;
-}
-.arch-node:hover { border-color: var(--accent); transform: translateY(-2px); }
-.arch-node .label { font-size: 11px; font-weight: 600; }
-.arch-node .sub { font-size: 10px; color: var(--dim); margin-top: 2px; font-family: var(--mono); }
-.arch-arrow { color: var(--xdim); font-size: 20px; margin: 0 4px; }
+/* ===== ARCH ===== */
+.arch { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 28px; flex-wrap: wrap; }
+.an { background: var(--bg1); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; text-align: center; min-width: 120px; transition: all 0.2s; }
+.an:hover { border-color: rgba(34,211,238,0.3); transform: translateY(-2px); }
+.an .l { font-size: 11px; font-weight: 600; }
+.an .s { font-size: 9.5px; color: var(--dim); margin-top: 2px; font-family: var(--mono); }
+.an.hi { border-color: var(--cyan); box-shadow: 0 0 20px var(--cyan-dim); }
+.an.hi .l { color: var(--cyan); }
+.aa { color: var(--xdim); font-size: 16px; }
 
 /* ===== FOOTER ===== */
-.footer {
-  border-top: 1px solid var(--line); padding: 24px 0; position: relative; z-index: 1;
-  font-size: 12px; color: var(--dim);
-}
-.footer-inner { display: flex; justify-content: space-between; align-items: center; }
-.footer-inner a { color: var(--mid); text-decoration: none; }
-.footer-inner a:hover { color: var(--accent); }
+.footer { border-top: 1px solid var(--line); padding: 20px 0; position: relative; z-index: 1; font-size: 11px; color: var(--dim); }
+.footer-in { display: flex; justify-content: space-between; align-items: center; }
+.footer-in a { color: var(--mid); text-decoration: none; }
+.footer-in a:hover { color: var(--cyan); }
+.footer-in .ok { color: var(--green); }
 
-/* ===== ANIMATIONS ===== */
-.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
-.reveal.visible { opacity: 1; transform: translateY(0); }
+/* ===== SCROLL REVEAL ===== */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.reveal.vis { opacity: 1; transform: translateY(0); }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
-  .hero-inner { grid-template-columns: 1fr; }
-  .feature-grid { grid-template-columns: 1fr; }
-  .playground { grid-template-columns: 1fr; }
-  .docs-grid { grid-template-columns: 1fr; }
+  .hero-grid { grid-template-columns: 1fr; }
+  .features { grid-template-columns: 1fr; }
+  .pg { grid-template-columns: 1fr; }
+  .docs { grid-template-columns: 1fr; }
   .strip { grid-template-columns: repeat(3, 1fr); }
   .nav-links { display: none; }
 }
-@media (max-width: 600px) {
-  .strip { grid-template-columns: repeat(2, 1fr); }
-  .hero-title { font-size: 2rem; }
-}
+@media (max-width: 600px) { .strip { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
 <body>
@@ -426,10 +344,7 @@ section { position: relative; z-index: 1; }
 <!-- NAV -->
 <nav class="nav">
   <a href="#" class="nav-brand">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z"/>
-      <path d="M3 7l9 5 9-5M12 22V12"/>
-    </svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12l9-7v6l9-7v14l-9 7v-6l-9 7z"/></svg>
     <span>road-sense</span><span class="v">/v1.0</span>
   </a>
   <div class="nav-links">
@@ -437,56 +352,53 @@ section { position: relative; z-index: 1; }
     <a href="#benchmarks">Benchmarks</a>
     <a href="#api">API</a>
     <a href="#docs">Docs</a>
-    <a href="#architecture">Architecture</a>
+    <a href="#arch">Architecture</a>
   </div>
   <div class="nav-right">
-    <div class="hud-badge"><span class="hud-dot" id="statusDot"></span><span id="statusText">connecting…</span></div>
-    <div class="hud-badge">CPU</div>
+    <div class="badge"><span class="dot" id="sd"></span><span id="st">connecting…</span></div>
+    <div class="badge">CPU</div>
   </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
   <div class="shell">
-    <div class="hero-inner">
+    <div class="hero-grid">
       <div class="hero-text">
         <div class="hero-tag">YOLO11m · FastAPI · Azure ACI</div>
-        <h1 class="hero-title">Real-time object<br>detect<span style="color:var(--accent)">ion</span><br>for <em>autonomous vehicles</em></h1>
-        <p class="hero-desc">Three-class detection — Vehicle, Pedestrian, Cyclist — with 44 FPS on GPU and 650ms p50 on CPU. YOLO11m fine-tuned on KITTI, deployed as a live REST endpoint.</p>
+        <h1 class="hero-title">Real-time object<br><span class="glow">detection</span><br>for autonomous<br>vehicles</h1>
+        <p class="hero-desc">Three-class detection — Vehicle, Pedestrian, Cyclist — 44 FPS on GPU, 650ms p50 on CPU. YOLO11m fine-tuned on KITTI.</p>
         <div class="hero-btns">
-          <a href="#playground" class="btn btn-primary">Open playground <span class="arrow">→</span></a>
-          <a href="/docs" class="btn">OpenAPI / Swagger <span class="arrow">↗</span></a>
+          <a href="#playground" class="btn btn-p">Open playground <span class="arrow">→</span></a>
+          <a href="/docs" class="btn">Swagger <span class="arrow">↗</span></a>
         </div>
       </div>
-      <div class="hero-visual">
-        <div class="hud-card">
+      <div class="hud-wrap">
+        <div class="hud" id="hud">
           <div class="hud-bar">
-            <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            <div class="dots"><div class="d"></div><div class="d"></div><div class="d"></div></div>
             <div class="title">POST /detect — 200 OK</div>
             <div class="status">647ms</div>
           </div>
-          <div class="detection-img">
-            <div class="bg"></div>
+          <div class="viewport">
+            <div class="scene"></div>
             <svg viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice">
-              <!-- Vehicle detections -->
-              <rect class="bbox bbox-vehicle" x="120" y="100" width="200" height="140" stroke-dasharray="8 4"/>
-              <text class="bbox-label" x="125" y="96" fill="#22d3ee">Vehicle: 0.92</text>
-              <rect class="bbox bbox-vehicle" x="380" y="120" width="160" height="120" stroke-dasharray="8 4"/>
-              <text class="bbox-label" x="385" y="116" fill="#22d3ee">Vehicle: 0.87</text>
-              <!-- Pedestrian detection -->
-              <rect class="bbox bbox-pedestrian" x="280" y="80" width="60" height="180" stroke-dasharray="8 4"/>
-              <text class="bbox-label" x="285" y="76" fill="#fbbf24">Pedestrian: 0.84</text>
-              <!-- Cyclist detection -->
-              <rect class="bbox bbox-cyclist" x="480" y="140" width="80" height="160" stroke-dasharray="8 4"/>
-              <text class="bbox-label" x="485" y="136" fill="#a78bfa">Cyclist: 0.78</text>
+              <rect class="bbox bbox-v" x="120" y="100" width="200" height="140" style="animation-delay:0s"/>
+              <text class="bbox-lbl" x="126" y="94" fill="#22d3ee">Vehicle 0.92</text>
+              <rect class="bbox bbox-v" x="380" y="120" width="160" height="120" style="animation-delay:.3s"/>
+              <text class="bbox-lbl" x="386" y="114" fill="#22d3ee">Vehicle 0.87</text>
+              <rect class="bbox bbox-p" x="285" y="80" width="55" height="180" style="animation-delay:.5s"/>
+              <text class="bbox-lbl" x="290" y="74" fill="#fbbf24">Pedestrian 0.84</text>
+              <rect class="bbox bbox-c" x="485" y="140" width="70" height="155" style="animation-delay:.7s"/>
+              <text class="bbox-lbl" x="490" y="134" fill="#c084fc">Cyclist 0.78</text>
             </svg>
-            <div class="scanline"></div>
+            <div class="scan"></div>
             <div class="hud-overlay">
-              <div class="metric"><div class="lbl">FPS</div><div class="num">44.1</div><div class="bar"><div class="bar-fill" style="width:88%"></div></div></div>
-              <div class="metric"><div class="lbl">Objects</div><div class="num">3</div><div class="bar"><div class="bar-fill" style="width:60%"></div></div></div>
-              <div class="metric"><div class="lbl">Latency p50</div><div class="num">21.9ms</div><div class="bar"><div class="bar-fill" style="width:44%"></div></div></div>
-              <div class="metric"><div class="lbl">RAM</div><div class="num">390MB</div><div class="bar"><div class="bar-fill" style="width:25%"></div></div></div>
-              <div class="metric"><div class="lbl">Model</div><div class="num">YOLO11m</div><div class="bar"><div class="bar-fill" style="width:100%;background:var(--green)"></div></div></div>
+              <div class="m"><div class="l">FPS</div><div class="v">44.1</div><div class="bar"><div class="bar-f" style="width:88%"></div></div></div>
+              <div class="m"><div class="l">Objects</div><div class="v">3</div><div class="bar"><div class="bar-f" style="width:60%"></div></div></div>
+              <div class="m"><div class="l">Latency p50</div><div class="v">21.9ms</div><div class="bar"><div class="bar-f" style="width:44%"></div></div></div>
+              <div class="m"><div class="l">RAM</div><div class="v">390MB</div><div class="bar"><div class="bar-f" style="width:25%"></div></div></div>
+              <div class="m"><div class="l">Model</div><div class="v" style="color:var(--green)">YOLO11m</div></div>
             </div>
           </div>
         </div>
@@ -497,97 +409,54 @@ section { position: relative; z-index: 1; }
 
 <!-- STRIP -->
 <div class="strip">
-  <div class="strip-cell"><div class="strip-lbl">Uptime</div><div class="strip-val accent" id="mUp">—</div></div>
-  <div class="strip-cell"><div class="strip-lbl">Memory</div><div class="strip-val" id="mRam">—</div></div>
-  <div class="strip-cell"><div class="strip-lbl">Requests</div><div class="strip-val" id="mReq">—</div></div>
-  <div class="strip-cell"><div class="strip-lbl">p50 Latency</div><div class="strip-val" id="mP50">—</div></div>
-  <div class="strip-cell"><div class="strip-lbl">Errors</div><div class="strip-val" id="mErr">—</div></div>
-  <div class="strip-cell"><div class="strip-lbl">Model</div><div class="strip-val accent" id="mModel">—</div></div>
+  <div class="strip-c"><div class="strip-l">Uptime</div><div class="strip-v cyan" id="mU">—</div></div>
+  <div class="strip-c"><div class="strip-l">Memory</div><div class="strip-v" id="mR">—</div></div>
+  <div class="strip-c"><div class="strip-l">Requests</div><div class="strip-v" id="mQ">—</div></div>
+  <div class="strip-c"><div class="strip-l">p50 Latency</div><div class="strip-v" id="mL">—</div></div>
+  <div class="strip-c"><div class="strip-l">Errors</div><div class="strip-v" id="mE">—</div></div>
+  <div class="strip-c"><div class="strip-l">Model</div><div class="strip-v cyan" id="mM">—</div></div>
 </div>
 
 <!-- FEATURES -->
-<section class="section">
+<section class="sec">
   <div class="shell">
-    <div class="reveal">
-      <div class="section-label">Features</div>
-      <h2 class="section-title">What it does</h2>
-      <p class="section-desc">Everything you need to run object detection in production, from a single API call.</p>
-    </div>
-    <div class="feature-grid reveal">
-      <div class="feature-card">
-        <div class="icon">⚡</div>
-        <h3>44 FPS on GPU</h3>
-        <p>ONNX FP16 inference with CUDA execution provider. Zero accuracy loss.</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">🎯</div>
-        <h3>Three-class detection</h3>
-        <p>Vehicle, Pedestrian, Cyclist. mAP@50 = 0.935 on KITTI.</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">🔗</div>
-        <h3>Temporal tracking</h3>
-        <p>IoU-based tracking with session IDs. Objects stay tracked across frames.</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">📊</div>
-        <h3>Prometheus metrics</h3>
-        <p>Latency percentiles, request rates, error tracking at /metrics.</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">🔒</div>
-        <h3>No auth required</h3>
-        <p>Open CORS, multipart upload, JSON response. No API keys to manage.</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">📦</div>
-        <h3>19.7 MB TFLite INT8</h3>
-        <p>Edge-ready. 49% smaller than PyTorch, zero accuracy loss.</p>
-      </div>
+    <div class="reveal"><div class="sec-lab">Features</div><h2 class="sec-title">What it does</h2><p class="sec-desc">Production-grade object detection from a single API call. No setup required.</p></div>
+    <div class="features reveal">
+      <div class="fcard"><div class="ic">⚡</div><h3>44 FPS on GPU</h3><p>ONNX FP16 with CUDA. Zero accuracy loss.</p></div>
+      <div class="fcard"><div class="ic">🎯</div><h3>Three-class detection</h3><p>Vehicle, Pedestrian, Cyclist. mAP@50 = 0.935.</p></div>
+      <div class="fcard"><div class="ic">🔗</div><h3>Temporal tracking</h3><p>IoU-based tracking with session IDs across frames.</p></div>
+      <div class="fcard"><div class="ic">📊</div><h3>Prometheus metrics</h3><p>Latency percentiles, request rates, errors at /metrics.</p></div>
+      <div class="fcard"><div class="ic">🔒</div><h3>No auth required</h3><p>Open CORS. Multipart upload. JSON response.</p></div>
+      <div class="fcard"><div class="ic">📦</div><h3>19.7 MB TFLite</h3><p>Edge-ready. 49% smaller. Zero accuracy loss.</p></div>
     </div>
   </div>
 </section>
 
 <!-- PLAYGROUND -->
-<section class="section" id="playground">
+<section class="sec" id="playground">
   <div class="shell">
-    <div class="reveal">
-      <div class="section-label">Playground</div>
-      <h2 class="section-title">Try it now</h2>
-      <p class="section-desc">Upload an image and run inference live. No setup needed.</p>
-    </div>
-    <div class="playground reveal">
-      <div class="pg-input">
-        <div class="pg-label">Endpoint</div>
-        <input type="text" id="apiBase" value="http://road-sense-api.swedencentral.azurecontainer.io:8000" spellcheck="false">
-        <div class="pg-label" style="margin-top:12px">Image</div>
-        <div class="dropzone" id="dropzone" tabindex="0">
-          <p>Drop an image or click to browse</p>
-          <p class="hint">PNG, JPEG, WebP — max 10 MB</p>
-          <input type="file" id="fileInput" accept="image/*" hidden>
-        </div>
-        <div class="conf-row">
-          <label>Confidence</label>
-          <input type="range" id="confSlider" min="0" max="100" value="25">
-          <span class="val" id="confVal">0.25</span>
-        </div>
-        <button class="btn-detect" id="detectBtn">POST /detect →</button>
+    <div class="reveal"><div class="sec-lab">Playground</div><h2 class="sec-title">Try it now</h2><p class="sec-desc">Upload an image, POST to /detect. No setup, no API keys.</p></div>
+    <div class="pg reveal">
+      <div class="pg-in">
+        <div class="pg-lab">Endpoint</div>
+        <input type="text" id="apiBase" value="http://road-sense-api.swedencentral.azurecontainer.io:8000">
+        <div class="pg-lab" style="margin-top:10px">Image</div>
+        <div class="drop" id="dropzone" tabindex="0"><p>Drop image or click</p><p class="h">PNG, JPEG, WebP</p><input type="file" id="fi" accept="image/*" hidden></div>
+        <div class="crow"><label>Confidence</label><input type="range" id="cs" min="0" max="100" value="25"><span class="cv" id="cv">0.25</span></div>
+        <button class="btn-go" id="runBtn">POST /detect →</button>
       </div>
-      <div class="pg-output">
-        <div class="pg-empty" id="pgEmpty">Run detection to see results</div>
-        <div class="pg-loading" id="pgLoading" style="display:none">Running inference…</div>
-        <div class="pg-error" id="pgErr" style="display:none"></div>
-        <div class="pg-result" id="pgResult">
-          <div class="pg-metrics">
-            <div class="pg-metric"><div class="val" id="rObj">0</div><div class="lbl">Objects</div></div>
-            <div class="pg-metric"><div class="val" id="rLat">0ms</div><div class="lbl">Latency</div></div>
-            <div class="pg-metric"><div class="val" id="rFps">0</div><div class="lbl">FPS</div></div>
+      <div class="pg-out">
+        <div class="pg-empty" id="pgE">// response appears here</div>
+        <div class="pg-load" id="pgL" style="display:none">Running inference…</div>
+        <div class="pg-err" id="pgEr" style="display:none"></div>
+        <div class="pg-res" id="pgR">
+          <div class="pg-met">
+            <div class="pg-m"><div class="v" id="rO">0</div><div class="l">Objects</div></div>
+            <div class="pg-m"><div class="v" id="rT">0ms</div><div class="l">Latency</div></div>
+            <div class="pg-m"><div class="v" id="rF">0</div><div class="l">FPS</div></div>
           </div>
-          <div class="pg-img"><img id="annotatedImg" alt="Detection result"></div>
-          <table class="pg-table">
-            <thead><tr><th>Class</th><th>Confidence</th><th>Bounding Box</th></tr></thead>
-            <tbody id="detectionBody"></tbody>
-          </table>
+          <div class="pg-img"><img id="aImg" alt=""></div>
+          <table class="pg-tbl"><thead><tr><th>Class</th><th>Confidence</th><th>BBox</th></tr></thead><tbody id="tBody"></tbody></table>
         </div>
       </div>
     </div>
@@ -595,23 +464,17 @@ section { position: relative; z-index: 1; }
 </section>
 
 <!-- BENCHMARKS -->
-<section class="section" id="benchmarks">
+<section class="sec" id="benchmarks">
   <div class="shell">
-    <div class="reveal">
-      <div class="section-label">Benchmarks</div>
-      <h2 class="section-title">Format comparison</h2>
-      <p class="section-desc">RTX 3050, 640×640, single-image inference. ONNX FP16 recommended for production.</p>
-    </div>
-    <div class="reveal">
-      <table class="bench-table">
-        <thead>
-          <tr><th>Format</th><th class="num">Size</th><th class="num">FPS</th><th class="num">p50</th><th class="num">p95</th><th class="num">p99</th><th class="num">mAP@50</th><th>Note</th></tr>
-        </thead>
+    <div class="reveal"><div class="sec-lab">Benchmarks</div><h2 class="sec-title">Format comparison</h2><p class="sec-desc">RTX 3050 · 640×640 · single-image inference. ONNX FP16 recommended.</p></div>
+    <div class="bench reveal">
+      <table>
+        <thead><tr><th>Format</th><th class="n">Size</th><th class="n">FPS</th><th class="n">p50</th><th class="n">p95</th><th class="n">p99</th><th class="n">mAP@50</th><th>Note</th></tr></thead>
         <tbody>
-          <tr class="winner"><td>ONNX FP16 <span class="tag">RECOMMENDED</span></td><td class="num">38.3 MB</td><td class="num">44.1</td><td class="num">21.9ms</td><td class="num">28.2ms</td><td class="num">34.4ms</td><td class="num">0.935</td><td style="color:var(--dim);font-size:12px">Best speed/accuracy</td></tr>
-          <tr><td>PyTorch</td><td class="num">38.8 MB</td><td class="num">33.6</td><td class="num">29.5ms</td><td class="num">32.1ms</td><td class="num">33.2ms</td><td class="num">0.935</td><td style="color:var(--dim);font-size:12px">Default runtime</td></tr>
-          <tr><td>TorchScript</td><td class="num">77.0 MB</td><td class="num">33.2</td><td class="num">29.8ms</td><td class="num">33.3ms</td><td class="num">34.4ms</td><td class="num">0.935</td><td style="color:var(--dim);font-size:12px">2× size, no gain</td></tr>
-          <tr><td>TFLite INT8</td><td class="num">19.7 MB</td><td class="num">36.4</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">0.935</td><td style="color:var(--dim);font-size:12px">Edge-ready, 49% smaller</td></tr>
+          <tr class="win"><td>ONNX FP16 <span class="tag">BEST</span></td><td class="n">38.3 MB</td><td class="n">44.1</td><td class="n">21.9ms</td><td class="n">28.2ms</td><td class="n">34.4ms</td><td class="n">0.935</td><td class="s">Best speed/accuracy</td></tr>
+          <tr><td>PyTorch</td><td class="n">38.8 MB</td><td class="n">33.6</td><td class="n">29.5ms</td><td class="n">32.1ms</td><td class="n">33.2ms</td><td class="n">0.935</td><td class="s">Default runtime</td></tr>
+          <tr><td>TorchScript</td><td class="n">77.0 MB</td><td class="n">33.2</td><td class="n">29.8ms</td><td class="n">33.3ms</td><td class="n">34.4ms</td><td class="n">0.935</td><td class="s">2× size, no gain</td></tr>
+          <tr><td>TFLite INT8</td><td class="n">19.7 MB</td><td class="n">36.4</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">0.935</td><td class="s">Edge · 49% smaller</td></tr>
         </tbody>
       </table>
     </div>
@@ -619,22 +482,18 @@ section { position: relative; z-index: 1; }
 </section>
 
 <!-- API -->
-<section class="section" id="api">
+<section class="sec" id="api">
   <div class="shell">
-    <div class="reveal">
-      <div class="section-label">API Reference</div>
-      <h2 class="section-title">Endpoints</h2>
-      <p class="section-desc">REST API with JSON responses. CORS open. No authentication.</p>
-    </div>
-    <div class="reveal">
-      <table class="api-table">
+    <div class="reveal"><div class="sec-lab">API</div><h2 class="sec-title">Endpoints</h2><p class="sec-desc">REST JSON. CORS open. Multipart for /detect. No auth.</p></div>
+    <div class="api reveal">
+      <table>
         <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td><span class="m-post">POST</span></td><td class="path">/detect</td><td class="desc">Run inference on an uploaded image. Returns JSON with detections, annotated image, and latency.</td></tr>
-          <tr><td><span class="m-post">POST</span></td><td class="path">/detect_batch</td><td class="desc">Batch inference on multiple images. Returns array of results.</td></tr>
-          <tr><td><span class="m-get">GET</span></td><td class="path">/health</td><td class="desc">Liveness check. Returns model status, memory, latency stats.</td></tr>
-          <tr><td><span class="m-get">GET</span></td><td class="path">/docs</td><td class="desc">Interactive Swagger UI with live API testing.</td></tr>
-          <tr><td><span class="m-get">GET</span></td><td class="path">/metrics</td><td class="desc">Prometheus-format metrics endpoint.</td></tr>
+          <tr><td><span class="mp">POST</span></td><td class="pa">/detect</td><td class="ds">Single-image inference. Multipart: <code>image</code>, <code>conf</code> (0–1).</td></tr>
+          <tr><td><span class="mp">POST</span></td><td class="pa">/detect_batch</td><td class="ds">Up to 10 images per request. Array of results.</td></tr>
+          <tr><td><span class="mg">GET</span></td><td class="pa"><a class="pa" href="/health">/health</a></td><td class="ds">Liveness + model status + rolling latency stats.</td></tr>
+          <tr><td><span class="mg">GET</span></td><td class="pa"><a class="pa" href="/docs">/docs</a></td><td class="ds">Swagger UI. Try requests live.</td></tr>
+          <tr><td><span class="mg">GET</span></td><td class="pa"><a class="pa" href="/metrics">/metrics</a></td><td class="ds">Prometheus metrics endpoint.</td></tr>
         </tbody>
       </table>
     </div>
@@ -642,59 +501,34 @@ section { position: relative; z-index: 1; }
 </section>
 
 <!-- DOCS -->
-<section class="section" id="docs">
+<section class="sec" id="docs">
   <div class="shell">
-    <div class="reveal">
-      <div class="section-label">Resources</div>
-      <h2 class="section-title">Documentation</h2>
-    </div>
-    <div class="docs-grid reveal">
-      <a class="doc-card" href="/docs" target="_blank">
-        <div class="icon">📄</div>
-        <div><div class="name">Swagger UI</div><div class="desc">Interactive API explorer with live testing</div></div>
-      </a>
-      <a class="doc-card" href="/health" target="_blank">
-        <div class="icon">💚</div>
-        <div><div class="name">Health Check</div><div class="desc">Live system status and metrics</div></div>
-      </a>
-      <a class="doc-card" href="https://github.com/Abdallah4Z/Road-Sense" target="_blank">
-        <div class="icon">📦</div>
-        <div><div class="name">GitHub Repo</div><div class="desc">Source code, issues, and releases</div></div>
-      </a>
-      <a class="doc-card" href="https://github.com/Abdallah4Z/Road-Sense/blob/main/reports/MODEL_EVALUATION_REPORT.md" target="_blank">
-        <div class="icon">📊</div>
-        <div><div class="name">Evaluation Report</div><div class="desc">Full benchmark results and analysis</div></div>
-      </a>
-      <a class="doc-card" href="https://github.com/Abdallah4Z/Road-Sense/blob/main/docs/DEPLOYMENT_GUIDE.md" target="_blank">
-        <div class="icon">🚀</div>
-        <div><div class="name">Deployment Guide</div><div class="desc">Local, Docker, and Azure setup</div></div>
-      </a>
-      <a class="doc-card" href="https://github.com/Abdallah4Z/Road-Sense/blob/main/docs/API_DOCUMENTATION.md" target="_blank">
-        <div class="icon">📡</div>
-        <div><div class="name">API Documentation</div><div class="desc">Full endpoint reference and examples</div></div>
-      </a>
+    <div class="reveal"><div class="sec-lab">Docs</div><h2 class="sec-title">References</h2></div>
+    <div class="docs reveal">
+      <a class="doc" href="/docs"><div class="ic">📄</div><div><div class="nm">Swagger UI</div><div class="dt">Interactive API explorer</div></div></a>
+      <a class="doc" href="/health"><div class="ic">💚</div><div><div class="nm">Health Check</div><div class="dt">Live system status</div></div></a>
+      <a class="doc" href="https://github.com/Abdallah4Z/Road-Sense"><div class="ic">📦</div><div><div class="nm">GitHub</div><div class="dt">Source code & issues</div></div></a>
+      <a class="doc" href="https://github.com/Abdallah4Z/Road-Sense/blob/main/reports/MODEL_EVALUATION_REPORT.md"><div class="ic">📊</div><div><div class="nm">Evaluation Report</div><div class="dt">Full benchmark results</div></div></a>
+      <a class="doc" href="https://github.com/Abdallah4Z/Road-Sense/blob/main/docs/DEPLOYMENT_GUIDE.md"><div class="ic">🚀</div><div><div class="nm">Deployment Guide</div><div class="dt">Local, Docker, Azure</div></div></a>
+      <a class="doc" href="https://github.com/Abdallah4Z/Road-Sense/blob/main/docs/API_DOCUMENTATION.md"><div class="ic">📡</div><div><div class="nm">API Docs</div><div class="dt">Endpoint reference</div></div></a>
     </div>
   </div>
 </section>
 
 <!-- ARCHITECTURE -->
-<section class="section" id="architecture">
+<section class="sec" id="arch">
   <div class="shell">
-    <div class="reveal">
-      <div class="section-label">Architecture</div>
-      <h2 class="section-title">How it's deployed</h2>
-      <p class="section-desc">From training to production in one pipeline.</p>
-    </div>
-    <div class="arch-flow reveal">
-      <div class="arch-node"><div class="label">Modal GPU</div><div class="sub">A100 · HPO</div></div>
-      <div class="arch-arrow">→</div>
-      <div class="arch-node"><div class="label">GitHub Actions</div><div class="sub">CI / CD</div></div>
-      <div class="arch-arrow">→</div>
-      <div class="arch-node"><div class="label">GHCR</div><div class="sub">Container registry</div></div>
-      <div class="arch-arrow">→</div>
-      <div class="arch-node" style="border-color:var(--accent);box-shadow:0 0 20px rgba(34,211,238,0.1)"><div class="label" style="color:var(--accent)">Azure ACI</div><div class="sub">sweden central · 4 CPU · 8 GB</div></div>
-      <div class="arch-arrow">→</div>
-      <div class="arch-node"><div class="label">FastAPI + YOLO11m</div><div class="sub">uvicorn :8000</div></div>
+    <div class="reveal"><div class="sec-lab">Architecture</div><h2 class="sec-title">How it's deployed</h2></div>
+    <div class="arch reveal">
+      <div class="an"><div class="l">Modal GPU</div><div class="s">A100 · HPO</div></div>
+      <div class="aa">→</div>
+      <div class="an"><div class="l">GitHub Actions</div><div class="s">CI/CD</div></div>
+      <div class="aa">→</div>
+      <div class="an"><div class="l">GHCR</div><div class="s">Container Registry</div></div>
+      <div class="aa">→</div>
+      <div class="an hi"><div class="l">Azure ACI</div><div class="s">sweden · 4 CPU · 8 GB</div></div>
+      <div class="aa">→</div>
+      <div class="an"><div class="l">FastAPI + YOLO11m</div><div class="s">uvicorn :8000</div></div>
     </div>
   </div>
 </section>
@@ -702,112 +536,78 @@ section { position: relative; z-index: 1; }
 <!-- FOOTER -->
 <footer class="footer">
   <div class="shell">
-    <div class="footer-inner">
-      <span>road-sense v1.0 · YOLO11m · MIT License</span>
-      <a href="https://github.com/Abdallah4Z/Road-Sense" target="_blank">github.com/Abdallah4Z/Road-Sense</a>
+    <div class="footer-in">
+      <span>road-sense v1.0 · <span class="ok">●</span> operational</span>
+      <a href="https://github.com/Abdallah4Z/Road-Sense">github.com/Abdallah4Z/Road-Sense</a>
     </div>
   </div>
 </footer>
 
 <script>
-const API = 'http://road-sense-api.swedencentral.azurecontainer.io:8000';
-
-// Health polling
-let _h = null, _t = 0;
-async function tick() {
-  try {
-    const r = await fetch(`${API}/health`, { cache: 'no-store' });
-    if (!r.ok) throw 0;
-    const d = await r.json();
-    const s = d.stats || {};
-    const dt = _t ? performance.now() - _t : 0;
-    const n = s.total_requests || 0;
-    const _n = _h ? (_h.stats?.total_requests || 0) : 0;
-    const rps = dt > 0 ? ((n - _n) / (dt / 1000)).toFixed(1) : '—';
-    _t = performance.now(); _h = d;
-    const f = s => s == null ? '—' : s < 60 ? `${Math.round(s)}s` : s < 3600 ? `${Math.round(s/60)}m` : `${(s/3600).toFixed(1)}h`;
-    document.getElementById('mUp').textContent = f(s.uptime_seconds);
-    document.getElementById('mRam').textContent = `${Math.round(s.ram_rss_mb||0)} MB`;
-    document.getElementById('mReq').textContent = s.total_requests ?? '—';
-    document.getElementById('mP50').textContent = `${Math.round(s.latency_ms_p50||0)} ms`;
-    document.getElementById('mErr').textContent = s.error_count ?? '0';
-    document.getElementById('mModel').textContent = d.model_loaded ? 'Loaded' : '—';
-    document.getElementById('statusDot').className = 'hud-dot';
-    document.getElementById('statusText').textContent = `${f(s.uptime_seconds)} · ${Math.round(s.latency_ms_p50||0)}ms`;
-  } catch(e) {
-    document.getElementById('statusDot').className = 'hud-dot off';
-    document.getElementById('statusText').textContent = 'Offline';
+const API='http://road-sense-api.swedencentral.azurecontainer.io:8000';
+let _h=null,_t=0;
+async function tick(){
+  try{
+    const r=await fetch(`${API}/health`,{cache:'no-store'});
+    if(!r.ok)throw 0;
+    const d=await r.json();const s=d.stats||{};
+    const dt=_t?performance.now()-_t:0;const n=s.total_requests||0;
+    const _n=_h?(_h.stats?.total_requests||0):0;
+    const rps=dt>0?((n-_n)/(dt/1000)).toFixed(1):'—';_t=performance.now();_h=d;
+    const f=v=>v==null?'—':v<60?Math.round(v)+'s':v<3600?Math.round(v/60)+'m':(v/3600).toFixed(1)+'h';
+    document.getElementById('mU').textContent=f(s.uptime_seconds);
+    document.getElementById('mR').textContent=Math.round(s.ram_rss_mb||0)+' MB';
+    document.getElementById('mQ').textContent=s.total_requests??'—';
+    document.getElementById('mL').textContent=Math.round(s.latency_ms_p50||0)+' ms';
+    document.getElementById('mE').textContent=s.error_count??'0';
+    document.getElementById('mM').textContent=d.model_loaded?'Loaded':'—';
+    document.getElementById('sd').className='dot';
+    document.getElementById('st').textContent=`${f(s.uptime_seconds)} · ${Math.round(s.latency_ms_p50||0)}ms`;
+  }catch(e){
+    document.getElementById('sd').className='dot off';
+    document.getElementById('st').textContent='Offline';
   }
 }
-tick(); setInterval(tick, 5000);
-
-// Playground
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-const confSlider = document.getElementById('confSlider');
-const detectBtn = document.getElementById('detectBtn');
-let selectedFile = null;
-
-confSlider.addEventListener('input', () => {
-  document.getElementById('confVal').textContent = (confSlider.value / 100).toFixed(2);
-});
-
-dropzone.addEventListener('click', () => fileInput.click());
-dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.style.borderColor = '#22d3ee'; });
-dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = ''; });
-dropzone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropzone.style.borderColor = '';
-  if (e.dataTransfer.files.length) {
-    selectedFile = e.dataTransfer.files[0];
-    dropzone.innerHTML = `<p style="color:var(--accent)">${selectedFile.name}</p><p class="hint">${(selectedFile.size/1024).toFixed(0)} KB</p>`;
+tick();setInterval(tick,5000);
+const dropzone=document.getElementById('dropzone'),fi=document.getElementById('fi'),cs=document.getElementById('cs'),runBtn=document.getElementById('runBtn');
+let sf=null;
+cs.oninput=()=>document.getElementById('cv').textContent=(cs.value/100).toFixed(2);
+dropzone.onclick=()=>fi.click();
+dropzone.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
+dropzone.ondragover=e=>{e.preventDefault();dropzone.style.borderColor='var(--cyan)';};
+dropzone.ondragleave=()=>dropzone.style.borderColor='';
+dropzone.ondrop=e=>{e.preventDefault();dropzone.style.borderColor='';if(e.dataTransfer.files.length){fi.files=e.dataTransfer.files;sf=e.dataTransfer.files[0];dropzone.innerHTML=`<p style="color:var(--cyan)">${sf.name}</p><p class="h">${(sf.size/1024).toFixed(0)} KB</p>`}};
+fi.onchange=()=>{if(fi.files.length){sf=fi.files[0];dropzone.innerHTML=`<p style="color:var(--cyan)">${sf.name}</p><p class="h">${(sf.size/1024).toFixed(0)} KB</p>`}};
+runBtn.onclick=async()=>{
+  if(!sf){document.getElementById('pgEr').textContent='Select an image first';document.getElementById('pgEr').style.display='block';return;}
+  document.getElementById('pgEr').style.display='none';
+  document.getElementById('pgE').style.display='none';
+  document.getElementById('pgR').classList.remove('on');
+  document.getElementById('pgL').style.display='flex';
+  runBtn.disabled=true;
+  const fd=new FormData();fd.append('image',sf);fd.append('conf',cs.value/100);
+  try{
+    const r=await fetch(`${API}/detect`,{method:'POST',body:fd});
+    if(!r.ok){const e=await r.json();throw new Error(e.detail||`HTTP ${r.status}`);}
+    const d=await r.json();
+    document.getElementById('pgL').style.display='none';
+    document.getElementById('pgR').classList.add('on');
+    document.getElementById('rO').textContent=d.detections?.length||0;
+    document.getElementById('rT').textContent=Math.round(d.inference_time_ms)+'ms';
+    document.getElementById('rF').textContent=(1000/d.inference_time_ms).toFixed(1);
+    document.getElementById('aImg').src=d.annotated_image;
+    document.getElementById('tBody').innerHTML=(d.detections||[]).map(d=>`<tr><td class="cls">${d.class_name}</td><td class="cn">${(d.confidence*100).toFixed(1)}%</td><td class="bx">[${d.bbox.map(v=>v.toFixed(0)).join(', ')}]</td></tr>`).join('')||'<tr><td colspan="3" style="text-align:center;color:var(--xdim)">No detections</td></tr>';
+  }catch(e){
+    document.getElementById('pgL').style.display='none';
+    document.getElementById('pgEr').textContent=e.message;
+    document.getElementById('pgEr').style.display='block';
+    document.getElementById('pgE').style.display='block';
   }
-});
-fileInput.addEventListener('change', () => {
-  if (fileInput.files.length) {
-    selectedFile = fileInput.files[0];
-    dropzone.innerHTML = `<p style="color:var(--accent)">${selectedFile.name}</p><p class="hint">${(selectedFile.size/1024).toFixed(0)} KB</p>`;
-  }
-});
-
-detectBtn.addEventListener('click', async () => {
-  if (!selectedFile) { document.getElementById('pgErr').textContent = 'Please select an image first'; document.getElementById('pgErr').style.display = 'block'; return; }
-  document.getElementById('pgErr').style.display = 'none';
-  document.getElementById('pgEmpty').style.display = 'none';
-  document.getElementById('pgResult').classList.remove('on');
-  document.getElementById('pgLoading').style.display = 'flex';
-  detectBtn.disabled = true;
-
-  const fd = new FormData();
-  fd.append('image', selectedFile);
-  fd.append('conf', confSlider.value / 100);
-
-  try {
-    const r = await fetch(`${API}/detect`, { method: 'POST', body: fd });
-    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || `HTTP ${r.status}`); }
-    const d = await r.json();
-    document.getElementById('pgLoading').style.display = 'none';
-    document.getElementById('pgResult').classList.add('on');
-    document.getElementById('rObj').textContent = d.detections?.length || 0;
-    document.getElementById('rLat').textContent = `${Math.round(d.inference_time_ms)}ms`;
-    document.getElementById('rFps').textContent = (1000 / d.inference_time_ms).toFixed(1);
-    document.getElementById('annotatedImg').src = d.annotated_image;
-    const tb = document.getElementById('detectionBody');
-    tb.innerHTML = (d.detections || []).map(d => `<tr><td class="cls">${d.class_name}</td><td class="conf">${(d.confidence*100).toFixed(1)}%</td><td class="bbox">[${d.bbox.map(v=>v.toFixed(1)).join(', ')}]</td></tr>`).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--xdim)">No detections</td></tr>';
-  } catch(e) {
-    document.getElementById('pgLoading').style.display = 'none';
-    document.getElementById('pgErr').textContent = e.message;
-    document.getElementById('pgErr').style.display = 'block';
-    document.getElementById('pgEmpty').style.display = 'block';
-  }
-  detectBtn.disabled = false;
-});
-
+  runBtn.disabled=false;
+};
 // Scroll reveal
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.1 });
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis')}),{threshold:.1});
+document.querySelectorAll('.reveal').forEach(e=>obs.observe(e));
 </script>
 
 </body>
