@@ -3,1026 +3,470 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>road-sense — yolo11m detection api</title>
-<meta name="description" content="Object detection API. Vehicle, pedestrian, cyclist. Live at 4.225.74.191:8000.">
-<meta name="theme-color" content="#0a0a0a">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 2h12v12H2z' fill='none' stroke='%2300ff66' stroke-width='1.2'/%3E%3Cpath d='M5 5l3 3-3 3M9 11h4' fill='none' stroke='%2300ff66' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>road-sense — yolov11m detection api</title>
+<meta name="description" content="Real-time object detection API. YOLO11m. Vehicle, Pedestrian, Cyclist.">
+<meta name="theme-color" content="#080c10">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:        #0a0a0a;
-  --bg-1:     #111111;
-  --bg-2:     #181818;
-  --line:     #2a2a2a;
-  --line-2:   #1f1f1f;
-  --text:      #d4d4d4;
-  --text-mid:  #888888;
-  --text-dim:  #555555;
-  --text-xdim: #383838;
-  --green:    #4ade80;
-  --green-d:  #166534;
-  --amber:    #fbbf24;
-  --red:      #f87171;
-  --accent:   #00ff66;
-  --accent-d: #003318;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --bg:#080c10;--bg1:#0c1014;--bg2:#11161b;--line:#1a1f27;--line2:#141820;
+  --text:#d1d5db;--dim:#4b5563;--mid:#6b7280;--xdim:#2a3040;
+  --green:#00ff41;--green-d:#00ff4120;--green-glow:0 0 20px #00ff4140;
+  --amber:#fbbf24;--red:#f87171;--blue:#60a5fa;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+*::selection{background:var(--green);color:#000}
+html{scroll-behavior:smooth}
+body{font-family:var(--mono);font-size:13.5px;line-height:1.6;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;cursor:crosshair}
+a{color:inherit;text-decoration:none}
+a:hover{color:var(--green)}
+button{font-family:inherit;background:none;border:0;color:inherit;cursor:pointer}
+code,.m{font-family:var(--mono)}
+
+/* Scan lines overlay */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,65,0.015) 2px,rgba(0,255,65,0.015) 4px);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-*::selection { background: var(--accent); color: #000; }
+/* Crosshair cursor for HUD feel */
+body::before{content:'';position:fixed;top:50%;left:50%;width:40px;height:40px;border:1px solid rgba(0,255,65,0.15);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all .15s}
 
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: var(--font-mono);
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: var(--text);
-  background: var(--bg);
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-}
-
-a { color: inherit; text-decoration: none; }
-a:hover { color: var(--accent); }
-
-button { font-family: inherit; background: none; border: 0; color: inherit; cursor: pointer; }
-
-code, kbd, .m { font-family: var(--font-mono); }
-
-::selection { background: var(--accent); color: #000; }
-
-::selection, input, button, select, textarea { font-family: inherit; }
-
-img { max-width: 100%; display: block; }
-
-/* ===== Layout ===== */
-
-.shell {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 32px;
-}
+/* Layout */
+.shell{max-width:1200px;margin:0 auto;padding:0 32px}
 
 /* ===== Nav ===== */
+.nav{border-bottom:1px solid var(--line);padding:14px 0;position:sticky;top:0;background:rgba(8,12,16,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:100}
+.nav__inner{max-width:1200px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between;gap:32px}
+.nav__brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;color:var(--green)}
+.nav__brand svg{filter:drop-shadow(0 0 6px #00ff4160)}
+.nav__brand .ver{color:var(--dim);font-weight:400;font-size:11px;margin-left:4px}
+.nav__links{display:flex;align-items:center;gap:20px;font-size:12px;color:var(--mid)}
+.nav__links a:hover{color:var(--green)}
+.nav__right{display:flex;align-items:center;gap:14px;font-size:11px}
+.hud-badge{padding:3px 8px;border:1px solid var(--green-d);border-radius:3px;color:var(--green);display:flex;align-items:center;gap:5px;font-size:11px}
+.hud-dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:var(--green-glow);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@media(max-width:720px){.nav__links{display:none}.nav__right{display:none}}
 
-.nav {
-  border-bottom: 1px solid var(--line);
-  padding: 18px 0;
-  position: sticky;
-  top: 0;
-  background: rgba(10, 10, 10, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  z-index: 100;
-}
-.nav__inner {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 32px;
-}
-.nav__brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--accent);
-}
-.nav__brand .sep { color: var(--text-xdim); }
-.nav__brand .v { color: var(--text-mid); }
-.nav__links {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  font-size: 12.5px;
-  color: var(--text-mid);
-}
-.nav__links a { color: var(--text-mid); }
-.nav__links a:hover { color: var(--text); }
-.nav__links .dot {
-  display: inline-block;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--green);
-  margin-right: 6px;
-  box-shadow: 0 0 4px var(--green);
-  animation: pulse 1.6s ease-in-out infinite;
-}
-.nav__links .dot.off { background: var(--text-dim); box-shadow: none; animation: none; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-.nav__end {
-  font-size: 12px;
-  color: var(--text-dim);
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-.nav__end .pill {
-  padding: 4px 8px;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  color: var(--text-mid);
-}
-.nav__end .pill.on { color: var(--green); border-color: var(--green-d); }
+/* ===== Hero HUD ===== */
+.hero{padding:60px 0 40px;position:relative}
+.hero__grid{max-width:1200px;margin:0 auto;padding:0 32px;display:grid;grid-template-columns:1fr 1.1fr;gap:40px;align-items:center}
+.hero__left{position:relative}
+.hero__label{font-size:10px;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;margin-bottom:12px}
+.hero__h1{font-size:44px;font-weight:700;line-height:1.05;letter-spacing:-.02em;margin-bottom:16px;color:var(--text)}
+.hero__h1 em{font-style:normal;color:var(--green);text-shadow:0 0 30px #00ff4130}
+.hero__p{font-size:14px;color:var(--dim);line-height:1.7;max-width:440px;margin-bottom:24px}
+.hero__btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:12.5px;font-weight:500;border-radius:3px;border:1px solid var(--line);background:var(--bg);color:var(--text);transition:all .15s}
+.btn:hover{border-color:var(--green);color:var(--green)}
+.btn--g{background:var(--green);color:#000;border-color:var(--green);font-weight:600}
+.btn--g:hover{background:#00ff66;color:#000}
 
-@media (max-width: 720px) {
-  .nav__inner { gap: 16px; }
-  .nav__links { display: none; }
-  .nav__end { display: none; }
-}
+/* HUD Frame — 3D perspective container */
+.hud{position:relative;perspective:1200px;margin-top:40px}
+.hud__frame{background:var(--bg1);border:1px solid var(--line);border-radius:6px;padding:12px;transform:rotateX(2deg) rotateY(-1deg);transform-origin:center center;transition:transform .3s ease;position:relative;overflow:hidden}
+.hud__frame::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);opacity:.3}
+.hud__frame::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:var(--green-d)}
+.hud__top{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line2);font-size:11px;color:var(--dim)}
+.hud__lights{display:flex;gap:5px}
+.hud__lights span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.hud__lights span:nth-child(1){background:#ff5f57}
+.hud__lights span:nth-child(2){background:#febc2e}
+.hud__lights span:nth-child(3){background:var(--green);box-shadow:var(--green-glow)}
+.hud__top .title{flex:1;text-align:center;color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:.08em}
+.hud__top .rt{color:var(--dim);font-size:10px;font-variant-numeric:tabular-nums}
+.hud__body{padding:20px 24px;font-size:13px;line-height:1.7}
+.hud__row{display:flex;align-items:baseline;gap:8px}
+.hud__row+.hud__row{margin-top:1px}
+.hl{color:var(--green);user-select:none}
+.hk{color:var(--mid)}
+.hv{color:var(--text)}
+.hs{color:#c084fc}
+.hn{color:var(--amber)}
+.hb{color:var(--blue)}
+.hc{color:var(--dim)}
+.hud__sep{margin:20px -12px 0;height:1px;background:var(--line)}
+.hud__actions{padding:14px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-/* ===== Hero — terminal ===== */
-
-.hero {
-  padding: 60px 0 40px;
-  border-bottom: 1px solid var(--line);
-}
-.hero__shell {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 32px;
-}
-.hero__pane {
-  background: var(--bg-1);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.hero__bar {
-  display: flex;
-  align-items: center;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg-2);
-  gap: 12px;
-  font-size: 11.5px;
-  color: var(--text-dim);
-}
-.hero__bar .lights { display: inline-flex; gap: 6px; }
-.hero__bar .lights span {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  background: var(--line);
-}
-.hero__bar .lights span:nth-child(1) { background: #ff5f57; }
-.hero__bar .lights span:nth-child(2) { background: #febc2e; }
-.hero__bar .lights span:nth-child(3) { background: #28c840; }
-.hero__bar .path { flex: 1; text-align: center; }
-.hero__bar .time { color: var(--text-xdim); }
-
-.hero__body {
-  padding: 28px 32px 32px;
-  font-size: 14.5px;
-  line-height: 1.75;
-}
-.hero__row { display: flex; align-items: baseline; gap: 10px; }
-.hero__row + .hero__row { margin-top: 2px; }
-.hero__prompt { color: var(--green); user-select: none; }
-.hero__cmd { color: var(--text); }
-.hero__str { color: #c084fc; }
-.hero__num { color: var(--amber); }
-.hero__bool { color: #60a5fa; }
-.hero__key { color: var(--text-mid); }
-.hero__com { color: var(--text-dim); }
-.hero__out { color: var(--text-mid); }
-.hero__out .l { color: var(--text-xdim); }
-.hero__out .v { color: var(--text); }
-
-.hero__row--meta { margin-top: 20px; color: var(--text-dim); }
-.hero__row--meta .lbl { color: var(--text-dim); }
-.hero__row--meta .val { color: var(--text); }
-
-.hero__divider {
-  margin: 22px -32px 0;
-  height: 1px;
-  background: var(--line);
-}
-.hero__cta {
-  padding: 20px 32px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.hero__cta .prompt { color: var(--green); }
-.hero__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: transparent;
-  color: var(--text);
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  font-size: 12.5px;
-  transition: all 0.12s;
-}
-.hero__btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.hero__btn.primary {
-  background: var(--accent);
-  color: #000;
-  border-color: var(--accent);
-  font-weight: 600;
-}
-.hero__btn.primary:hover {
-  background: #00ff88;
-  color: #000;
-}
-
-/* ===== Section base ===== */
-
-.section {
-  padding: 64px 0;
-  border-bottom: 1px solid var(--line);
-}
-.section:last-of-type { border-bottom: 0; }
-.section__head {
-  max-width: 1180px;
-  margin: 0 auto 40px;
-  padding: 0 32px;
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-}
-.section__index {
-  font-size: 12px;
-  color: var(--text-dim);
-  letter-spacing: 0.1em;
-}
-.section__title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
-}
-.section__desc {
-  font-size: 12.5px;
-  color: var(--text-mid);
-  margin-left: auto;
-  max-width: 480px;
-}
-.section__body {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 32px;
-}
+/* 3D bounding box animation in hero */
+.bbox-3d{position:absolute;top:20px;right:-10px;opacity:.5;pointer-events:none}
+.bbox-3d rect{fill:none;stroke:var(--green);stroke-width:1;animation:scan 3s infinite}
+@keyframes scan{0%{stroke-dashoffset:0}100%{stroke-dashoffset:100}}
 
 /* ===== Strip — live metrics ===== */
-
-.strip {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  border: 1px solid var(--line);
-  background: var(--bg-1);
-}
-.strip__cell {
-  padding: 16px 20px;
-  border-right: 1px solid var(--line);
-}
-.strip__cell:last-child { border-right: 0; }
-.strip__label {
-  font-size: 11px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 6px;
-}
-.strip__val {
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-.strip__val.is-on { color: var(--green); }
-
-@media (max-width: 1024px) {
-  .strip { grid-template-columns: repeat(3, 1fr); }
-  .strip__cell:nth-child(3) { border-right: 0; }
-  .strip__cell:nth-child(4) { border-top: 1px solid var(--line); }
-  .strip__cell:nth-child(n+5) { border-top: 1px solid var(--line); }
-}
-@media (max-width: 600px) {
-  .strip { grid-template-columns: repeat(2, 1fr); }
-  .strip__cell:nth-child(2n) { border-right: 0; }
-  .strip__cell:nth-child(odd+1) { border-top: 1px solid var(--line); }
-  .strip__cell:nth-child(n+3) { border-top: 1px solid var(--line); }
-}
+.strip{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid var(--line);background:var(--bg1)}
+.strip__cell{padding:14px 16px;border-right:1px solid var(--line)}
+.strip__cell:last-child{border-right:0}
+.strip__label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.strip__val{font-size:16px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums}
+.strip__val.on{color:var(--green)}
+@media(max-width:1024px){.strip{grid-template-columns:repeat(3,1fr)}.strip__cell:nth-child(3){border-right:0}}
+@media(max-width:600px){.strip{grid-template-columns:repeat(2,1fr)}}
 
 /* ===== Playground ===== */
+.section{padding:56px 0;border-bottom:1px solid var(--line)}
+.section:last-of-type{border-bottom:0}
+.section__head{max-width:1200px;margin:0 auto 32px;padding:0 32px;display:flex;align-items:baseline;gap:16px}
+.section__idx{font-size:10px;color:var(--dim);letter-spacing:.15em}
+.section__title{font-size:15px;font-weight:600;color:var(--text)}
+.section__desc{font-size:11.5px;color:var(--mid);margin-left:auto;max-width:400px}
+.section__body{max-width:1200px;margin:0 auto;padding:0 32px}
 
-.pg {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  border: 1px solid var(--line);
-  background: var(--bg-1);
-  min-height: 520px;
-}
-.pg__input {
-  padding: 24px;
-  border-right: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.pg__output {
-  padding: 24px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  background:
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 12px,
-      rgba(255,255,255,0.008) 12px,
-      rgba(255,255,255,0.008) 13px
-    ),
-    var(--bg-1);
-}
-@media (max-width: 880px) {
-  .pg { grid-template-columns: 1fr; }
-  .pg__input { border-right: 0; border-bottom: 1px solid var(--line); }
-}
+.pg{display:grid;grid-template-columns:300px 1fr;border:1px solid var(--line);background:var(--bg1);min-height:480px}
+.pg__input{padding:20px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:16px}
+.pg__output{padding:20px;background:var(--bg);position:relative;display:flex;flex-direction:column;gap:12px}
+@media(max-width:880px){.pg{grid-template-columns:1fr}.pg__input{border-right:0;border-bottom:1px solid var(--line)}}
+.pg__label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.pg__input input[type="text"],.pg__input input[type="url"]{width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--line);color:var(--text);font-size:12px;font-family:var(--mono);outline:none;border-radius:2px}
+.pg__input input:focus{border-color:var(--green)}
 
-.pg__label {
-  font-size: 11px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 8px;
-}
-.pg__input input[type="text"],
-.pg__input input[type="url"] {
-  width: 100%;
-  padding: 8px 10px;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  color: var(--text);
-  font-size: 12.5px;
-  font-family: var(--font-mono);
-  outline: none;
-  border-radius: 3px;
-}
-.pg__input input:focus { border-color: var(--accent); }
+.drop{border:1px dashed var(--line);border-radius:3px;padding:28px 12px;text-align:center;font-size:12px;color:var(--dim);cursor:pointer;transition:all .15s;background:var(--bg);outline:none}
+.drop:hover,.drop.is-over{border-color:var(--green);color:var(--green)}
+.drop__hint{font-size:10px;color:var(--xdim);margin-top:3px}
 
-.drop {
-  border: 1px dashed var(--line);
-  border-radius: 3px;
-  padding: 32px 16px;
-  text-align: center;
-  font-size: 12.5px;
-  color: var(--text-dim);
-  cursor: pointer;
-  transition: all 0.12s;
-  background: var(--bg);
-  outline: none;
-}
-.drop:hover, .drop.is-over {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.drop__hint { font-size: 11px; color: var(--text-xdim); margin-top: 4px; }
+.slider{display:flex;align-items:center;gap:8px;font-size:11.5px}
+.slider__v{width:36px;text-align:right;color:var(--green);font-variant-numeric:tabular-nums}
+.slider input[type="range"]{flex:1;accent-color:var(--green)}
 
-.slider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-}
-.slider__val {
-  width: 40px;
-  text-align: right;
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-}
-.slider input[type="range"] {
-  flex: 1;
-  accent-color: var(--accent);
-}
+.btn--block{width:100%;justify-content:center}
 
-.btn {
-  padding: 9px 14px;
-  background: var(--accent);
-  color: #000;
-  border: 0;
-  font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: 3px;
-  transition: all 0.12s;
-}
-.btn:hover { background: #00ff88; }
-.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* Output */
+.pg__empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--xdim);font-size:12px;min-height:320px}
+.pg__loading{flex:1;display:flex;align-items:center;justify-content:center;color:var(--green);font-size:12px;min-height:320px}
+.pg__loading::before{content:'';display:inline-block;width:8px;height:8px;border:1.5px solid var(--green);border-top-color:transparent;border-radius:50%;margin-right:8px;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-.pg__empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-xdim);
-  font-size: 13px;
-  text-align: center;
-  min-height: 360px;
-}
-.pg__loading {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent);
-  font-size: 12.5px;
-  min-height: 360px;
-}
-.pg__loading::before {
-  content: '';
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border: 1.5px solid var(--accent);
-  border-top-color: transparent;
-  border-radius: 50%;
-  margin-right: 10px;
-  animation: spin 0.6s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+.pg__result{display:none;flex-direction:column;gap:12px;flex:1}
+.pg__result.on{display:flex}
+.pg__meta{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);background:var(--bg1)}
+.pg__meta__c{padding:10px 12px;border-right:1px solid var(--line)}
+.pg__meta__c:last-child{border-right:0}
+.pg__meta__l{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
+.pg__meta__v{font-size:16px;font-weight:500;color:var(--text);margin-top:2px;font-variant-numeric:tabular-nums}
+.pg__img{background:var(--bg1);border:1px solid var(--line);padding:4px;display:flex;align-items:center;justify-content:center;min-height:200px;max-height:320px;overflow:hidden}
+.pg__img img{max-width:100%;max-height:316px}
+.pg__tbl{background:var(--bg1);border:1px solid var(--line);font-size:11.5px;overflow:auto;max-height:160px}
+.pg__tbl table{width:100%;border-collapse:collapse}
+.pg__tbl th,.pg__tbl td{padding:5px 10px;text-align:left;border-bottom:1px solid var(--line2)}
+.pg__tbl th{background:var(--bg2);font-weight:500;color:var(--dim);font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;position:sticky;top:0}
+.pg__tbl .cls{color:var(--green)}
+.pg__tbl .conf{color:var(--amber)}
+.pg__tbl .bx{color:var(--xdim);font-size:10.5px}
+.pg__err{background:var(--bg);border:1px solid var(--red);color:var(--red);padding:10px 14px;font-size:12px;border-radius:2px}
 
-.pg__result {
-  display: none;
-  flex-direction: column;
-  gap: 16px;
-  flex: 1;
-}
-.pg__result.is-on { display: flex; }
+/* ===== Benchmarks ===== */
+.bench{border:1px solid var(--line);background:var(--bg1)}
+.bench table{width:100%;border-collapse:collapse;font-size:12px}
+.bench th,.bench td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line2)}
+.bench th{background:var(--bg2);font-weight:500;color:var(--dim);font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--line)}
+.bench .n{text-align:right;font-variant-numeric:tabular-nums}
+.bench tr:last-child td{border-bottom:0}
+.bench .win{background:rgba(0,255,65,.03)}
+.bench .win td:first-child{border-left:2px solid var(--green);padding-left:14px}
+.bench .tag{display:inline-block;padding:1px 5px;background:var(--green);color:#000;font-size:8px;font-weight:700;letter-spacing:.04em;margin-left:6px;border-radius:1px}
+.bench .s{color:var(--dim);font-size:10.5px}
+@media(max-width:720px){.bench table,.bench thead,.bench tbody,.bench tr,.bench td,.bench th{display:block}.bench tr{padding:12px;border-bottom:1px solid var(--line)}.bench th{display:none}.bench td{border:0;padding:2px 0}.bench td.n{text-align:left}.bench td::before{content:attr(data-l)': ';color:var(--dim)}}
 
-.pg__meta {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  border: 1px solid var(--line);
-  background: var(--bg);
-}
-.pg__meta__cell {
-  padding: 12px 16px;
-  border-right: 1px solid var(--line);
-}
-.pg__meta__cell:last-child { border-right: 0; }
-.pg__meta__l {
-  font-size: 10.5px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-.pg__meta__v {
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--text);
-  margin-top: 2px;
-  font-variant-numeric: tabular-nums;
-}
+/* ===== API ===== */
+.api{border:1px solid var(--line);background:var(--bg1)}
+.api table{width:100%;border-collapse:collapse;font-size:12px}
+.api th,.api td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line2);vertical-align:top}
+.api th{background:var(--bg2);font-weight:500;color:var(--dim);font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--line)}
+.api tr:last-child td{border-bottom:0}
+.m{display:inline-block;padding:1px 5px;font-size:9.5px;font-weight:600;letter-spacing:.04em;border-radius:1px;min-width:42px;text-align:center}
+.m.g{background:rgba(96,165,250,.12);color:var(--blue)}
+.m.p{background:rgba(0,255,65,.12);color:var(--green)}
+.api .path{color:var(--text);font-weight:500}
+.api a.path:hover{color:var(--green)}
+.api .d{color:var(--mid);font-size:11.5px}
 
-.pg__img {
-  background: var(--bg);
-  border: 1px solid var(--line);
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 240px;
-  max-height: 360px;
-  overflow: hidden;
-}
-.pg__img img { max-width: 100%; max-height: 344px; }
-
-.pg__table {
-  background: var(--bg);
-  border: 1px solid var(--line);
-  font-size: 12px;
-  overflow: auto;
-  max-height: 200px;
-}
-.pg__table table { width: 100%; border-collapse: collapse; }
-.pg__table th, .pg__table td {
-  padding: 7px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--line-2);
-}
-.pg__table th {
-  font-weight: 500;
-  color: var(--text-dim);
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  position: sticky; top: 0;
-  background: var(--bg-1);
-}
-.pg__table td { color: var(--text); }
-.pg__table .cls { color: var(--accent); }
-.pg__table .conf { color: var(--amber); }
-.pg__table .track { color: var(--text-mid); }
-.pg__table .bbox { color: var(--text-dim); font-size: 11.5px; }
-.pg__err {
-  background: var(--bg);
-  border: 1px solid var(--red);
-  color: var(--red);
-  padding: 12px 16px;
-  font-size: 12.5px;
-  border-radius: 3px;
-}
-
-/* ===== Bench table ===== */
-
-.bench {
-  border: 1px solid var(--line);
-  background: var(--bg-1);
-  overflow: hidden;
-}
-.bench table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-.bench th, .bench td {
-  padding: 14px 20px;
-  text-align: left;
-  border-bottom: 1px solid var(--line-2);
-}
-.bench th {
-  background: var(--bg-2);
-  font-weight: 500;
-  color: var(--text-dim);
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  border-bottom: 1px solid var(--line);
-}
-.bench td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.bench tr:last-child td { border-bottom: 0; }
-.bench tr.winner { background: rgba(0, 255, 102, 0.04); }
-.bench tr.winner td:first-child { border-left: 2px solid var(--accent); }
-.bench tr.winner td:first-child { padding-left: 18px; }
-.bench .winner-tag {
-  display: inline-block;
-  padding: 1px 6px;
-  background: var(--accent);
-  color: #000;
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  margin-left: 8px;
-  border-radius: 2px;
-}
-.bench .small { color: var(--text-dim); font-size: 11.5px; }
-@media (max-width: 720px) {
-  .bench table, .bench thead, .bench tbody, .bench tr, .bench td, .bench th { display: block; }
-  .bench tr { padding: 16px; border-bottom: 1px solid var(--line); }
-  .bench th { display: none; }
-  .bench td { border: 0; padding: 4px 0; }
-  .bench td.num { text-align: left; }
-  .bench td::before { content: attr(data-l) ': '; color: var(--text-dim); }
-}
-
-/* ===== Endpoints table ===== */
-
-.api {
-  border: 1px solid var(--line);
-  background: var(--bg-1);
-}
-.api table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.api th, .api td {
-  padding: 14px 20px;
-  text-align: left;
-  border-bottom: 1px solid var(--line-2);
-  vertical-align: top;
-}
-.api th {
-  background: var(--bg-2);
-  font-weight: 500;
-  color: var(--text-dim);
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  border-bottom: 1px solid var(--line);
-}
-.api tr:last-child td { border-bottom: 0; }
-.method {
-  display: inline-block;
-  padding: 1px 6px;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  border-radius: 2px;
-  min-width: 48px;
-  text-align: center;
-}
-.method.get  { background: rgba(96,165,250,0.12); color: #60a5fa; }
-.method.post { background: rgba(74,222,128,0.12); color: #4ade80; }
-.path { color: var(--text); font-weight: 500; }
-.api a.path:hover { color: var(--accent); }
-.api__d { color: var(--text-mid); font-size: 12px; }
-
-/* ===== Status section ===== */
-
-.status {
-  border: 1px solid var(--line);
-  background: var(--bg-1);
-  padding: 20px 24px;
-  font-size: 12px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px 40px;
-}
-.status dt {
-  color: var(--text-dim);
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-top: 6px;
-}
-.status dd { color: var(--text); font-variant-numeric: tabular-nums; }
-.status .ok { color: var(--green); }
+/* ===== Docs table ===== */
+.docs{border:1px solid var(--line);background:var(--bg1)}
+.docs table{width:100%;border-collapse:collapse;font-size:12px}
+.docs th,.docs td{padding:10px 16px;text-align:left;border-bottom:1px solid var(--line2)}
+.docs th{background:var(--bg2);font-weight:500;color:var(--dim);font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--line)}
+.docs tr:last-child td{border-bottom:0}
+.docs a{color:var(--green)}
+.docs a:hover{text-decoration:underline}
+.docs .path{color:var(--mid);font-family:var(--mono);font-size:10.5px}
 
 /* ===== Footer ===== */
+.foot{border-top:1px solid var(--line);padding:20px 0;font-size:11px;color:var(--dim)}
+.foot__inner{max-width:1200px;margin:0 auto;padding:0 32px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.foot__inner .ok{color:var(--green)}
+.foot__inner a{color:var(--mid)}
+.foot__inner a:hover{color:var(--green)}
 
-.foot {
-  border-top: 1px solid var(--line);
-  padding: 24px 0 40px;
-  font-size: 11.5px;
-  color: var(--text-dim);
-}
-.foot__shell {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 32px;
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-.foot__path { color: var(--text-mid); }
-.foot__path .ok { color: var(--green); }
-.foot__repo a { color: var(--text-mid); }
-.foot__repo a:hover { color: var(--accent); }
-
-@media (max-width: 720px) {
-  .foot__shell { flex-direction: column; gap: 6px; }
-}
+/* ===== 3D Card Hover (hero frame) ===== */
+.hud__frame{transition:transform .15s ease-out}
+.hud__frame:hover{transform:rotateX(0deg) rotateY(0deg)}
 </style>
 </head>
 <body>
 
 <nav class="nav">
   <div class="nav__inner">
-    <a href="/" class="nav__brand">
-      <span>road-sense</span><span class="sep">/</span><span class="v">v1.0</span>
+    <a href="#" class="nav__brand">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="1" y="1" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.2"/><path d="M6 15V9l5 4 5-4v6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      road-sense<span class="ver">/v1.0</span>
     </a>
     <div class="nav__links">
       <a href="#playground">/playground</a>
-      <a href="#bench">/benchmarks</a>
+      <a href="#bench">/bench</a>
       <a href="#api">/api</a>
       <a href="#docs">/docs</a>
     </div>
-    <div class="nav__end">
-      <span><span class="dot" id="statusDot"></span><span id="statusText">— · — · —</span></span>
-      <span class="pill on" id="statusPill">CPU</span>
+    <div class="nav__right">
+      <div class="hud-badge"><span class="hud-dot"></span><span id="navStatus">connecting…</span></div>
+      <div class="hud-badge">CPU</div>
     </div>
   </div>
 </nav>
 
+<!-- HUD Hero -->
 <section class="hero">
-  <div class="hero__shell">
-    <div class="hero__pane">
-      <div class="hero__bar">
-        <div class="lights"><span></span><span></span><span></span></div>
-        <div class="path">road-sense — POST /detect — 200 OK</div>
-        <div class="time" id="heroTime">— ms</div>
-      </div>
-      <div class="hero__body">
-
-        <div class="hero__row">
-          <span class="hero__prompt">$</span>
-          <span class="hero__cmd">curl</span>
-          <span class="hero__str">"http://road-sense-api.swedencentral.azurecontainer.io:8000/detect"</span>
-          <span class="hero__com">\</span>
-        </div>
-        <div class="hero__row" style="padding-left:20px">
-          <span class="hero__cmd">&nbsp;&nbsp;-F</span>
-          <span class="hero__str">"image=@kitti_frame_00123.png"</span>
-          <span class="hero__com">\</span>
-        </div>
-        <div class="hero__row" style="padding-left:20px">
-          <span class="hero__cmd">&nbsp;&nbsp;-F</span>
-          <span class="hero__str">"conf=0.25"</span>
-          <span class="hero__com">\</span>
-        </div>
-        <div class="hero__row" style="padding-left:20px">
-          <span class="hero__cmd">&nbsp;&nbsp;-F</span>
-          <span class="hero__str">"session_id=demo-1"</span>
-        </div>
-
-        <div class="hero__row hero__row--meta" style="margin-top: 16px">
-          <span class="hero__com"># 200 OK · application/json</span>
-        </div>
-
-        <div class="hero__row">
-          <span class="hero__out">{</span>
-        </div>
-        <div class="hero__row" style="padding-left:18px">
-          <span class="hero__key">"success"</span><span class="hero__out">:</span> <span class="hero__bool">true</span><span class="hero__out">,</span>
-        </div>
-        <div class="hero__row" style="padding-left:18px">
-          <span class="hero__key">"detections"</span><span class="hero__out">:</span> <span class="hero__out">[</span>
-        </div>
-        <div class="hero__row" style="padding-left:36px">
-          <span class="hero__out">{</span>
-        </div>
-        <div class="hero__row" style="padding-left:54px">
-          <span class="hero__key">"class_name"</span><span class="hero__out">:</span> <span class="hero__str">"Vehicle"</span><span class="hero__out">,</span>
-        </div>
-        <div class="hero__row" style="padding-left:54px">
-          <span class="hero__key">"confidence"</span><span class="hero__out">:</span> <span class="hero__num">0.92</span><span class="hero__out">,</span>
-        </div>
-        <div class="hero__row" style="padding-left:54px">
-          <span class="hero__key">"bbox"</span><span class="hero__out">:</span> <span class="hero__out">[</span><span class="hero__num">234.5</span><span class="hero__out">,</span> <span class="hero__num">412.1</span><span class="hero__out">,</span> <span class="hero__num">458.2</span><span class="hero__out">,</span> <span class="hero__num">528.7</span><span class="hero__out">],</span>
-        </div>
-        <div class="hero__row" style="padding-left:54px">
-          <span class="hero__key">"track_id"</span><span class="hero__out">:</span> <span class="hero__num">1</span>
-        </div>
-        <div class="hero__row" style="padding-left:36px">
-          <span class="hero__out">},</span>
-        </div>
-        <div class="hero__row" style="padding-left:36px; color: var(--text-dim)">
-          <span class="hero__com">// + 2 more detections: Pedestrian, Cyclist</span>
-        </div>
-        <div class="hero__row" style="padding-left:18px">
-          <span class="hero__out">],</span>
-        </div>
-        <div class="hero__row" style="padding-left:18px">
-          <span class="hero__key">"inference_time_ms"</span><span class="hero__out">:</span> <span class="hero__num">647</span><span class="hero__out">,</span>
-        </div>
-        <div class="hero__row" style="padding-left:18px">
-          <span class="hero__key">"message"</span><span class="hero__out">:</span> <span class="hero__str">"Detected 3 tracked objects"</span>
-        </div>
-        <div class="hero__row">
-          <span class="hero__out">}</span>
-        </div>
-
-        <div class="hero__divider"></div>
-
-        <div class="hero__cta">
-          <a href="#playground" class="hero__btn primary">→ /playground</a>
-          <a href="/docs" class="hero__btn" target="_blank" rel="noopener">/docs (Swagger)</a>
-          <a href="#bench" class="hero__btn">/benchmarks</a>
-          <a href="#api" class="hero__btn">/api</a>
-        </div>
-
+  <div class="hero__grid">
+    <div class="hero__left">
+      <p class="hero__label">YOLO11M · FASTAPI · AZURE ACI</p>
+      <h1 class="hero__h1">Real-time object detection<br>for <em>autonomous</em> vehicles</h1>
+      <p class="hero__p">Three-class detection — Vehicle, Pedestrian, Cyclist — with 44 FPS on GPU, 650ms p50 on CPU. YOLO11m fine-tuned on KITTI, deployed as a live REST endpoint.</p>
+      <div class="hero__btns">
+        <a href="#playground" class="btn btn--g">Open playground →</a>
+        <a href="/docs" class="btn" target="_blank">/docs</a>
+        <a href="#bench" class="btn">/bench</a>
+        <a href="#api" class="btn">/api</a>
       </div>
     </div>
 
-    <div style="margin-top: 24px" class="strip">
-      <div class="strip__cell">
-        <div class="strip__label">uptime</div>
-        <div class="strip__val" id="mUptime">—</div>
-      </div>
-      <div class="strip__cell">
-        <div class="strip__label">memory</div>
-        <div class="strip__val" id="mMem">—</div>
-      </div>
-      <div class="strip__cell">
-        <div class="strip__label">requests</div>
-        <div class="strip__val" id="mReq">—</div>
-      </div>
-      <div class="strip__cell">
-        <div class="strip__label">p50</div>
-        <div class="strip__val" id="mP50">—</div>
-      </div>
-      <div class="strip__cell">
-        <div class="strip__label">errors</div>
-        <div class="strip__val" id="mErr">—</div>
-      </div>
-      <div class="strip__cell">
-        <div class="strip__label">model</div>
-        <div class="strip__val is-on" id="mModel">—</div>
+    <div class="hero__right">
+      <!-- HUD Frame with terminal + 3D bounding box overlay -->
+      <div class="hud">
+        <div class="hud__frame" id="hudFrame">
+          <div class="hud__top">
+            <div class="hud__lights"><span></span><span></span><span></span></div>
+            <span class="title">POST /detect — 200 OK</span>
+            <span class="rt" id="hudRt">— ms</span>
+          </div>
+          <div class="hud__body">
+            <div class="hud__row"><span class="hl">$</span><span>curl</span><span class="hs">"http://road-sense-api.swedencentral.azurecontainer.io:8000/detect"</span><span class="hc">\</span></div>
+            <div class="hud__row" style="padding-left:18px"><span>&nbsp;&nbsp;-F</span><span class="hs">"image=@kitti_00123.png"</span><span class="hc">\</span></div>
+            <div class="hud__row" style="padding-left:18px"><span>&nbsp;&nbsp;-F</span><span class="hs">"conf=0.25"</span></div>
+            <div class="hud__row hc" style="margin-top:12px"># 200 OK · application/json</div>
+            <div class="hud__row"><span class="hc">{</span></div>
+            <div class="hud__row" style="padding-left:16px"><span class="hk">"success"</span><span class="hc">:</span><span class="hb">true</span><span class="hc">,</span></div>
+            <div class="hud__row" style="padding-left:16px"><span class="hk">"detections"</span><span class="hc">:</span><span class="hc">[</span></div>
+            <div class="hud__row" style="padding-left:32px"><span class="hc">{</span></div>
+            <div class="hud__row" style="padding-left:48px"><span class="hk">"class_name"</span><span class="hc">:</span><span class="hs">"Vehicle"</span><span class="hc">,</span></div>
+            <div class="hud__row" style="padding-left:48px"><span class="hk">"confidence"</span><span class="hc">:</span><span class="hn">0.92</span><span class="hc">,</span></div>
+            <div class="hud__row" style="padding-left:48px"><span class="hk">"bbox"</span><span class="hc">:</span><span class="hc">[</span><span class="hn">234.5</span><span class="hc">,</span><span class="hn">412.1</span><span class="hc">,</span><span class="hn">458.2</span><span class="hc">,</span><span class="hn">528.7</span><span class="hc">]</span></div>
+            <div class="hud__row" style="padding-left:32px"><span class="hc">},</span></div>
+            <div class="hud__row" style="padding-left:32px;color:var(--xdim)"><span class="hc">// + 2 more detections</span></div>
+            <div class="hud__row" style="padding-left:16px"><span class="hc">]</span></div>
+            <div class="hud__row" style="padding-left:16px"><span class="hk">"inference_time_ms"</span><span class="hc">:</span><span class="hn">647</span><span class="hc">,</span></div>
+            <div class="hud__row" style="padding-left:16px"><span class="hk">"message"</span><span class="hc">:</span><span class="hs">"Detected 3 objects"</span></div>
+            <div class="hud__row"><span class="hc">}</span></div>
+          </div>
+          <!-- 3D bounding box overlay -->
+          <svg class="bbox-3d" width="120" height="100" viewBox="0 0 120 100">
+            <rect x="20" y="10" width="80" height="55" rx="2" stroke-dasharray="4 2" style="animation-delay:0s"/>
+            <rect x="20" y="10" width="80" height="55" rx="2" stroke-dasharray="4 2" style="animation-delay:.5s;stroke:var(--amber);opacity:.6"/>
+            <rect x="35" y="55" width="50" height="35" rx="2" stroke-dasharray="4 2" style="animation-delay:1s"/>
+            <text x="25" y="25" font-size="8" fill="var(--green)" opacity="0.7">Vehicle 0.92</text>
+            <text x="40" y="70" font-size="8" fill="var(--amber)" opacity="0.7">Pedestrian 0.87</text>
+          </svg>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
+<!-- Live Metrics Strip -->
+<section class="section" style="padding-top:0;padding-bottom:0">
+  <div class="shell">
+    <div class="strip">
+      <div class="strip__cell"><div class="strip__label">uptime</div><div class="strip__val" id="mUp">—</div></div>
+      <div class="strip__cell"><div class="strip__label">memory</div><div class="strip__val" id="mRam">—</div></div>
+      <div class="strip__cell"><div class="strip__label">requests</div><div class="strip__val" id="mReq">—</div></div>
+      <div class="strip__cell"><div class="strip__label">p50</div><div class="strip__val" id="mP50">—</div></div>
+      <div class="strip__cell"><div class="strip__label">errors</div><div class="strip__val" id="mErr">—</div></div>
+      <div class="strip__cell"><div class="strip__label">model</div><div class="strip__val on" id="mModel">—</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Playground -->
 <section class="section" id="playground">
   <div class="section__head">
-    <span class="section__index">/01</span>
+    <span class="section__idx">/01</span>
     <span class="section__title">playground</span>
-    <span class="section__desc">Upload an image. POST to /detect. Read the response. No build steps, no auth, no rate limits.</span>
+    <span class="section__desc">Upload an image. POST to /detect. No auth. No rate limits. No build steps.</span>
   </div>
   <div class="section__body">
     <div class="pg">
       <div class="pg__input">
-        <div>
-          <div class="pg__label">endpoint</div>
-          <input type="text" id="apiBase" value="http://road-sense-api.swedencentral.azurecontainer.io:8000">
+        <div><div class="pg__label">endpoint</div><input type="text" id="apiBase" value="http://road-sense-api.swedencentral.azurecontainer.io:8000"></div>
+        <div><div class="pg__label">image</div>
+          <div class="drop" id="drop" tabindex="0"><div id="dropLabel">drop image or click</div><div class="drop__hint">PNG / JPEG / WebP</div><input type="file" id="file" accept="image/*" hidden></div>
         </div>
-        <div>
-          <div class="pg__label">image</div>
-          <div class="drop" id="drop" tabindex="0">
-            <div id="dropLabel">drop image or click</div>
-            <div class="drop__hint">PNG / JPEG / WebP</div>
-            <input type="file" id="file" accept="image/*" hidden>
-          </div>
-        </div>
-        <div>
-          <div class="pg__label">conf threshold</div>
-          <div class="slider">
-            <input type="range" id="conf" min="0" max="100" value="25">
-            <span class="slider__val" id="confVal">0.25</span>
-          </div>
-        </div>
-        <button class="btn" id="runBtn">POST /detect →</button>
+        <div><div class="pg__label">conf</div><div class="slider"><input type="range" id="conf" min="0" max="100" value="25"><span class="slider__v" id="confVal">0.25</span></div></div>
+        <button class="btn btn--g btn--block" id="runBtn">POST /detect →</button>
       </div>
       <div class="pg__output">
         <div class="pg__empty" id="pgEmpty">// response will appear here</div>
-        <div class="pg__loading" id="pgLoading" style="display:none">running inference</div>
+        <div class="pg__loading" id="pgLoading" style="display:none">running inference…</div>
         <div class="pg__err" id="pgErr" style="display:none"></div>
         <div class="pg__result" id="pgResult">
           <div class="pg__meta">
-            <div class="pg__meta__cell">
-              <div class="pg__meta__l">objects</div>
-              <div class="pg__meta__v" id="rObj">—</div>
-            </div>
-            <div class="pg__meta__cell">
-              <div class="pg__meta__l">latency</div>
-              <div class="pg__meta__v" id="rLat">—</div>
-            </div>
-            <div class="pg__meta__cell">
-              <div class="pg__meta__l">throughput</div>
-              <div class="pg__meta__v" id="rTps">—</div>
-            </div>
+            <div class="pg__meta__c"><div class="pg__meta__l">objects</div><div class="pg__meta__v" id="rObj">—</div></div>
+            <div class="pg__meta__c"><div class="pg__meta__l">latency</div><div class="pg__meta__v" id="rLat">—</div></div>
+            <div class="pg__meta__c"><div class="pg__meta__l">throughput</div><div class="pg__meta__v" id="rTps">—</div></div>
           </div>
           <div class="pg__img"><img id="rImg" alt=""></div>
-          <div class="pg__table">
-            <table>
-              <thead>
-                <tr><th>class</th><th>conf</th><th>track</th><th>bbox</th></tr>
-              </thead>
-              <tbody id="rBody"></tbody>
-            </table>
-          </div>
+          <div class="pg__tbl"><table><thead><tr><th>class</th><th>conf</th><th>bbox</th></tr></thead><tbody id="rBody"></tbody></table></div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
+<!-- Benchmarks -->
 <section class="section" id="bench">
   <div class="section__head">
-    <span class="section__index">/02</span>
+    <span class="section__idx">/02</span>
     <span class="section__title">benchmarks</span>
-    <span class="section__desc">Single-image inference on RTX 3050 at 640×640. 10 repeats per format. YOLO11m HPO weights, identical across all rows.</span>
+    <span class="section__desc">RTX 3050 · 640×640 · 10 repeats · identical YOLO11m HPO weights across all formats.</span>
   </div>
   <div class="section__body">
     <div class="bench">
       <table>
-        <thead>
-          <tr>
-            <th>format</th>
-            <th class="num">size</th>
-            <th class="num">fps</th>
-            <th class="num">p50</th>
-            <th class="num">p95</th>
-            <th class="num">p99</th>
-            <th class="num">mAP@50</th>
-            <th>note</th>
-          </tr>
-        </thead>
+        <thead><tr><th>format</th><th class="n">size</th><th class="n">fps</th><th class="n">p50</th><th class="n">p95</th><th class="n">p99</th><th class="n">mAP@50</th><th>note</th></tr></thead>
         <tbody>
-          <tr class="winner">
-            <td data-l="format">ONNX FP16<span class="winner-tag">RECOMMENDED</span></td>
-            <td class="num" data-l="size">38.3 MB</td>
-            <td class="num" data-l="fps">44.1</td>
-            <td class="num" data-l="p50">21.9 ms</td>
-            <td class="num" data-l="p95">28.2 ms</td>
-            <td class="num" data-l="p99">34.4 ms</td>
-            <td class="num" data-l="mAP@50">0.935</td>
-            <td class="small" data-l="note">best speed/accuracy · ONNX Runtime + CUDA</td>
-          </tr>
-          <tr>
-            <td data-l="format">PyTorch (native)</td>
-            <td class="num" data-l="size">38.8 MB</td>
-            <td class="num" data-l="fps">33.6</td>
-            <td class="num" data-l="p50">29.5 ms</td>
-            <td class="num" data-l="p95">32.1 ms</td>
-            <td class="num" data-l="p99">33.2 ms</td>
-            <td class="num" data-l="mAP@50">0.935</td>
-            <td class="small" data-l="note">default runtime · what the server uses</td>
-          </tr>
-          <tr>
-            <td data-l="format">TorchScript</td>
-            <td class="num" data-l="size">77.0 MB</td>
-            <td class="num" data-l="fps">33.2</td>
-            <td class="num" data-l="p50">29.8 ms</td>
-            <td class="num" data-l="p95">33.3 ms</td>
-            <td class="num" data-l="p99">34.4 ms</td>
-            <td class="num" data-l="mAP@50">0.935</td>
-            <td class="small" data-l="note">2× file size · no speed gain over PyTorch</td>
-          </tr>
-          <tr>
-            <td data-l="format">TFLite INT8</td>
-            <td class="num" data-l="size">19.7 MB</td>
-            <td class="num" data-l="p99">34.4 ms</td>
-            <td class="num" data-l="p95">28.2 ms</td>
-            <td class="num" data-l="p50">21.9 ms</td>
-            <td class="num" data-l="fps">44.1</td>
-            <td class="num" data-l="mAP@50">0.935</td>
-            <td class="small" data-l="note">for edge · 49% smaller · zero accuracy loss</td>
-          </tr>
+          <tr class="win"><td data-l="format">ONNX FP16<span class="tag">BEST</span></td><td class="n" data-l="size">38.3 MB</td><td class="n" data-l="fps">44.1</td><td class="n" data-l="p50">21.9 ms</td><td class="n" data-l="p95">28.2 ms</td><td class="n" data-l="p99">34.4 ms</td><td class="n" data-l="mAP@50">0.935</td><td class="s" data-l="note">ONNX Runtime + CUDA</td></tr>
+          <tr><td data-l="format">PyTorch</td><td class="n" data-l="size">38.8 MB</td><td class="n" data-l="fps">33.6</td><td class="n" data-l="p50">29.5 ms</td><td class="n" data-l="p95">32.1 ms</td><td class="n" data-l="p99">33.2 ms</td><td class="n" data-l="mAP@50">0.935</td><td class="s" data-l="note">default runtime</td></tr>
+          <tr><td data-l="format">TorchScript</td><td class="n" data-l="size">77.0 MB</td><td class="n" data-l="fps">33.2</td><td class="n" data-l="p50">29.8 ms</td><td class="n" data-l="p95">33.3 ms</td><td class="n" data-l="p99">34.4 ms</td><td class="n" data-l="mAP@50">0.935</td><td class="s" data-l="note">2× size, no gain</td></tr>
+          <tr><td data-l="format">TFLite INT8</td><td class="n" data-l="size">19.7 MB</td><td class="n" data-l="fps">—</td><td class="n" data-l="p50">—</td><td class="n" data-l="p95">—</td><td class="n" data-l="p99">—</td><td class="n" data-l="mAP@50">0.935</td><td class="s" data-l="note">edge · 49% smaller</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 </section>
 
+<!-- API -->
 <section class="section" id="api">
   <div class="section__head">
-    <span class="section__index">/03</span>
+    <span class="section__idx">/03</span>
     <span class="section__title">api</span>
-    <span class="section__desc">REST over JSON. CORS open. Multipart for /detect. No auth. 0.65 s p50 on CPU.</span>
+    <span class="section__desc">REST over JSON. CORS open. Multipart for /detect. No auth.</span>
   </div>
   <div class="section__body">
     <div class="api">
       <table>
-        <thead>
-          <tr><th>method</th><th>path</th><th>description</th></tr>
-        </thead>
+        <thead><tr><th>method</th><th>path</th><th>description</th></tr></thead>
         <tbody>
-          <tr>
-            <td><span class="method get">GET</span></td>
-            <td><a class="path" href="/health" target="_blank" rel="noopener">/health</a></td>
-            <td class="api__d">Liveness probe. Returns server status, loaded model path, and rolling 100-request performance stats.</td>
-          </tr>
-          <tr>
-            <td><span class="method post">POST</span></td>
-            <td><a class="path" href="/docs" target="_blank" rel="noopener">/detect</a></td>
-            <td class="api__d">Single-image inference. Multipart: <code>image</code> (file), <code>conf</code> (0–1, default 0.25), <code>session_id</code> (string, enables temporal tracking).</td>
-          </tr>
-          <tr>
-            <td><span class="method post">POST</span></td>
-            <td><a class="path" href="/docs" target="_blank" rel="noopener">/detect_batch</a></td>
-            <td class="api__d">Batch up to 10 images in a single request. Returns one entry per input.</td>
-          </tr>
-          <tr>
-            <td><span class="method get">GET</span></td>
-            <td><a class="path" href="/docs" target="_blank" rel="noopener">/docs</a></td>
-            <td class="api__d">OpenAPI / Swagger UI. Try requests, see schemas, copy as curl.</td>
-          </tr>
-          <tr>
-            <td><span class="method get">GET</span></td>
-            <td><a class="path" href="/docs" target="_blank" rel="noopener">/redoc</a></td>
-            <td class="api__d">ReDoc alternative documentation with code samples.</td>
-          </tr>
-          <tr>
-            <td><span class="method get">GET</span></td>
-            <td><a class="path" href="/metrics" target="_blank" rel="noopener">/metrics</a></td>
-            <td class="api__d">Prometheus-format metrics. Compatible with Grafana, Datadog, etc.</td>
-          </tr>
+          <tr><td><span class="m g">GET</span></td><td><a class="path" href="/health" target="_blank">/health</a></td><td class="d">Liveness probe. Model status, rolling 100-request latency stats, RAM usage.</td></tr>
+          <tr><td><span class="m p">POST</span></td><td><a class="path" href="/docs" target="_blank">/detect</a></td><td class="d">Single-image inference. Fields: <code>image</code> (file), <code>conf</code> (0–1, default 0.25).</td></tr>
+          <tr><td><span class="m p">POST</span></td><td><a class="path" href="/docs" target="_blank">/detect_batch</a></td><td class="d">Up to 10 images per request. One result per input.</td></tr>
+          <tr><td><span class="m g">GET</span></td><td><a class="path" href="/docs" target="_blank">/docs</a></td><td class="d">OpenAPI / Swagger UI. Try requests, copy as curl.</td></tr>
+          <tr><td><span class="m g">GET</span></td><td><a class="path" href="/metrics" target="_blank">/metrics</a></td><td class="d">Prometheus-format metrics. Grafana, Datadog compatible.</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 </section>
 
+<!-- Docs -->
 <section class="section" id="docs">
   <div class="section__head">
-    <span class="section__index">/04</span>
-    <span class="section__title">system</span>
-    <span class="section__desc">Live snapshot of the running container. Refreshes on focus.</span>
+    <span class="section__idx">/04</span>
+    <span class="section__title">references</span>
   </div>
   <div class="section__body">
-    <dl class="status">
-      <dt>endpoint</dt><dd id="sBase">—</dd>
-      <dt>model path</dt><dd id="sPath">—</dd>
-      <dt>container</dt><dd id="sImg">ghcr.io/abdallah4z/road-sense:latest</dd>
-      <dt>uptime</dt><dd id="sUp">—</dd>
-      <dt>memory</dt><dd id="sMem">—</dd>
-      <dt>region</dt><dd>sweden central</dd>
-      <dt>tracking</dt><dd id="sTrack">—</dd>
-      <dt>cpu / mem alloc</dt><dd>4 vCPU / 8 GB</dd>
-    </dl>
+    <div class="docs">
+      <table>
+        <thead><tr><th>resource</th><th>link</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAPI / Swagger</td><td class="path"><a href="/docs" target="_blank">/docs</a></td></tr>
+          <tr><td>Health endpoint</td><td class="path"><a href="/health" target="_blank">/health</a></td></tr>
+          <tr><td>Prometheus metrics</td><td class="path"><a href="/metrics" target="_blank">/metrics</a></td></tr>
+          <tr><td>GitHub repository</td><td class="path"><a href="https://github.com/Abdallah4Z/Road-Sense" target="_blank">Abdallah4Z/Road-Sense</a></td></tr>
+          <tr><td>Benchmark reports</td><td class="path"><a href="https://github.com/Abdallah4Z/Road-Sense/tree/main/reports" target="_blank">reports/</a></td></tr>
+          <tr><td>Container image</td><td><code>ghcr.io/abdallah4z/road-sense:latest</code></td></tr>
+          <tr><td>Model weights</td><td><code>HPO_run/weights/best.pt</code> (38.8 MB)</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>
 
 <footer class="foot">
-  <div class="foot__shell">
-    <span class="foot__path">road-sense · <span class="ok">●</span> operational</span>
-    <span class="foot__repo">
-      <a href="https://github.com/Abdallah4Z/Road-Sense" target="_blank" rel="noopener">github.com/Abdallah4Z/Road-Sense</a>
-    </span>
+  <div class="foot__inner">
+    <span>road-sense · <span class="ok">●</span> operational · sweden central</span>
+    <span><a href="https://github.com/Abdallah4Z/Road-Sense" target="_blank">github.com/Abdallah4Z/Road-Sense</a></span>
   </div>
 </footer>
 
-<script src="/static/js/app.js" defer></script>
+<script>
+const API='http://road-sense-api.swedencentral.azurecontainer.io:8000';
+const $=s=>document.querySelector(s);
+
+// ===== HUD frame 3D tilt =====
+const hf=$('#hudFrame');
+if(hf){const h=()=>{const x=(event.clientX/window.innerWidth-.5)*4;const y=(event.clientY/window.innerHeight-.5)*4;hf.style.transform=`rotateX(${-y}deg) rotateY(${x}deg)`};document.addEventListener('mousemove',h)}
+
+// ===== Health polling =====
+let _h=null,_t=0;
+async function tick(){
+  try{const r=await fetch(`${API}/health`,{cache:'no-store'});
+  if(!r.ok)throw 0;const d=await r.json();const s=d.stats||{};
+  const dt=_t?performance.now()-_t:0;const n=s.total_requests||0;
+  const _n=_h?(_h.stats?.total_requests||0):0;const rps=dt>0?((n-_n)/(dt/1000)).toFixed(1):'—';_t=performance.now();_h=d;
+  const f=s=>s==null?'—':s<60?`${Math.round(s)}s`:s<3600?`${Math.round(s/60)}m`:`${(s/3600).toFixed(1)}h`;
+  $('#mUp').textContent=f(s.uptime_seconds);
+  $('#mRam').textContent=`${Math.round(s.ram_rss_mb||0)} MB`;
+  $('#mReq').textContent=s.total_requests??'—';
+  $('#mP50').textContent=`${Math.round(s.latency_ms_p50||0)} ms`;
+  $('#mErr').textContent=s.error_count??'0';
+  $('#mModel').textContent=d.model_loaded?'loaded':'—';
+  $('#hudRt').textContent=`${Math.round(s.latency_ms_p50||0)} ms`;
+  $('#navStatus').textContent=`${f(s.uptime_seconds)} · ${s.latency_ms_p50?Math.round(s.latency_ms_p50)+'ms':'—'} · ${rps} rps`;
+  }catch{navigator.serviceWorker?.ready?.then(()=>{})}
+}
+tick();setInterval(tick,5000);
+
+// ===== Playground =====
+const drop=$('#drop'),fi=$('#file'),confS=$('#conf'),confV=$('#confVal'),btn=$('#runBtn'),base=$('#apiBase');
+let sf=null;
+confS.oninput=()=>confV.textContent=(confS.value/100).toFixed(2);
+drop.onclick=()=>fi.click();
+drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('is-over')};
+drop.ondragleave=()=>drop.classList.remove('is-over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('is-over');if(e.dataTransfer.files.length){fi.files=e.dataTransfer.files;sf=e.dataTransfer.files[0];$('#dropLabel').textContent=`${sf.name} (${(sf.size/1024).toFixed(0)} KB)`}};
+fi.onchange=()=>{if(fi.files.length){sf=fi.files[0];$('#dropLabel').textContent=`${sf.name} (${(sf.size/1024).toFixed(0)} KB)`}};
+btn.onclick=run;
+
+async function run(){
+  if(!sf){showErr('select an image first');return}
+  hideErr();$('#pgEmpty').style.display='none';$('#pgLoading').style.display='flex';$('#pgResult').classList.remove('on');btn.disabled=true;btn.textContent='…';
+  const fd=new FormData();fd.append('image',sf);fd.append('conf',confS.value/100);
+  try{
+    const r=await fetch(`${base.value.replace(/\/+$/,'')}/detect`,{method:'POST',body:fd});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||`HTTP ${r.status}`)}
+    const d=await r.json();render(d);
+  }catch(e){showErr(e.message)}
+  finally{btn.disabled=false;btn.textContent='POST /detect →';$('#pgLoading').style.display='none'}
+}
+function render(d){
+  const dd=d.detections||[];$('#pgResult').classList.add('on');
+  $('#rObj').textContent=dd.length;$('#rLat').textContent=`${Math.round(d.inference_time_ms)} ms`;
+  $('#rTps').textContent=`${(1000/d.inference_time_ms).toFixed(1)}/s`;$('#rImg').src=d.annotated_image;
+  $('#rBody').innerHTML=dd.map(d=>`<tr><td class="cls">${d.class_name}</td><td class="conf">${(d.confidence*100).toFixed(1)}%</td><td class="bx">${d.bbox.map(v=>v.toFixed(0)).join(', ')}</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--xdim);text-align:center">no detections</td></tr>';
+}
+function showErr(m){const e=$('#pgErr');e.textContent=`> ${m}`;e.style.display='block';$('#pgResult').classList.remove('on');$('#pgEmpty').style.display='none'}
+function hideErr(){$('#pgErr').style.display='none'}
+</script>
 </body>
 </html>
