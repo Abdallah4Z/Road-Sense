@@ -65,10 +65,10 @@ const visuals = [
 ];
 
 const metricRows = [
-  { name: "mAP50-95", best: 0.768, final: 0.725 },
-  { name: "mAP50",    best: 0.942, final: 0.935 },
-  { name: "Precision", best: 0.924, final: 0.893 },
-  { name: "Recall",   best: 0.916, final: 0.894 }
+  { name: "mAP50-95", value: 0.768 },
+  { name: "mAP50",    value: 0.942 },
+  { name: "Precision", value: 0.924 },
+  { name: "Recall",   value: 0.916 }
 ];
 
 /* ─── Helpers ─── */
@@ -305,8 +305,7 @@ function renderScoreCards() {
     card.innerHTML = `
       <div class="score-title">${row.name}</div>
       <div class="score-values">
-        <span>Best: ${row.best.toFixed(5)}</span>
-        <span style="color: var(--muted)">Final: ${row.final.toFixed(5)}</span>
+        <span>${row.value.toFixed(3)}</span>
       </div>`;
     container.appendChild(card);
   });
@@ -352,23 +351,14 @@ function drawMetricChart() {
 
   metricRows.forEach((row, i) => {
     const center = margin.left + groupW * i + groupW / 2;
-    // Normalize data visualization slightly so bars aren't clipped (assuming max is 1.0)
     const maxVal = 1.0;
-    const bestH = (row.best / maxVal) * chartH;
-    const finalH = (row.final / maxVal) * chartH;
+    const valH = (row.value / maxVal) * chartH;
 
-    // Best Bar
+    // Bar
     ctx.fillStyle = accent;
     ctx.beginPath();
-    const bx = center - barW - 4, by = margin.top + chartH - bestH;
-    ctx.roundRect(bx, by, barW, bestH, [4, 4, 0, 0]);
-    ctx.fill();
-
-    // Final Bar
-    ctx.fillStyle = accentDim;
-    ctx.beginPath();
-    const fx = center + 4, fy = margin.top + chartH - finalH;
-    ctx.roundRect(fx, fy, barW, finalH, [4, 4, 0, 0]);
+    const bx = center - barW / 2, by = margin.top + chartH - valH;
+    ctx.roundRect(bx, by, barW, valH, [4, 4, 0, 0]);
     ctx.fill();
 
     // Text Label
