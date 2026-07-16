@@ -1,11 +1,9 @@
-import io
 import time
-import numpy as np
-import cv2
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
+import cv2
+import numpy as np
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
-from typing import List
 
 app = FastAPI(
     title="Road-Sense Detection API",
@@ -34,7 +32,7 @@ def run_inference(image_bytes: bytes) -> dict:
     }
 
 
- 
+
 # Health check
 
 @app.get("/health")
@@ -64,7 +62,7 @@ async def predict_single(file: UploadFile = File(...)):
 
 # Batch-image endpoint
 @app.post("/predict/batch")
-async def predict_batch(files: List[UploadFile] = File(...)):
+async def predict_batch(files: list[UploadFile] = File(...)):
     """
     Run inference on multiple images in one request.
     Returns list of detections per image.
