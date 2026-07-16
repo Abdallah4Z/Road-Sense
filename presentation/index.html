@@ -19,7 +19,6 @@
         <li><a href="docs.html">Docs</a></li>
         <li><a href="reports.html">Reports</a></li>
         <li><a href="visuals.html">Visuals</a></li>
-        <li><a href="#results">Results</a></li>
         <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">☀️</button>
       </ul>
     </div>
@@ -35,8 +34,7 @@
           Deployed as a live API on Azure Container Instances.
         </p>
         <div class="hero-actions">
-          <a href="#results" class="btn btn-primary">View Metrics</a>
-          <a href="docs.html" class="btn btn-ghost">Documentation</a>
+          <a href="docs.html" class="btn btn-primary">Documentation</a>
         </div>
       </div>
 
@@ -59,23 +57,6 @@
         </article>
       </section>
     </header>
-
-    <section id="results" class="panel reveal">
-      <div class="panel-head">
-        <p class="eyebrow">HPO run</p>
-        <h2>Baseline vs HPO</h2>
-      </div>
-
-      <div class="results-wrap">
-        <div class="score-cards" id="scoreCards"></div>
-
-        <div class="chart-card">
-          <h3>Best Epoch Metrics</h3>
-          <canvas id="metricChart" width="700" height="320" aria-label="Best epoch metrics chart"></canvas>
-          <p class="caption">Best validation scores from the baseline training run (exp34332).</p>
-        </div>
-      </div>
-    </section>
   </main>
 
   <footer class="footer reveal">
