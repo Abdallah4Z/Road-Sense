@@ -4,35 +4,44 @@
 
 /* ─── Data ─── */
 const docs = [
-  { title: "Quick Setup Guide", description: "Install, validate, preprocess, and verify in a fast flow.", path: "./docs/QUICK_SETUP_GUIDE.md", category: "getting-started" },
-  { title: "Project Details", description: "Full dataset context, workflow design, and milestone structure.", path: "./docs/PROJECT_DETAILS.md", category: "getting-started" },
-  { title: "Preprocessing and Augmentation", description: "Details of data conversion and augmentation pipeline.", path: "./docs/PREPROCESSING_AND_AUGMENTATION_GUIDE.md", category: "dataset" },
-  { title: "Dataset Exploration", description: "Dataset profile and supporting statistical analysis.", path: "./docs/DATASET_EXPLORATION_REPORT.md", category: "dataset" },
-  { title: "Data Quality Report", description: "Validation checks for corruption, labels, and box constraints.", path: "./docs/data_quality_report.md", category: "dataset" },
-  { title: "Dataset Download Instructions", description: "How to obtain and place KITTI and related datasets.", path: "./docs/DATASET_DOWNLOAD_INSTRUCTIONS.md", category: "dataset" },
-  { title: "Dataset Upload Guidelines", description: "Repository data handling and large-file best practices.", path: "./docs/DATASET_UPLOAD_GUIDELINES.md", category: "dataset" },
-  { title: "Training Report", description: "Training configuration, curves, and run-specific observations.", path: "./docs/TRAINING_REPORT_EXP34332.md", category: "training" },
-  { title: "Multi-Dataset Training Strategy", description: "Plan for integrating additional datasets and training stages.", path: "./docs/MULTI_DATASET_TRAINING_STRATEGY.md", category: "training" },
-  { title: "Model Comparison Report", description: "Model-level comparison details and performance perspective.", path: "./docs/models/MODEL_COMPARISON_REPORT.md", category: "models" },
+  { title: "Quick Setup Guide", description: "Install dependencies, download data, run preprocessing.", path: "./docs/QUICK_SETUP_GUIDE.md", category: "getting-started" },
+  { title: "API Documentation", description: "Full endpoint reference with request/response schemas.", path: "./docs/API_DOCUMENTATION.md", category: "getting-started" },
+  { title: "Deployment Guide", description: "Local, Docker, and Azure deployment instructions.", path: "./docs/DEPLOYMENT_GUIDE.md", category: "getting-started" },
+  { title: "Docker Usage Guide", description: "Build, run, and troubleshoot Docker containers.", path: "./docs/DOCKER_USAGE.md", category: "getting-started" },
+  { title: "Project Details", description: "Dataset context, workflow design, and milestone structure.", path: "./docs/PROJECT_DETAILS.md", category: "getting-started" },
+  { title: "Preprocessing and Augmentation", description: "KITTI-to-YOLO conversion and augmentation pipeline.", path: "./docs/PREPROCESSING_AND_AUGMENTATION_GUIDE.md", category: "dataset" },
+  { title: "Dataset Exploration", description: "Statistical profile of the KITTI dataset.", path: "./docs/DATASET_EXPLORATION_REPORT.md", category: "dataset" },
+  { title: "Data Quality Report", description: "Duplicate detection, corruption checks, box constraint validation.", path: "./docs/data_quality_report.md", category: "dataset" },
+  { title: "Dataset Download Instructions", description: "How to obtain KITTI and other datasets.", path: "./docs/DATASET_DOWNLOAD_INSTRUCTIONS.md", category: "dataset" },
+  { title: "Dataset Upload Guidelines", description: "Managing large files in the repository.", path: "./docs/DATASET_UPLOAD_GUIDELINES.md", category: "dataset" },
+  { title: "Training Report", description: "Configuration, loss curves, and run observations.", path: "./docs/TRAINING_REPORT_EXP34332.md", category: "training" },
+  { title: "Multi-Dataset Training Strategy", description: "Plan for additional datasets and training stages.", path: "./docs/MULTI_DATASET_TRAINING_STRATEGY.md", category: "training" },
+  { title: "Model Comparison Report", description: "YOLO vs SSD vs Faster R-CNN on COCO128 and KITTI.", path: "./docs/models/MODEL_COMPARISON_REPORT.md", category: "models" },
+  { title: "Model Development Summary", description: "Final model selection, optimization, and export results.", path: "./docs/MODEL_DEVELOPMENT_SUMMARY.md", category: "models" },
+  { title: "Final Project Report", description: "Comprehensive project summary with methodology and results.", path: "./docs/FINAL_PROJECT_REPORT.md", category: "project-planning" },
   { title: "Project Proposal", description: "Overview, objectives, scope, and expected outcomes.", path: "./docs/project_planning/PROJECT_PROPOSAL.md", category: "project-planning" },
-  { title: "Project Plan & Gantt Chart", description: "Timeline, milestones, Gantt chart, and resource allocation.", path: "./docs/project_planning/PROJECT_PLAN.md", category: "project-planning" },
-  { title: "Task Assignment & Roles", description: "Defined responsibilities and task ownership for all members.", path: "./docs/project_planning/TASK_ASSIGNMENT.md", category: "project-planning" },
-  { title: "Risk Assessment & Mitigation", description: "Identified risks, impact analysis, and mitigation strategies.", path: "./docs/project_planning/RISK_ASSESSMENT.md", category: "project-planning" },
-  { title: "KPIs", description: "Key performance indicators for project success.", path: "./docs/project_planning/KPIS.md", category: "project-planning" },
-  { title: "Feedback & Evaluation", description: "Advisor evaluation, peer assessment, and project strengths.", path: "./docs/literature_review/FEEDBACK_AND_EVALUATION.md", category: "project-planning" },
+  { title: "Project Plan & Gantt Chart", description: "Timeline, milestones, and resource allocation.", path: "./docs/project_planning/PROJECT_PLAN.md", category: "project-planning" },
+  { title: "Task Assignment & Roles", description: "Responsibilities and ownership for all team members.", path: "./docs/project_planning/TASK_ASSIGNMENT.md", category: "project-planning" },
+  { title: "Risk Assessment & Mitigation", description: "Identified risks and mitigation strategies.", path: "./docs/project_planning/RISK_ASSESSMENT.md", category: "project-planning" },
+  { title: "KPIs", description: "Key performance indicators and targets.", path: "./docs/project_planning/KPIS.md", category: "project-planning" },
+  { title: "Feedback & Evaluation", description: "Advisor evaluation and project assessment.", path: "./docs/literature_review/FEEDBACK_AND_EVALUATION.md", category: "project-planning" },
   { title: "Suggested Improvements", description: "Prioritized technical and process improvements.", path: "./docs/literature_review/SUGGESTED_IMPROVEMENTS.md", category: "project-planning" },
-  { title: "Final Grading Criteria", description: "Grading breakdown, rubrics, scorecard, and timeline.", path: "./docs/literature_review/GRADING_CRITERIA.md", category: "project-planning" }
+  { title: "Final Grading Criteria", description: "Rubrics, scorecard, and timeline.", path: "./docs/literature_review/GRADING_CRITERIA.md", category: "project-planning" }
 ];
 
 const reports = [
-  { title: "Milestone 2 Executive Summary", description: "High-level training outcomes and readiness statement.", path: "./reports/MILESTONE_2_EXECUTIVE_SUMMARY_EXP34332.md", category: "milestones" },
-  { title: "Milestone 2 Technical Report", description: "Technical details, metrics, and artifact inventory.", path: "./reports/MILESTONE_2_TECHNICAL_REPORT_EXP34332.md", category: "milestones" },
-  { title: "Reports Index", description: "One-stop map for all major reporting documents.", path: "./reports/REPORTS_INDEX.md", category: "status" },
-  { title: "Project Status Report", description: "Progress across milestones and current priorities.", path: "./reports/PROJECT_STATUS_REPORT.md", category: "status" },
-  { title: "Week 1 Deliverables", description: "Early milestone summary and key outputs.", path: "./reports/WEEK_1_DELIVERABLES_SUMMARY.md", category: "status" },
-  { title: "Abdallah Dataset Analysis", description: "Research analysis for dataset options and rationale.", path: "./reports/research/Abdallah_dataset_analysis.md", category: "research" },
-  { title: "Aya Dataset Analysis", description: "Research notes and comparative insights by Aya Ahmed.", path: "./reports/research/AyaAhmed_dataset_analysis.md", category: "research" },
-  { title: "Dataset Analysis Template", description: "Template used for standardized analysis documentation.", path: "./reports/templates/dataset_analysis_template.md", category: "research" }
+  { title: "Milestone 2 Executive Summary", description: "Training outcomes and model readiness.", path: "./reports/MILESTONE_2_EXECUTIVE_SUMMARY_EXP34332.md", category: "milestones" },
+  { title: "Milestone 2 Technical Report", description: "Technical metrics and artifact details.", path: "./reports/MILESTONE_2_TECHNICAL_REPORT_EXP34332.md", category: "milestones" },
+  { title: "Model Evaluation Report", description: "Full performance breakdown and per-class analysis.", path: "./reports/MODEL_EVALUATION_REPORT.md", category: "evaluation" },
+  { title: "HPO Report", description: "Hyperparameter optimization results and best config.", path: "./reports/HPO_REPORT.md", category: "evaluation" },
+  { title: "HPO Training Report", description: "Training with HPO-optimized hyperparameters.", path: "./reports/HPO_TRAINING_REPORT.md", category: "evaluation" },
+  { title: "Training Comparison Report", description: "YOLO11m vs Faster R-CNN fine-tuning results.", path: "./reports/TRAINING_COMPARISON_REPORT.md", category: "evaluation" },
+  { title: "Reports Index", description: "Map of all reporting documents.", path: "./reports/REPORTS_INDEX.md", category: "status" },
+  { title: "Project Status Report", description: "Progress across milestones.", path: "./reports/PROJECT_STATUS_REPORT.md", category: "status" },
+  { title: "Week 1 Deliverables", description: "Early milestone summary.", path: "./reports/WEEK_1_DELIVERABLES_SUMMARY.md", category: "status" },
+  { title: "Abdallah Dataset Analysis", description: "Dataset options and rationale.", path: "./reports/research/Abdallah_dataset_analysis.md", category: "research" },
+  { title: "Aya Dataset Analysis", description: "Comparative dataset insights.", path: "./reports/research/AyaAhmed_dataset_analysis.md", category: "research" },
+  { title: "Dataset Analysis Template", description: "Standardized analysis format.", path: "./reports/templates/dataset_analysis_template.md", category: "research" }
 ];
 
 const visuals = [
@@ -56,10 +65,10 @@ const visuals = [
 ];
 
 const metricRows = [
-  { name: "mAP50-95", best: 0.76786, final: 0.76517 },
-  { name: "mAP50",    best: 0.94159, final: 0.93534 },
-  { name: "Precision", best: 0.92421, final: 0.90017 },
-  { name: "Recall",   best: 0.91550, final: 0.90167 }
+  { name: "mAP50-95", best: 0.768, final: 0.725 },
+  { name: "mAP50",    best: 0.942, final: 0.935 },
+  { name: "Precision", best: 0.924, final: 0.893 },
+  { name: "Recall",   best: 0.916, final: 0.894 }
 ];
 
 /* ─── Helpers ─── */
@@ -198,6 +207,7 @@ function renderSidebars(pageType) {
     buildSidebarItems(docs.filter(d=>d.category==="models"), "docsSidebarModels");
     buildSidebarItems(docs.filter(d=>d.category==="project-planning"), "docsSidebarProjectPlanning");
   } else if (pageType === "reports") {
+    buildSidebarItems(reports.filter(r=>r.category==="evaluation"), "reportsSidebarEvaluation");
     buildSidebarItems(reports.filter(r=>r.category==="milestones"), "reportsSidebarMilestones");
     buildSidebarItems(reports.filter(r=>r.category==="status"), "reportsSidebarStatus");
     buildSidebarItems(reports.filter(r=>r.category==="research"), "reportsSidebarResearch");

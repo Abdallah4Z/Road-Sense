@@ -19,7 +19,6 @@
         <li><a href="docs.html">Docs</a></li>
         <li><a href="reports.html">Reports</a></li>
         <li><a href="visuals.html">Visuals</a></li>
-        <li><a href="detect.html">Detect</a></li>
         <li><a href="#results">Results</a></li>
         <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">☀️</button>
       </ul>
@@ -29,42 +28,42 @@
   <main>
     <header class="hero reveal">
       <div class="hero-content">
-        <p class="eyebrow">Autonomous Vision Project Showcase</p>
-        <h1>From Raw KITTI Data to Production-Ready Detection Insights</h1>
+        <p class="eyebrow">YOLO11m · KITTI · Azure</p>
+        <h1>Real-time object detection<br>for autonomous vehicles</h1>
         <p class="hero-copy">
-          A presentation-ready portal for Road-Sense documentation, milestone reports,
-          training visualizations, and benchmark results.
+          YOLO11m fine-tuned on KITTI. Three-class detection — Vehicle, Pedestrian, Cyclist.
+          Deployed as a live API on Azure Container Instances.
         </p>
         <div class="hero-actions">
           <a href="#results" class="btn btn-primary">View Metrics</a>
-          <a href="docs.html" class="btn btn-ghost">Open Documentation</a>
+          <a href="docs.html" class="btn btn-ghost">Documentation</a>
         </div>
       </div>
 
       <section class="stat-ribbon reveal" aria-label="Key model metrics">
         <article>
-          <span class="label">Best mAP50-95</span>
-          <span class="value">0.76786</span>
+          <span class="label">mAP50</span>
+          <span class="value">0.935</span>
         </article>
         <article>
-          <span class="label">Best mAP50</span>
-          <span class="value">0.94159</span>
+          <span class="label">mAP50-95</span>
+          <span class="value">0.725</span>
         </article>
         <article>
-          <span class="label">Best Precision</span>
-          <span class="value">0.92421</span>
+          <span class="label">Precision</span>
+          <span class="value">0.893</span>
         </article>
         <article>
-          <span class="label">Best Recall</span>
-          <span class="value">0.91550</span>
+          <span class="label">Recall</span>
+          <span class="value">0.894</span>
         </article>
       </section>
     </header>
 
     <section id="results" class="panel reveal">
       <div class="panel-head">
-        <p class="eyebrow">Run exp34332</p>
-        <h2>Results Snapshot</h2>
+        <p class="eyebrow">HPO run</p>
+        <h2>Baseline vs HPO</h2>
       </div>
 
       <div class="results-wrap">
@@ -80,8 +79,7 @@
   </main>
 
   <footer class="footer reveal">
-    <p>Road-Sense Presentation Site</p>
-    <p>Built for docs, reports, visual artifacts, and milestone communication.</p>
+    <p>Road-Sense · YOLO11m · DEPI Graduation Project</p>
   </footer>
 
   <script src="script.js"></script>
