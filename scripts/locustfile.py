@@ -1,8 +1,8 @@
-import io
 import os
-import numpy as np
+
 import cv2
-from locust import HttpUser, task, between, events
+import numpy as np
+from locust import HttpUser, between, events, task
 
 # Helpers — generate dummy images in memory
 
@@ -35,7 +35,7 @@ class DetectionAPIUser(HttpUser):
             name="/predict [single]",
         )
 
-    #  Batch images 
+    #  Batch images
     @task(1)
     def predict_batch(self):
         """POST /predict/batch — multiple images."""
@@ -49,7 +49,7 @@ class DetectionAPIUser(HttpUser):
             name="/predict/batch [4 images]",
         )
 
-    #  Health check (lightweight baseline) 
+    #  Health check (lightweight baseline)
     @task(1)
     def health_check(self):
         """GET /health — sanity check endpoint."""
@@ -67,8 +67,8 @@ def on_quitting(environment, **kwargs):
     print("  LOAD TEST RESULTS")
     print("="*55)
 
-    TARGET_P95_MS    = 150
-    TARGET_RPS       = 10
+    target_p95  = 150
+    target_rps  = 10
 
     all_pass = True
 
@@ -81,15 +81,15 @@ def on_quitting(environment, **kwargs):
         p99 = entry.get_response_time_percentile(0.99)
         rps = entry.current_rps
 
-        p95_ok  = p95 < TARGET_P95_MS
-        rps_ok  = stats.total.current_rps >= TARGET_RPS
+        p95_ok  = p95 < target_p95
+        rps_ok  = stats.total.current_rps >= target_rps
 
         print(f"\n  Endpoint : {name[1]}")
         print(f"  Requests : {entry.num_requests} | Failures: {entry.num_failures}")
         print(f"  p50      : {p50:.1f} ms")
-        print(f"  p95      : {p95:.1f} ms  {' if p95_ok else ' > 150ms TARGET'}")
+        print(f"  p95      : {p95:.1f} ms  {'✅' if p95_ok else '❌ > 150ms TARGET'}")
         print(f"  p99      : {p99:.1f} ms")
-        print(f"  RPS      : {rps:.1f}  {' if rps_ok else ' < 10 req/s TARGET'}")
+        print(f"  RPS      : {rps:.1f}  {'✅' if rps_ok else '❌ < 10 req/s TARGET'}")
 
         if not p95_ok or not rps_ok:
             all_pass = False

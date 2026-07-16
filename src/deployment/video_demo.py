@@ -18,12 +18,11 @@ Usage:
 
 import argparse
 import sys
-from pathlib import Path
 
 import cv2
-import numpy as np
-
 from ultralytics import YOLO
+
+from src.models.api_server import SessionTracker, draw_boxes_from_detections, extract_raw_detections
 
 CLASSES = ["Vehicle", "Pedestrian", "Cyclist"]
 COLORS = [(0, 255, 0), (0, 255, 255), (255, 0, 0)]
@@ -65,6 +64,8 @@ def main() -> int:
     print("Controls: q=quit, p=pause")
 
     paused = False
+    tracker = SessionTracker(iou_threshold=0.35, max_missed=5, bbox_alpha=0.6, conf_alpha=0.5)
+
     while True:
         if not paused:
             ret, frame = cap.read()
@@ -73,14 +74,17 @@ def main() -> int:
 
             results = model.predict(frame, imgsz=args.imgsz, conf=args.conf, device=device, verbose=False)[0]
 
-            annotated = results.plot()
-            fps_text = f"FPS: {fps_in:.0f}"
+            raw = extract_raw_detections(results, results.names)
+            tracked = tracker.update(raw)
 
-            if results.boxes:
-                cv2.putText(annotated, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            annotated = draw_boxes_from_detections(frame, tracked)
+            fps_text = f"FPS: {fps_in:.0f}"
+            cv2.putText(annotated, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+            if tracked:
                 class_counts = {}
-                for cls in results.boxes.cls:
-                    name = results.names[int(cls)]
+                for d in tracked:
+                    name = d["class_name"]
                     class_counts[name] = class_counts.get(name, 0) + 1
                 y_offset = 60
                 for name, count in class_counts.items():
